@@ -1,0 +1,6 @@
+**__pycache__
+.vscode/
+*.egg-info
+docs/readthedocs/_build
+docs/readthedocs/vbeam/_autosummary
+build

@@ -1,0 +1,4 @@
+sphinx-book-theme
+sphinxcontrib-jquery
+sphinx-hoverxref
+myst-nb
