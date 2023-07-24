@@ -15,6 +15,6 @@ setup(
         "numpy",
         "pyuff_ustb",
         "scipy",
-        "spekk @ git+https://bitbucket.org/ntnuultrasoundgroup/spekk.git",
+        "spekk",
     ],
 )
