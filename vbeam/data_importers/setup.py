@@ -3,11 +3,12 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Literal, Optional, Sequence, Union
 
 from spekk import Spec
-from spekk.slicing import IndicesT, slice_data, slice_spec
+from spekk.util.slicing import IndicesT, slice_data, slice_spec
 
 from vbeam.core import SignalForPointData
 from vbeam.fastmath import numpy as np
 from vbeam.scan import PointOptimizer, Scan
+from vbeam.util.transformations import *
 
 
 @dataclass
@@ -98,14 +99,12 @@ the scan instead."
 
         By default, all dimensions not specified in the list are summed over. You can
         override this by passing in a sum_fn."""
-        from vbeam.beamformers import Apply, Axis, ForAll, compose
-
         sum_fn = np.sum if sum_fn == "sum" else sum_fn
         all_dimensions = (
-            self.spec.at["sender"].dimensions
-            | self.spec.at["point_pos"].dimensions
-            | self.spec.at["receiver"].dimensions
-            | self.spec.at["wave_data"].dimensions
+            self.spec["sender"].dimensions
+            | self.spec["point_pos"].dimensions
+            | self.spec["receiver"].dimensions
+            | self.spec["wave_data"].dimensions
         )
         calculate_apodization = compose(
             lambda apodization, *args, **kwargs: apodization(*args, **kwargs),
