@@ -2,7 +2,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Callable, Dict, Literal, Optional, Sequence, Union
 
-from spekk import Spec
+from spekk import Spec, trees
 from spekk.util.slicing import IndicesT, slice_data, slice_spec
 
 from vbeam.core import SignalForPointData
@@ -70,11 +70,29 @@ the scan instead."
             value = object.__getattribute__(self, name)
         return value
 
-    def size(self, dimension: Optional[str] = None) -> Union[int, Dict[str, int]]:
+    def size(
+        self, dimension: Optional[Union[str, trees.Tree]] = None
+    ) -> Union[int, Dict[str, int]]:
         """Return the size of the various dimensions of the data.
 
+        ``dimension`` may be None, a string, or a tree of strings. If it is None, then 
+        a dict of all the dimensions and their sizes is returned. If it is a string, 
+        then the size of that dimension is returned. If it is a tree of strings, then 
+        the leaves of the tree is updated to be the size of those dimensions (assuming 
+        all leaves are dimensions that exists in the spec).
+
         See Spec.size for details."""
-        return self.spec.size({**self}, dimension)
+        data = self.data
+        if dimension is None:
+            # Returns a dict with all dimensions in the spec as keys and sizes as values
+            return self.spec.size(data)
+        # dimension may be a tree of dimensions. Update the leaves of the tree to get 
+        # the size of each dimension.
+        return trees.update_leaves(
+            dimension,
+            lambda x: isinstance(x, str),
+            lambda dimension: self.spec.size(data, dimension),
+        )
 
     @property
     def data(self) -> dict:
