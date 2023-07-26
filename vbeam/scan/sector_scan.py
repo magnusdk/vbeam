@@ -150,11 +150,15 @@ def _right_bound(
     sin_min, sin_max = np.sin(min_azimuth), np.sin(max_azimuth)
 
     # Get the maximum x coordinate of the corners of both the inner and outer arc.
-    max_corner_x = max(
-        cos_min * min_depth,  # Inner arc
-        cos_max * min_depth,  # Inner arc
-        cos_min * max_depth,  # Outer arc
-        cos_max * max_depth,  # Outer arc
+    max_corner_x = np.max(
+        np.array(
+            [
+                cos_min * min_depth,  # Inner arc
+                cos_max * min_depth,  # Inner arc
+                cos_min * max_depth,  # Outer arc
+                cos_max * max_depth,  # Outer arc
+            ]
+        )
     )
 
     # The right-most part of the arcs may either be ``max_corner_x``, or it may be on
