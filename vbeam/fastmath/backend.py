@@ -199,6 +199,10 @@ class Backend:
     def logical_or(self, x1, x2):
         raise NotImplementedError
 
+    @wraps(np.logical_or)
+    def logical_and(self, x1, x2):
+        raise NotImplementedError
+
     @wraps(np.squeeze)
     def squeeze(self, a, axis=None):
         raise NotImplementedError

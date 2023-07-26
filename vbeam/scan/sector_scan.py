@@ -104,20 +104,68 @@ class SectorScan(Scan):
 
     @property
     def cartesian_bounds(self):
-        points = self.get_points()
-        # Ensure that points and apex are broadcastable
-        apex = np.expand_dims(self.apex, axis=1) if self.apex.ndim > 1 else self.apex
-        points -= apex
-        min_x, max_x = points[:, 0].min(), points[:, 0].max()
-        min_y, max_y = points[:, 1].min(), points[:, 1].max()
-        min_z, max_z = points[:, 2].min(), points[:, 2].max()
+        """Get the bounds of the scan in cartesian coordinates. It is the same as
+        bounding box of the scan-converted image."""
         if self.is_3d:
-            return (min_x, max_x, min_y, max_y, min_z, max_z)
-        if self.is_2d:
-            return (min_x, max_x, min_z, max_z)
+            raise NotImplementedError(
+                "Cartesian bounds are not implemented for 3D scans yet.",
+                "Please create an issue on Github if this is something you need.",
+            )
+        min_az, max_az, min_d, max_d = self.bounds
+        # We get the bounds by calculating the bound for each edge of the bounding box
+        # individually. _right_bound gets the right-most x coordinate of the bounding
+        # box and we can get the other sides by rotating the azimuth bounds by 90, 180,
+        # and 270 degrees. Because in ultrasound, "straight down" is at 0 degrees, we
+        # have to rotate everything by an additional 90 degrees.
+        quarter_turn = np.pi / 2
+        half_turn = np.pi
+        # Return (left, right, top, bottom)
+        return (
+            -_right_bound(min_az + quarter_turn, max_az + quarter_turn, min_d, max_d),
+            _right_bound(min_az - quarter_turn, max_az - quarter_turn, min_d, max_d),
+            -_right_bound(min_az + half_turn, max_az + half_turn, min_d, max_d),
+            _right_bound(min_az, max_az, min_d, max_d),
+        )
 
     def __repr__(self):
         return f"SectorScan(<shape={self.shape}>, apex={self.apex})"
+
+
+def _right_bound(
+    min_azimuth: float,
+    max_azimuth: float,
+    min_depth: float,
+    max_depth: float,
+) -> float:
+    """For the two arcs defined by the azimuth bounds (one for ``min_depth`` and one
+    for ``max_depth``), find the right-most x coordinate of the two arcs.
+
+    This will be the right-edge of a bounding box that encompasses the arcs. You can
+    get the other edges of the bounding box by rotating the azimuth bounds by 90, 180,
+    and 270 degrees.
+
+    See ``docs/vbeam/scan/sector_scan_bounds.ipynb`` for a visualization of the bounding
+    box of the arcs."""
+    cos_min, cos_max = np.cos(min_azimuth), np.cos(max_azimuth)
+    sin_min, sin_max = np.sin(min_azimuth), np.sin(max_azimuth)
+
+    # Get the maximum x coordinate of the corners of both the inner and outer arc.
+    max_corner_x = max(
+        cos_min * min_depth,  # Inner arc
+        cos_max * min_depth,  # Inner arc
+        cos_min * max_depth,  # Outer arc
+        cos_max * max_depth,  # Outer arc
+    )
+
+    # The right-most part of the arcs may either be ``max_corner_x``, or it may be on
+    # the right-most *tangent* of the outer arc. We have to make some additional checks
+    # to make this work. The code for this is a bit terse, so just trust the generative
+    # unit tests for :attr:`SectorScan.cartesian_bounds` :)
+    return np.where(
+        (max_azimuth - min_azimuth) < np.pi,
+        np.where(np.logical_and(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
+        np.where(np.logical_or(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
+    )
 
 
 # TODO: Research proper scan conversion

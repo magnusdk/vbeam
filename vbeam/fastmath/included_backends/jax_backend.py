@@ -140,6 +140,9 @@ class JaxBackend(Backend):
 
     def logical_or(self, x1, x2):
         return jnp.logical_or(x1, x2)
+    
+    def logical_and(self, x1, x2):
+        return jnp.logical_and(x1, x2)
 
     def squeeze(self, a, axis=None):
         return jnp.squeeze(a, axis=axis)
