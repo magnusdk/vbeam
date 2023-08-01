@@ -1,9 +1,9 @@
 from typing import Sequence, Set, Union
 
+import vbeam.beamformers.building_blocks as building_blocks
 from vbeam.beamformers.building_blocks import (
     compensate_for_apodization_overlap,
     do_nothing,
-    scan_convert,
     sum_over_dimensions,
     unflatten_points,
     vectorize_over_datacube,
@@ -18,7 +18,7 @@ def get_das_beamformer(
     setup: SignalForPointSetup,
     *,
     log_compress: bool = True,
-    apply_scan_conversion: bool = True,
+    scan_convert: bool = True,
     keep_dimensions: Union[Sequence[str], Set[str]] = (),
 ):
     return compose(
@@ -28,14 +28,14 @@ def get_das_beamformer(
         unflatten_points(setup),
         compensate_for_apodization_overlap(setup),
         Apply(normalized_decibels) if log_compress else do_nothing,
-        scan_convert(setup) if apply_scan_conversion else do_nothing,
+        building_blocks.scan_convert(setup) if scan_convert else do_nothing,
     ).build(setup.spec)
 
 
 def get_coherence_beamformer(
     setup: SignalForPointSetup,
     *,
-    apply_scan_conversion: bool = True,
+    scan_convert: bool = True,
     keep_dimensions: Union[Sequence[str], Set[str]] = (),
 ):
     keep_dimensions = set(keep_dimensions) | {"receivers"}
@@ -45,5 +45,5 @@ def get_coherence_beamformer(
         sum_over_dimensions(setup, keep=keep_dimensions),
         unflatten_points(setup),
         Apply(coherence_factor, Axis("receivers")),
-        scan_convert(setup) if apply_scan_conversion else do_nothing,
+        building_blocks.scan_convert(setup) if scan_convert else do_nothing,
     ).build(setup.spec)
