@@ -1,7 +1,10 @@
 from functools import wraps
-from typing import Type
+from typing import Callable, Sequence, Type, TypeVar, Union
 
 import numpy as np
+
+T_carry = TypeVar("T_carry")
+T_x = TypeVar("T_x")
 
 
 def i_at(arr, i, ax):
@@ -301,31 +304,48 @@ class Backend:
         """
         raise NotImplementedError
 
-    # Dependent functions. These do not need to be implemented by subclasses.
+    ######################
+    # Dependent functions;
+    # These do not need to be implemented by subclasses:
 
-    def reduce(self, reduce_fn, init_val, in_axes):
-        if isinstance(in_axes, int):
-            in_axes = (in_axes,)
+    def reduce(
+        self,
+        f: Callable[[T_carry, T_x], T_carry],
+        xs: Union[Sequence[T_x], np.ndarray],
+        init_val: T_carry,
+    ):
+        """Reduce over xs using f, starting with init_val.
+        
+        An example that iteratively sums each value in the list ``[1,2,3,4,5]``:
 
-        def wrapped_fun(*args, **kwargs):
-            assert len(args) == len(in_axes), "Must specify an axis for each arg."
-            v_axes = [(i, ax) for i, ax in enumerate(in_axes) if ax is not None]
-            v_sizes = [args[i].shape[ax] for i, ax in v_axes]
-            v_ax_size = v_sizes[0]
-            assert all(
-                [v_size == v_ax_size for v_size in v_sizes]
-            ), "All axes must have the same number of elements."
+        >>> import operator
+        >>> from vbeam.fastmath import numpy as np
+        >>> xs = [1,2,3,4,5]
+        >>> np.reduce(operator.add, xs, 0)
+        15
 
-            def scan_fn(carry, i):
-                """Call reduce_fn with the given carry and the i-th element of each arg
-                across the axes defined by in_axes."""
-                args_at_i = [
-                    args[j] if ax is None else i_at(args[j], i, ax)
-                    for j, ax in enumerate(in_axes)
-                ]
-                return reduce_fn(carry, *args_at_i, **kwargs), i
+        It is semantically equivalent to the following Python code:
 
-            carry, _ = self.scan(scan_fn, init_val, self.arange(v_ax_size))
-            return carry  # The final carry is the result
+        >>> def reduce(f, xs, init_val):
+        ...     carry = init_val
+        ...     for x in xs:
+        ...         carry = f(carry, x)
+        ...     return carry
+        >>> reduce(operator.add, xs, 0)
+        15
+        """
+        def scan_fn(carry, i):
+            """Call reduce_fn with the given carry and the i-th element of each arg
+            across the axes defined by in_axes."""
+            return f(carry, i), i
 
-        return wrapped_fun
+        xs = self.array(xs)
+        init_val = self.array(init_val, dtype=xs.dtype)
+        carry, _ = self.scan(scan_fn, init_val, xs)
+        return carry  # The final carry is the result
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()
