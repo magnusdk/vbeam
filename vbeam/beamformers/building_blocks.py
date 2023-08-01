@@ -25,7 +25,7 @@ def vectorize_over_datacube(setup: SignalForPointSetup) -> Transformation:
     return compose(
         *[
             ForAll(dim)
-            for dim in ["points", "receivers", "transmits", "frames"]
+            for dim in ["points", "receivers", "senders", "transmits", "frames"]
             if setup.spec.has_dimension(dim)
         ]
     )
