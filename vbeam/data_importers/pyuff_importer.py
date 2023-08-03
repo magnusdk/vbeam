@@ -146,16 +146,10 @@ given {all_wavefronts})."
     )
     spec = Spec(
         {
-            "speed_of_sound": [],
-            "t_axis_interp": [],
             "signal": ["transmits", "receivers", "signal_time"],
-            "modulation_frequency": [],
             "receiver": ["receivers"],
-            "sender": [],
             "point_pos": ["points"],
-            "wavefront": [],
             "wave_data": ["transmits"],
-            "apodization": [],
         }
     )
     if has_multiple_frames:
