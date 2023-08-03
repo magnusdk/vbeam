@@ -94,7 +94,7 @@ def import_pyuff(
             receiver_signals = np.transpose(channel_data.data, (2, 1, 0))
             has_multiple_frames = False
     # Apply hilbert transform if modulation_frequency is 0
-    modulation_frequency = channel_data.modulation_frequency
+    modulation_frequency = np.array(channel_data.modulation_frequency)
     if numpy.abs(modulation_frequency) == 0:
         receiver_signals = np.array(hilbert(receiver_signals), dtype="complex64")
 
