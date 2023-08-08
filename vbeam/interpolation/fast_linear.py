@@ -3,6 +3,7 @@ from typing import Tuple
 from vbeam.core import InterpolationSpace1D
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
+from vbeam.util import ensure_positive_index
 
 
 @traceable_dataclass(data_fields=("min", "d", "n"))
@@ -93,7 +94,21 @@ class FastInterpLinspace(InterpolationSpace1D):
         yp: "FastInterpLinspace",
         z: np.ndarray,
         padding: float = 0.0,
+        azimuth_axis: int = 0,
+        depth_axis: int = 1,
     ) -> np.ndarray:
+        # Ensure that the axes are positive numbers
+        azimuth_axis = ensure_positive_index(z.ndim, azimuth_axis)
+        depth_axis = ensure_positive_index(z.ndim, depth_axis)
+
+        # Ensure that the azimuth and depth axes are the first two axes
+        if depth_axis == 0 and azimuth_axis == 1:
+            z = np.swapaxes(z, azimuth_axis, depth_axis)
+        else:
+            z = np.moveaxis(z, azimuth_axis, 0)
+            z = np.moveaxis(z, depth_axis, 1)
+
+        # Interpolate along the axes
         bounds_flag_x, clipped_xi1, clipped_xi2, px1, px2 = xp.interp1d_indices(x)
         bounds_flag_y, clipped_yi1, clipped_yi2, py1, py2 = yp.interp1d_indices(y)
 
@@ -112,6 +127,13 @@ class FastInterpLinspace(InterpolationSpace1D):
         v1 = z[clipped_xi1, clipped_yi2] * px1 + z[clipped_xi2, clipped_yi2] * px2
         v = v0 * py1 + v1 * py2
         v = np.where(np.logical_or(bounds_flag_x != 0, bounds_flag_y != 0), padding, v)
+
+        # Swap axes back to their original positions
+        if depth_axis == 0 and azimuth_axis == 1:
+            v = np.swapaxes(v, azimuth_axis, depth_axis)
+        else:
+            v = np.moveaxis(v, 1, depth_axis)
+            v = np.moveaxis(v, 0, azimuth_axis)
         return v
 
     @property
