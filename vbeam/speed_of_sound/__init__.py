@@ -21,7 +21,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
         dx, dz = (x2 - x1) / self.n_samples, (z2 - z1) / self.n_samples
 
         # Numerically integrates speed of sound from pos1 to pos2
-        integrate_speed_of_sound = np.reduce(
+        integrated_speed_of_sound = np.reduce(
             lambda carry, i: carry
             + FastInterpLinspace.interp2d(
                 x1 + i * dx,
@@ -31,7 +31,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
                 self.values,
                 self.default_speed_of_sound,
             ),
+            np.arange(self.n_samples),
             0.0,
-            0,
         )
-        return integrate_speed_of_sound(np.arange(self.n_samples)) / self.n_samples
+        return integrated_speed_of_sound / self.n_samples
