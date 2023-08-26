@@ -37,7 +37,10 @@ import contextlib
 from typing import Callable, Dict, Optional
 
 from vbeam.fastmath.backend import Backend
-from vbeam.fastmath.included_backends import included_backends
+from vbeam.fastmath.included_backends import (
+    get_best_available_backend,
+    included_backends,
+)
 
 _registered_backends: Dict[str, Callable[[], Backend]] = included_backends
 
@@ -73,15 +76,17 @@ def register_backend(name: str, get_backend: Callable[[], Backend]):
 
 
 class BackendManager:
-    _active_backend: str = "numpy"
+    _active_backend: Optional[str]
     _backends_cache: Dict[str, Backend] = {}
 
     def __init__(self, initial_active_backend: Optional[str] = None):
-        if initial_active_backend is not None:
-            self.active_backend = initial_active_backend
+        self._active_backend = initial_active_backend
 
     @property
     def active_backend(self) -> Backend:
+        if self._active_backend is None:
+            self._active_backend = get_best_available_backend()
+
         backend = self._backends_cache.get(self._active_backend, None)
         if backend is None:
             get_backend = _registered_backends[self._active_backend]
