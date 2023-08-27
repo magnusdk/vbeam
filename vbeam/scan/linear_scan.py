@@ -2,7 +2,8 @@ from typing import Callable, Literal, Optional, Tuple, Union, overload
 
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
-from vbeam.scan.base import Scan, _parse_axes
+from vbeam.scan.base import CoordinateSystem, Scan
+from vbeam.scan.util import parse_axes
 from vbeam.util.arrays import grid
 
 
@@ -76,6 +77,10 @@ class LinearScan(Scan):
     def cartesian_bounds(self):
         return self.bounds  # LinearScan is already in cartesian coordinates :)
 
+    @property
+    def coordinate_system(self) -> CoordinateSystem:
+        return CoordinateSystem.CARTESIAN
+
     def __repr__(self):
         return f"LinearScan(<shape={self.shape}>)"
 
@@ -92,5 +97,5 @@ def linear_scan(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> LinearScan:
 
 def linear_scan(*xyz: np.ndarray) -> LinearScan:
     "Construct a linear scan. See LinearScan documentation for more details."
-    x, y, z = _parse_axes(xyz)
+    x, y, z = parse_axes(xyz)
     return LinearScan(x, y, z)

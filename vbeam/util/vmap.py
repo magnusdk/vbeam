@@ -1,9 +1,56 @@
-from typing import Callable, Sequence
+from dataclasses import dataclass
+from functools import partial
+from typing import Callable, Optional, Sequence, Union
 
 from spekk import Spec
 
 from vbeam.fastmath import numpy as np
 from vbeam.util.transformations import *
+
+
+def vmap_all_except(f: Union[Callable, int], axis: Optional[int] = None):
+    # See if we're being called as @vmap_all_except or @vmap_all_except().
+    if axis is None:
+        # axis being None indicates we are being called as @vmap_all_except().
+        # Then f must be the axis (i.e.: an int).
+        if not isinstance(f, int):
+            raise ValueError("axis must be specified when using @vmap_all_except().")
+        return partial(vmap_all_except, axis=f)
+    elif f is None:
+        # axis may also have been specified as a keyword argument.
+        if not isinstance(axis, int):
+            raise ValueError("axis must be an int when using @vmap_all_except().")
+        return partial(vmap_all_except, axis=f)
+
+    def wrapped(x: np.ndarray):
+        if x.ndim == 1:
+            return f(x)
+
+        nonlocal axis
+        if axis < 0:
+            axis += x.ndim
+        dims = [f"dim{i}" for i in range(x.ndim)]
+        vmapped_f = compose(
+            lambda x: f(x), *[ForAll(dim) for dim in dims if dim != f"dim{axis}"]
+        )
+        vmapped_f = vmapped_f.build(Spec({"x": dims}))
+        result = vmapped_f(x=x)
+        f_ndim = result.ndim - x.ndim + 1
+        if f_ndim > 0:
+            # f returned an array with at least 1 dimension. Transpose the result such
+            # that those dimensions are at the given axis.
+            result = np.transpose(
+                result,
+                [
+                    *range(axis),
+                    *range(axis, axis + f_ndim),
+                    *range(axis + f_ndim, result.ndim),
+                ],
+            )
+
+        return result
+
+    return wrapped
 
 
 def apply_binary_operation_across_axes(

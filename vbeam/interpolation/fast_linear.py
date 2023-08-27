@@ -93,9 +93,10 @@ class FastInterpLinspace(InterpolationSpace1D):
         xp: "FastInterpLinspace",
         yp: "FastInterpLinspace",
         z: np.ndarray,
-        padding: float = 0.0,
         azimuth_axis: int = 0,
         depth_axis: int = 1,
+        *,  # Remaining args must be passed by name (to avoid confusion)
+        padding: float = 0.0,
     ) -> np.ndarray:
         # Ensure that the axes are positive numbers
         azimuth_axis = ensure_positive_index(z.ndim, azimuth_axis)

@@ -5,7 +5,9 @@ from spekk.transformations import Transformation
 
 from vbeam.data_importers.setup import SignalForPointSetup
 from vbeam.fastmath import numpy as np
-from vbeam.scan import SectorScan, cartesian_map
+from vbeam.scan import CoordinateSystem
+from vbeam.scan import util as scan_util
+from vbeam.scan.advanced import ExtraDimsScanMixin
 from vbeam.util.transformations import *
 from vbeam.util.vmap import apply_binary_operation_across_axes
 
@@ -45,13 +47,13 @@ def sum_over_dimensions(
     Dimensions needed to recombine the points using the points optimizer are always
     kept."""
     keep = set(keep)
-    if setup.points_optimizer is not None:
-        keep |= set(setup.points_optimizer.shape_info.required_for_recombine)
+    if isinstance(setup.scan, ExtraDimsScanMixin):
+        keep |= set(setup.scan.required_dimensions_for_unflatten)
     return Apply(
         np.sum,
         [
             Axis(dim)
-            for dim in ["receivers", "transmits"]
+            for dim in ["receivers", "senders", "transmits"]
             if dim not in keep and setup.spec.has_dimension(dim)
         ],
     )
@@ -63,28 +65,34 @@ def unflatten_points(setup: SignalForPointSetup) -> Transformation:
     (assuming a 2D scan).
 
     Automatically handles point optimizers."""
-    if setup.points_optimizer is None:
-        return Apply(setup.scan.unflatten, Axis("points", becomes=["width", "height"]))
+    if isinstance(setup.scan, ExtraDimsScanMixin):
+        return Apply(
+            setup.scan.unflatten,
+            *[Axis(dim) for dim in setup.scan.required_dimensions_for_unflatten[:-1]],
+            Axis(
+                setup.scan.required_dimensions_for_unflatten[-1],
+                becomes=setup.scan.dimensions_after_unflatten,
+            ),
+        )
     else:
-        required_dimensions = setup.points_optimizer.shape_info.required_for_recombine
-        axes = [
-            *(Axis(dim) for dim in required_dimensions[:-1]),
-            Axis(required_dimensions[-1], becomes=["width", "height"]),
-        ]
-        return Apply(setup.points_optimizer.recombine, setup.scan, *axes)
+        return Apply(setup.scan.unflatten, Axis("points", becomes=["width", "height"]))
 
 
 def compensate_for_apodization_overlap(setup: SignalForPointSetup) -> Transformation:
     """Return a :class:`Transformation` that makes the function divide its result by
     the RTB apodization overlap for each pixel."""
-    if setup.points_optimizer is None:
+    if isinstance(setup.scan, ExtraDimsScanMixin):
+        apodization_overlap = setup.get_apodization_values(
+            setup.scan.required_dimensions_for_unflatten
+        )
+        apodization_overlap = setup.scan.unflatten(
+            apodization_overlap,
+            *range(len(setup.scan.required_dimensions_for_unflatten)),
+        )
+    else:
         apodization_overlap = setup.get_apodization_values(["points"])
         apodization_overlap = setup.scan.unflatten(apodization_overlap)
-    else:
-        apodization_overlap = setup.get_apodization_values(["transmits", "points"])
-        apodization_overlap = setup.points_optimizer.recombine(
-            apodization_overlap, setup.scan, 0, 1
-        )
+
     return Apply(
         lambda result, width_axis, height_axis: apply_binary_operation_across_axes(
             result, apodization_overlap, operator.truediv, [width_axis, height_axis]
@@ -96,11 +104,11 @@ def compensate_for_apodization_overlap(setup: SignalForPointSetup) -> Transforma
 
 def scan_convert(setup: SignalForPointSetup) -> Transformation:
     """Return a :class:`Transformation` that makes the function apply scan conversion
-    to its result if the scan is a :class:`SectorScan`."""
-    if not isinstance(setup.scan, SectorScan):
+    to its result if the scan is defined in polar coordinates."""
+    if setup.scan.coordinate_system != CoordinateSystem.POLAR:
         return do_nothing
     return Apply(
-        cartesian_map,
+        scan_util.scan_convert,
         setup.scan,
         Axis("width", keep=True),
         Axis("height", keep=True),

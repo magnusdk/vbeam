@@ -34,7 +34,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
                 self.x_axis,
                 self.z_axis,
                 self.values,
-                self.default_speed_of_sound,
+                padding=self.default_speed_of_sound,
             ),
             np.arange(self.n_samples),
             0.0,

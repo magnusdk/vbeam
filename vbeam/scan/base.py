@@ -1,10 +1,16 @@
 import operator
 from abc import ABC, abstractmethod
+from enum import Enum
 from functools import reduce
 from typing import Callable, Literal, Optional, Tuple, Union
 
 from vbeam.fastmath import numpy as np
 from vbeam.util import ensure_positive_index
+
+
+class CoordinateSystem(Enum):
+    CARTESIAN = "cartesian"
+    POLAR = "polar"
 
 
 class Scan(ABC):
@@ -41,6 +47,12 @@ class Scan(ABC):
         """Return the bounds in cartesian coordinates of the axes of the scan (useful
         for sector scans)."""
 
+    @property
+    @abstractmethod
+    def coordinate_system(self) -> CoordinateSystem:
+        """Return the coordinate system of the scan. E.g.: sector scans are in polar
+        coordinates and linear scans are in cartesian coordinates."""
+
     def unflatten(self, imaged_points: np.ndarray, points_axis: int = -1) -> np.ndarray:
         "Unflatten a flattened array of values into the original shape of the scan."
         points_axis = ensure_positive_index(imaged_points.ndim, points_axis)
@@ -71,17 +83,3 @@ class Scan(ABC):
     def is_3d(self) -> bool:
         "True if all three axes are defined."
         return self.ndim == 3
-
-
-def _parse_axes(xyz):
-    "Internal utility function for parsing axes. Handles both 2D and 3D scans."
-    if len(xyz) == 3:
-        x, y, z = xyz
-    elif len(xyz) == 2:
-        x, z = xyz
-        y = None
-    else:
-        raise ValueError(
-            f"Provide either x, y, and z (3D) or only x and z (2D). Got {len(xyz)} axes"
-        )
-    return x, y, z

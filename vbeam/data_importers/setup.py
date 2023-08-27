@@ -5,9 +5,11 @@ from typing import Callable, Dict, Literal, Optional, Sequence, Union
 from spekk import Spec, trees
 from spekk.util.slicing import IndicesT, slice_data, slice_spec
 
+from vbeam.apodization.util import get_apodization_values
 from vbeam.core import SignalForPointData
 from vbeam.fastmath import numpy as np
-from vbeam.scan import PointOptimizer, Scan
+from vbeam.scan import Scan
+from vbeam.scan.advanced import ExtraDimsScanMixin
 from vbeam.util.transformations import *
 
 
@@ -15,7 +17,6 @@ from vbeam.util.transformations import *
 class SignalForPointSetup(SignalForPointData):
     spec: Spec
     scan: Optional[Scan] = None
-    points_optimizer: Optional[PointOptimizer] = None
 
     @property
     def slice(self):
@@ -25,7 +26,9 @@ class SignalForPointSetup(SignalForPointData):
             ) -> "SignalForPointSetup":
                 sliced_data = slice_data(self.data, self.spec, slices)
                 sliced_spec = slice_spec(self.spec, slices)
-                return SignalForPointSetup(**sliced_data, spec=sliced_spec)
+                return SignalForPointSetup(
+                    **sliced_data, scan=self.scan, spec=sliced_spec
+                )
 
         return Slicer()
 
@@ -45,26 +48,18 @@ the scan instead."
 
     def __getattribute__(self, name: str):
         scan: Scan = object.__getattribute__(self, "scan")
-        points_optimizer: Optional[PointOptimizer] = object.__getattribute__(
-            self, "points_optimizer"
-        )
         if name == "point_pos" and scan is not None:
             point_pos = object.__getattribute__(self, "point_pos")
             if point_pos is not None:
                 warnings.warn("Both point_pos and scan are set. Scan will be used.")
             value = scan.get_points()
-
-            if points_optimizer is not None:
-                value = points_optimizer.reshape(value, scan)
         elif name == "spec":
             spec: Spec = object.__getattribute__(self, "spec")
-            if points_optimizer is not None:
-                spec = spec.replace(
-                    {"point_pos": points_optimizer.shape_info.after_reshape}
-                )
             point_pos = object.__getattribute__(self, "point_pos")
             if scan is None and point_pos is None:
                 spec = spec.remove_subtree(["point_pos"])
+            elif isinstance(scan, ExtraDimsScanMixin):
+                spec = spec.at["point_pos"].set(scan.flattened_points_dimensions)
             value = spec
         else:
             value = object.__getattribute__(self, name)
@@ -75,10 +70,10 @@ the scan instead."
     ) -> Union[int, Dict[str, int]]:
         """Return the size of the various dimensions of the data.
 
-        ``dimension`` may be None, a string, or a tree of strings. If it is None, then 
-        a dict of all the dimensions and their sizes is returned. If it is a string, 
-        then the size of that dimension is returned. If it is a tree of strings, then 
-        the leaves of the tree is updated to be the size of those dimensions (assuming 
+        ``dimension`` may be None, a string, or a tree of strings. If it is None, then
+        a dict of all the dimensions and their sizes is returned. If it is a string,
+        then the size of that dimension is returned. If it is a tree of strings, then
+        the leaves of the tree is updated to be the size of those dimensions (assuming
         all leaves are dimensions that exists in the spec).
 
         See Spec.size for details."""
@@ -86,7 +81,7 @@ the scan instead."
         if dimension is None:
             # Returns a dict with all dimensions in the spec as keys and sizes as values
             return self.spec.size(data)
-        # dimension may be a tree of dimensions. Update the leaves of the tree to get 
+        # dimension may be a tree of dimensions. Update the leaves of the tree to get
         # the size of each dimension.
         return trees.update_leaves(
             dimension,
@@ -99,6 +94,9 @@ the scan instead."
         kernel_data_fields = SignalForPointData.__dataclass_fields__
         data = {k: getattr(self, k) for k in kernel_data_fields}
         return data
+
+    def copy(self) -> "SignalForPointSetup":
+        return SignalForPointSetup(**self.data, spec=self.spec, scan=self.scan)
 
     def get_apodization_values(
         self,
@@ -117,24 +115,13 @@ the scan instead."
 
         By default, all dimensions not specified in the list are summed over. You can
         override this by passing in a sum_fn."""
-        sum_fn = np.sum if sum_fn == "sum" else sum_fn
-        all_dimensions = (
-            self.spec["sender"].dimensions
-            | self.spec["point_pos"].dimensions
-            | self.spec["receiver"].dimensions
-            | self.spec["wave_data"].dimensions
-        )
-        calculate_apodization = compose(
-            lambda apodization, *args, **kwargs: apodization(*args, **kwargs),
-            *[ForAll(dim) for dim in all_dimensions],
-            Apply(sum_fn, [Axis(dim) for dim in all_dimensions - set(dimensions)]),
-            # Put the dimensions in the order defined by keep
-            Apply(np.transpose, [Axis(dim, keep=True) for dim in dimensions]),
-        ).build(self.spec.replace({"point_position": self.spec.get(["point_pos"])}))
-        return calculate_apodization(
-            apodization=self.apodization,
-            sender=self.sender,
-            point_position=self.point_pos,
-            receiver=self.receiver,
-            wave_data=self.wave_data,
+        return get_apodization_values(
+            self.apodization,
+            self.sender,
+            self.point_pos,
+            self.receiver,
+            self.wave_data,
+            self.spec,
+            dimensions,
+            sum_fn,
         )

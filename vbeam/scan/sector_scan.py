@@ -5,7 +5,8 @@ import numpy
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.interpolation import FastInterpLinspace
-from vbeam.scan.base import Scan, _parse_axes
+from vbeam.scan.base import CoordinateSystem, Scan
+from vbeam.scan.util import parse_axes
 from vbeam.util import ensure_positive_index
 from vbeam.util.arrays import grid
 from vbeam.util.coordinate_systems import as_cartesian
@@ -23,7 +24,11 @@ class SectorScan(Scan):
         points = grid(self.azimuths, polar_axis, self.depths, shape=(*self.shape, 3))
         points = as_cartesian(points)
         # Ensure that points and apex are broadcastable
-        apex = np.expand_dims(self.apex, axis=tuple(range(1, self.ndim))) if self.apex.ndim > 1 else self.apex
+        apex = (
+            np.expand_dims(self.apex, axis=tuple(range(1, self.ndim)))
+            if self.apex.ndim > 1
+            else self.apex
+        )
         points = points + apex
         if flatten:
             points = points.reshape((self.num_points, 3))
@@ -127,6 +132,10 @@ class SectorScan(Scan):
             _right_bound(min_az, max_az, min_d, max_d),
         )
 
+    @property
+    def coordinate_system(self) -> CoordinateSystem:
+        return CoordinateSystem.POLAR
+
     def __repr__(self):
         return f"SectorScan(<shape={self.shape}>, apex={self.apex})"
 
@@ -172,73 +181,6 @@ def _right_bound(
     )
 
 
-# TODO: Research proper scan conversion
-def cartesian_map(
-    imaged_points: np.ndarray,
-    scan: SectorScan,
-    azimuth_axis: int = -2,
-    depth_axis: int = -1,
-    scale_azimuth: float = 1.0,
-    scale_depth: Optional[float] = None,
-):
-    """Convert the imaged points to cartesian coordinates (scan-conversion)."""
-    if not imaged_points.ndim >= 2:
-        raise ValueError(
-            "Image must be 2D in order to perform scan conversion. Did you forget to \
-unflatten the imaged points?"
-        )
-
-    scale_depth = scale_azimuth if scale_depth is None else scale_depth
-
-    # Use the sizes of the imaged_points, assuming they are defined from this scan.
-    # The points may have been resampled, but the bounds of the scan should still
-    # be the same.
-    azimuth_size = imaged_points.shape[azimuth_axis]
-    depth_size = imaged_points.shape[depth_axis]
-    # Use numpy.ceil instead of np.ceil to avoid dynamic shapes when JIT-compiling
-    new_azimuth_size = numpy.ceil(azimuth_size * scale_azimuth).astype("int")
-    new_depth_size = numpy.ceil(depth_size * scale_depth).astype("int")
-
-    min_x, max_x, min_z, max_z = scan.cartesian_bounds
-
-    new_points = grid(
-        np.linspace(min_x, max_x, new_azimuth_size),
-        np.linspace(min_z, max_z, new_depth_size),
-    )
-    x, z = new_points[..., 0], new_points[..., -1]
-    angles = np.arctan2(x, z)
-    radii = np.sqrt(x**2 + z**2)
-
-    # Ensure that x-axis comes first, followed by y-axis.
-    azimuth_axis = ensure_positive_index(imaged_points.ndim, azimuth_axis)
-    depth_axis = ensure_positive_index(imaged_points.ndim, depth_axis)
-    if depth_axis == 0 and azimuth_axis == 1:
-        imaged_points = np.swapaxes(imaged_points, azimuth_axis, depth_axis)
-    else:
-        imaged_points = np.moveaxis(imaged_points, azimuth_axis, 0)
-        imaged_points = np.moveaxis(imaged_points, depth_axis, 1)
-
-    # Interpolate image using the cartesian points
-    min_az, max_az, min_depth, max_depth = scan.bounds
-    interp_x = FastInterpLinspace(
-        min_az, (max_az - min_az) / (azimuth_size - 1), azimuth_size
-    )
-    interp_z = FastInterpLinspace(
-        min_depth, (max_depth - min_depth) / (depth_size - 1), depth_size
-    )
-    imaged_points = FastInterpLinspace.interp2d(
-        angles, radii, interp_x, interp_z, imaged_points
-    )
-
-    # Swap axes back to original shape
-    if depth_axis == 0 and azimuth_axis == 1:
-        imaged_points = np.swapaxes(imaged_points, azimuth_axis, depth_axis)
-    else:
-        imaged_points = np.moveaxis(imaged_points, 1, depth_axis)
-        imaged_points = np.moveaxis(imaged_points, 0, azimuth_axis)
-    return imaged_points
-
-
 @overload
 def sector_scan(
     azimuths: np.ndarray,
@@ -260,5 +202,5 @@ def sector_scan(
 
 def sector_scan(*axes: np.ndarray, apex: Union[np.ndarray, float] = 0.0) -> SectorScan:
     "Construct a sector scan. See SectorScan documentation for more details."
-    azimuths, elevations, depths = _parse_axes(axes)
+    azimuths, elevations, depths = parse_axes(axes)
     return SectorScan(azimuths, elevations, depths, np.array(apex))
