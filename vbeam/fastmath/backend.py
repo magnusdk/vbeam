@@ -340,7 +340,6 @@ class Backend:
             return f(carry, i), i
 
         xs = self.array(xs)
-        init_val = self.array(init_val, dtype=xs.dtype)
         carry, _ = self.scan(scan_fn, init_val, xs)
         return carry  # The final carry is the result
 
