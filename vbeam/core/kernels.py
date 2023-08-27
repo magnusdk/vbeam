@@ -25,7 +25,7 @@ def signal_for_point(
     modulation_frequency: Optional[float],
     receiver: ElementGeometry,
     sender: ElementGeometry,
-    point_pos: np.ndarray,
+    point_position: np.ndarray,
     wavefront: Wavefront,
     wave_data: WaveData,
     apodization: Apodization,
@@ -43,7 +43,7 @@ def signal_for_point(
         delayed signal. If None and the signal is real, then the signal remains real.
       receiver_pos: The position of the receiver (x, y, z).
       sender_pos: The position of the sender (x, y, z).
-      point_pos: The position of the point to be imaged (x, z).
+      point_position: The position of the point to be imaged (x, z).
       wavefront: A Wavefront object for calculating the wavefront propagation distance,
         which varies depending on the wavefront model. See Wavefront class documentation
         for details.
@@ -54,12 +54,12 @@ def signal_for_point(
       The delayed signal from a single transmit, for a single receiver, for a single
       point.
     """
-    transmit_distance = wavefront.transmit_distance(sender, point_pos, wave_data)
-    receive_distance = wavefront.receive_distance(point_pos, receiver, wave_data)
+    transmit_distance = wavefront.transmit_distance(sender, point_position, wave_data)
+    receive_distance = wavefront.receive_distance(point_position, receiver, wave_data)
 
     if isinstance(speed_of_sound, SpeedOfSound):
-        transmit_sos = speed_of_sound.average_between(sender.position, point_pos)
-        receive_sos = speed_of_sound.average_between(point_pos, receiver.position)
+        transmit_sos = speed_of_sound.average_between(sender.position, point_position)
+        receive_sos = speed_of_sound.average_between(point_position, receiver.position)
         transmit_delay = transmit_distance / transmit_sos
         receive_delay = receive_distance / receive_sos
         delay = transmit_delay + receive_delay
@@ -71,7 +71,7 @@ def signal_for_point(
         signal = phase_correction(signal, delay, modulation_frequency)
     if isinstance(transmit_distance, MultipleTransmitDistances):
         signal = transmit_distance.aggregate_samples(signal)
-    return signal * apodization(sender, point_pos, receiver, wave_data)
+    return signal * apodization(sender, point_position, receiver, wave_data)
 
 
 def phase_correction(signal: float, delay: float, modulation_frequency: float):
@@ -91,7 +91,7 @@ class SignalForPointData(KernelData):
     modulation_frequency: float
     receiver: ElementGeometry
     sender: ElementGeometry
-    point_pos: np.ndarray
+    point_position: np.ndarray
     wavefront: Wavefront
     wave_data: WaveData
     apodization: Apodization

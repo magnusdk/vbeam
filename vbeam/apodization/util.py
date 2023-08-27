@@ -10,7 +10,7 @@ from vbeam.util.transformations import *
 def get_apodization_values(
     apodization: Apodization,
     sender: ElementGeometry,
-    point_pos: np.ndarray,
+    point_position: np.ndarray,
     receiver: ElementGeometry,
     wave_data: WaveData,
     spec: Spec,
@@ -32,7 +32,7 @@ def get_apodization_values(
     sum_fn = np.sum if sum_fn == "sum" else sum_fn
     all_dimensions = (
         spec["sender"].dimensions
-        | spec["point_pos"].dimensions
+        | spec["point_position"].dimensions
         | spec["receiver"].dimensions
         | spec["wave_data"].dimensions
     )
@@ -43,11 +43,11 @@ def get_apodization_values(
         # Put the dimensions in the order defined by keep
         Apply(np.transpose, [Axis(dim, keep=True) for dim in dimensions]),
         # TODO: Make this JIT compile by default: Wrap(np.jit),
-    ).build(spec.replace({"point_position": spec.get(["point_pos"])}))
+    ).build(spec)
     return calculate_apodization(
         apodization=apodization,
         sender=sender,
-        point_position=point_pos,
+        point_position=point_position,
         receiver=receiver,
         wave_data=wave_data,
     )

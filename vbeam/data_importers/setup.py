@@ -33,33 +33,35 @@ class SignalForPointSetup(SignalForPointData):
         return Slicer()
 
     def __setattr__(self, name: str, value) -> None:
-        # Handle cases where scan and point_pos are set at the same time
+        # Handle cases where scan and point_position are set at the same time
         # Note: scan always takes precedence
-        if name == "point_pos" and self.scan is not None:
+        if name == "point_position" and self.scan is not None:
             raise AttributeError(
-                "You may not set point_pos when a scan has been defined. Try updating \
-the scan instead."
+                "You may not set point_position when a scan has been defined. Try \
+updating the scan instead."
             )
         if name == "scan":
-            if self.point_pos is not None:
-                warnings.warn("point_pos will be overwritten by the scan.")
+            if self.point_position is not None:
+                warnings.warn("point_position will be overwritten by the scan.")
 
         return super().__setattr__(name, value)
 
     def __getattribute__(self, name: str):
         scan: Scan = object.__getattribute__(self, "scan")
-        if name == "point_pos" and scan is not None:
-            point_pos = object.__getattribute__(self, "point_pos")
-            if point_pos is not None:
-                warnings.warn("Both point_pos and scan are set. Scan will be used.")
+        if name == "point_position" and scan is not None:
+            point_position = object.__getattribute__(self, "point_position")
+            if point_position is not None:
+                warnings.warn(
+                    "Both point_position and scan are set. Scan will be used."
+                )
             value = scan.get_points()
         elif name == "spec":
             spec: Spec = object.__getattribute__(self, "spec")
-            point_pos = object.__getattribute__(self, "point_pos")
-            if scan is None and point_pos is None:
-                spec = spec.remove_subtree(["point_pos"])
+            point_position = object.__getattribute__(self, "point_position")
+            if scan is None and point_position is None:
+                spec = spec.remove_subtree(["point_position"])
             elif isinstance(scan, ExtraDimsScanMixin):
-                spec = spec.at["point_pos"].set(scan.flattened_points_dimensions)
+                spec = spec.at["point_position"].set(scan.flattened_points_dimensions)
             value = spec
         else:
             value = object.__getattribute__(self, name)
@@ -118,7 +120,7 @@ the scan instead."
         return get_apodization_values(
             self.apodization,
             self.sender,
-            self.point_pos,
+            self.point_position,
             self.receiver,
             self.wave_data,
             self.spec,

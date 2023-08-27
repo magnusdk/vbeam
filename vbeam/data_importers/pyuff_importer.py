@@ -148,7 +148,7 @@ given {all_wavefronts})."
         {
             "signal": ["transmits", "receivers", "signal_time"],
             "receiver": ["receivers"],
-            "point_pos": ["points"],
+            "point_position": ["points"],
             "wave_data": ["transmits"],
         }
     )
@@ -162,7 +162,7 @@ given {all_wavefronts})."
         modulation_frequency,
         receivers,
         sender,
-        None,  # point_pos is dynamically set from the scan in SignalForPointSetup
+        None,  # point_position is dynamically set from the scan in SignalForPointSetup
         wavefront,
         wave_data,
         apodization,

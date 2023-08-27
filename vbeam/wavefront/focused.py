@@ -9,14 +9,14 @@ class FocusedSphericalWavefront(Wavefront):
     def transmit_distance(
         self,
         sender: ElementGeometry,
-        point_pos: np.ndarray,
+        point_position: np.ndarray,
         wave_data: WaveData,
     ) -> float:
         sender_source_dist = np.sqrt(np.sum((sender.position - wave_data.source) ** 2))
-        source_point_dist = np.sqrt(np.sum((wave_data.source - point_pos) ** 2))
+        source_point_dist = np.sqrt(np.sum((wave_data.source - point_position) ** 2))
         return (
             sender_source_dist * np.sign(wave_data.source[2] - sender.position[2])
-            - source_point_dist * np.sign(wave_data.source[2] - point_pos[2])
+            - source_point_dist * np.sign(wave_data.source[2] - point_position[2])
             - (wave_data.delay_distance if wave_data.delay_distance is not None else 0)
         )
 
@@ -28,7 +28,7 @@ class FocusedHybridWavefront(Wavefront):
     def transmit_distance(
         self,
         sender: ElementGeometry,
-        point_pos: np.ndarray,
+        point_position: np.ndarray,
         wave_data: WaveData,
     ) -> float:
         spherical_wavefront = FocusedSphericalWavefront()
@@ -39,7 +39,7 @@ class FocusedHybridWavefront(Wavefront):
         )
         wave_data.elevation = wave_data.source[1] - sender.position[1]
         return np.where(
-            np.abs(point_pos[2] - wave_data.source[2]) > self.pw_margin,
-            spherical_wavefront.transmit_distance(sender, point_pos, wave_data),
-            plane_wavefront.transmit_distance(sender, point_pos, wave_data),
+            np.abs(point_position[2] - wave_data.source[2]) > self.pw_margin,
+            spherical_wavefront.transmit_distance(sender, point_position, wave_data),
+            plane_wavefront.transmit_distance(sender, point_position, wave_data),
         )

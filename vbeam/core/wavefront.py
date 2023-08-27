@@ -43,9 +43,9 @@ class Wavefront(ABC):
         delays (+/- 0.1 millimeters):
 
         >>> class SmoothedSTAWavefront(Wavefront):
-        ...     def transmit_distance(self, sender, point_pos, wave_data):
+        ...     def transmit_distance(self, sender, point_position, wave_data):
         ...         # Simply get the distance from sender to point (assume STA)
-        ...         dist = distance(sender.position, point_pos)
+        ...         dist = distance(sender.position, point_position)
         ...         # Smooth the dist by averaging with the two neighboring distances
         ...         dist = jnp.array([dist - 1e-4, dist, dist + 1e-4])
         ...         # Weights for the three different delayed signal samples
@@ -60,7 +60,7 @@ class Wavefront(ABC):
     def transmit_distance(
         self,
         sender: ElementGeometry,
-        point_pos: np.ndarray,
+        point_position: np.ndarray,
         wave_data: WaveData,
     ) -> Union[float, "MultipleTransmitDistances"]:
         """Return the distance from the sender element to the point for a transmit.
@@ -72,17 +72,17 @@ class Wavefront(ABC):
             :class:`MultipleTransmitDistances`
             :func:`~vbeam.core.kernels.signal_for_point`
         """
-        return distance(sender.position, point_pos)
+        return distance(sender.position, point_position)
 
     def receive_distance(
         self,
-        point_pos: np.ndarray,
+        point_position: np.ndarray,
         receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
         """Return the distance from a point and back to a receiving element for a
         transmit."""
-        return distance(receiver.position, point_pos)
+        return distance(receiver.position, point_position)
 
 
 @dataclass
