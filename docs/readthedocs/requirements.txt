@@ -1,4 +1,5 @@
-sphinx-book-theme
-sphinxcontrib-jquery
-sphinx-hoverxref
 myst-nb
+sphinxcontrib-jquery
+sphinx-book-theme
+sphinx-copybutton
+sphinx-hoverxref
