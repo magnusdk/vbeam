@@ -8,8 +8,13 @@ from vbeam.fastmath import numpy as np
 
 class SpeedOfSound(ABC):
     @abstractmethod
-    def average_between(self, pos1: np.ndarray, pos2: np.ndarray) -> float:
-        """Sample the speed of sound between pos1 and pos2 and return the average.
+    def average(
+        self,
+        sender_position: np.ndarray,
+        point_position: np.ndarray,
+        receiver_position: np.ndarray,
+    ) -> float:
+        """Sample the speed of sound between the sender, the point position, and the
+        receiver, and return the average.
 
-        pos1 and pos2 are arrays of three elements: (x, y, z)."""
-        ...
+        All positions are arrays of three elements: (x, y, z)."""

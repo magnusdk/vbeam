@@ -54,18 +54,13 @@ def signal_for_point(
       The delayed signal from a single transmit, for a single receiver, for a single
       point.
     """
+    if isinstance(speed_of_sound, SpeedOfSound):
+        speed_of_sound = speed_of_sound.average(
+            sender.position, point_position, receiver.position
+        )
     transmit_distance = wavefront.transmit_distance(sender, point_position, wave_data)
     receive_distance = wavefront.receive_distance(point_position, receiver, wave_data)
-
-    if isinstance(speed_of_sound, SpeedOfSound):
-        transmit_sos = speed_of_sound.average_between(sender.position, point_position)
-        receive_sos = speed_of_sound.average_between(point_position, receiver.position)
-        transmit_delay = transmit_distance / transmit_sos
-        receive_delay = receive_distance / receive_sos
-        delay = transmit_delay + receive_delay
-    else:
-        delay = (transmit_distance + receive_distance) / speed_of_sound
-
+    delay = (transmit_distance + receive_distance) / speed_of_sound
     signal = t_axis_interp(delay, signal)
     if modulation_frequency is not None:
         signal = phase_correction(signal, delay, modulation_frequency)

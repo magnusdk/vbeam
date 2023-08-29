@@ -7,6 +7,8 @@ from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.scan import Scan
+from vbeam.util import ensure_2d_point
+from vbeam.util.geometry.v2 import distance
 
 
 @traceable_dataclass(
@@ -20,12 +22,35 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
     n_samples: int
     default_speed_of_sound: float = 1540.0
 
-    def average_between(self, pos1: np.ndarray, pos2: np.ndarray) -> float:
-        x1, _, z1 = pos1[0], pos1[1], pos1[2]
-        x2, _, z2 = pos2[0], pos2[1], pos2[2]
-        dx, dz = (x2 - x1) / self.n_samples, (z2 - z1) / self.n_samples
+    def average(
+        self,
+        sender_position: np.ndarray,
+        point_position: np.ndarray,
+        receiver_position: np.ndarray,
+    ) -> float:
+        sender_position = ensure_2d_point(sender_position)
+        point_position = ensure_2d_point(point_position)
+        receiver_position = ensure_2d_point(receiver_position)
 
-        # Numerically integrates speed of sound from pos1 to pos2
+        # Calculate distances to get correct weighting of the averages
+        distance1 = distance(sender_position, point_position)
+        distance2 = distance(point_position, receiver_position)
+        total_distance = distance1 + distance2
+
+        # Get the average speed of sounds
+        average1 = self.average_between_two_points(sender_position, point_position)
+        average2 = self.average_between_two_points(point_position, receiver_position)
+
+        # Return the weighted average of the total distance
+        return (average1 * distance1 + average2 * distance2) / total_distance
+
+    def average_between_two_points(self, p1: np.ndarray, p2: np.ndarray) -> float:
+        "Return the averaged sampled speed of sound between point ``p1`` and ``p2``."
+        assert p1.shape == p2.shape == (2,), "Expected p1 and p2 to be 2D points."
+        x1, z1 = p1[0], p1[1]
+        x2, z2 = p2[0], p2[1]
+        dx, dz = (x2 - x1) / self.n_samples, (z2 - z1) / self.n_samples
+        # We use np.reduce instead of interp2d directly to allocate less GPU memory
         integrated_speed_of_sound = np.reduce(
             lambda carry, i: carry
             + FastInterpLinspace.interp2d(
@@ -37,7 +62,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
                 padding=self.default_speed_of_sound,
             ),
             np.arange(self.n_samples),
-            0.0,
+            np.array(0.0, dtype=self.values.dtype),
         )
         return integrated_speed_of_sound / self.n_samples
 
