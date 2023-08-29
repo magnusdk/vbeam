@@ -16,6 +16,14 @@ from vbeam.util.geometry.v2 import distance
     aux_fields=("n_samples",),
 )
 class HeterogeneousSpeedOfSound(SpeedOfSound):
+    """Sample the speed of sound between sender, point, and receiver position, and
+    return the average.
+
+    You should probably only ever use this if you are doing synthetic transmit aperture
+    imaging (STAI). For more complex imaging setups, like focused, diverging, or plane
+    wave imaging, this class is not appropriate. How should speed of sound be sampled
+    for these setups? That's a difficult question :)"""
+
     values: np.ndarray
     x_axis: FastInterpLinspace
     z_axis: FastInterpLinspace
