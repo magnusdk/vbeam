@@ -247,6 +247,14 @@ class TensorflowBackend(Backend):
                 indices = tnp.expand_dims(indices, -1)
             return tf.tensor_scatter_nd_add(a, indices, tf.cast(b, a.dtype))
 
+    def jit(self, fun, static_argnums=None, static_argnames=None):
+        if static_argnums is not None or static_argnames is not None:
+            raise NotImplementedError(
+                "Tensorflow backend currently doesn't support static_argnums or \
+static_argnames"
+            )
+        return tf.function(fun, jit_compile=True)
+
     def vmap(self, fun, in_axes, out_axes=0):
         return tf.function(vmap(fun, in_axes, out_axes))
 

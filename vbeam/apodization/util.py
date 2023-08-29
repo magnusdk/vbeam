@@ -42,7 +42,7 @@ def get_apodization_values(
         Apply(sum_fn, [Axis(dim) for dim in all_dimensions - set(dimensions)]),
         # Put the dimensions in the order defined by keep
         Apply(np.transpose, [Axis(dim, keep=True) for dim in dimensions]),
-        # TODO: Make this JIT compile by default: Wrap(np.jit),
+        Wrap(np.jit),  # Make it run faster, if the backend supports it.
     ).build(spec)
     return calculate_apodization(
         apodization=apodization,

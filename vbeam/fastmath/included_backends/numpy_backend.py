@@ -141,7 +141,7 @@ class NumpyBackend(Backend):
 
     def logical_or(self, x1, x2):
         return np.logical_or(x1, x2)
-    
+
     def logical_and(self, x1, x2):
         return np.logical_and(x1, x2)
 
@@ -166,6 +166,9 @@ class NumpyBackend(Backend):
             a = a.copy()
             np.add.at(a, indices, b)
             return a
+
+    def jit(self, fun, static_argnums=None, static_argnames=None):
+        return fun  # No-op
 
     def vmap(self, fun, in_axes, out_axes=0):
         v_axes = [(i, ax) for i, ax in enumerate(in_axes) if ax is not None]

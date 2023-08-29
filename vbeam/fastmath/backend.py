@@ -239,6 +239,10 @@ class Backend:
         """
         raise NotImplementedError
 
+    def jit(self, fun, static_argnums=None, static_argnames=None):
+        """Just-in-time compile fun, if the backend supports it."""
+        raise NotImplementedError
+
     def vmap(self, fun, in_axes, out_axes=0):
         """Vectorize fun over the axes specified in in_axes, possibly on the GPU, if the
         backend supports it."""
@@ -315,7 +319,7 @@ class Backend:
         init_val: T_carry,
     ):
         """Reduce over xs using f, starting with init_val.
-        
+
         An example that iteratively sums each value in the list ``[1,2,3,4,5]``:
 
         >>> import operator
@@ -334,6 +338,7 @@ class Backend:
         >>> reduce(operator.add, xs, 0)
         15
         """
+
         def scan_fn(carry, i):
             """Call reduce_fn with the given carry and the i-th element of each arg
             across the axes defined by in_axes."""

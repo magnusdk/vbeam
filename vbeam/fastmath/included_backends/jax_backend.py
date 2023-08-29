@@ -140,7 +140,7 @@ class JaxBackend(Backend):
 
     def logical_or(self, x1, x2):
         return jnp.logical_or(x1, x2)
-    
+
     def logical_and(self, x1, x2):
         return jnp.logical_and(x1, x2)
 
@@ -166,6 +166,13 @@ class JaxBackend(Backend):
         @staticmethod
         def at(a, indices, b):
             return a.at[indices].add(b)
+
+    def jit(self, fun, static_argnums=None, static_argnames=None):
+        return jax.jit(
+            fun,
+            static_argnums=static_argnums,
+            static_argnames=static_argnames,
+        )
 
     def vmap(self, fun, in_axes, out_axes=0):
         return jax.vmap(fun, in_axes=in_axes, out_axes=out_axes)
