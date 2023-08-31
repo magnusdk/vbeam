@@ -1,4 +1,8 @@
 myst-nb
+numpy
+pyuff_ustb
+scipy
+spekk
 sphinxcontrib-jquery
 sphinx-book-theme
 sphinx-copybutton
