@@ -153,8 +153,8 @@ def _right_bound(
     get the other edges of the bounding box by rotating the azimuth bounds by 90, 180,
     and 270 degrees.
 
-    See ``docs/vbeam/scan/sector_scan_bounds.ipynb`` for a visualization of the bounding
-    box of the arcs."""
+    See ``docs/tutorials/scan/sector_scan_bounds.ipynb`` for a visualization of the 
+    bounding box of the arcs."""
     cos_min, cos_max = np.cos(min_azimuth), np.cos(max_azimuth)
     sin_min, sin_max = np.sin(min_azimuth), np.sin(max_azimuth)
 
