@@ -132,6 +132,10 @@ class Line(Curve):
     def passing_through(point1: np.ndarray, point2: np.ndarray) -> "Line":
         return Line(point1, point2 - point1)
 
+    @staticmethod
+    def with_angle(anchor: np.ndarray, angle: float) -> "Line":
+        return Line(anchor, np.array([np.cos(angle), np.sin(angle)]))
+
     def intersect(self, other: Curve) -> Tuple[int, Tuple[np.ndarray, np.ndarray]]:
         if isinstance(other, Line):
             return intersect_line_line(self, other)

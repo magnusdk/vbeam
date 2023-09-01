@@ -113,12 +113,17 @@ def import_pyuff(
 given {all_wavefronts})."
     (wavefront,) = all_wavefronts
 
+    array_bounds = (
+        np.array([np.min(channel_data.probe.x), 0.0, 0.0]),
+        np.array([np.max(channel_data.probe.x), 0.0, 0.0]),
+    )
+
     _wave_xyz = sequence[0].source.xyz
     if wavefront == pyuff.Wavefront.plane or numpy.isinf(_wave_xyz).any():
         wavefront = PlaneWavefront()
         apodization = TxRxApodization(
-            transmit=PlaneWaveReceiveApodization(Hamming(), 1.7),
-            receive=PlaneWaveTransmitApodization(Hamming(), 1.7),
+            transmit=PlaneWaveTransmitApodization(array_bounds),
+            receive=PlaneWaveReceiveApodization(Hamming(), 1.7),
         )
 
     elif wavefront == pyuff.Wavefront.spherical:
@@ -127,12 +132,7 @@ given {all_wavefronts})."
             np.array(max(channel_data.probe.y) - min(channel_data.probe.y)),
         )
 
-        wavefront = UnifiedWavefront(
-            (
-                np.array([min(channel_data.probe.x), 0.0, 0.0]),
-                np.array([max(channel_data.probe.x), 0.0, 0.0]),
-            )
-        )
+        wavefront = UnifiedWavefront(array_bounds)
         apodization = TxRxApodization(
             transmit=FocusedTransmitApodization(array_size),
             receive=NoApodization(),
