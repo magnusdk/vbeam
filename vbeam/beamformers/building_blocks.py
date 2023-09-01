@@ -36,7 +36,7 @@ def vectorize_over_datacube(setup: SignalForPointSetup) -> Transformation:
 def sum_over_dimensions(
     setup: SignalForPointSetup,
     *,  # Always use keyword arguments for remaining args for clarity/readability
-    keep: Union[Sequence[str], Set[str]],
+    keep: Union[Sequence[str], Set[str]] = (),
 ) -> Transformation:
     """Return a :class:`Transformation` that makes the function sum over receivers and
     transmits, unless they should be kept (as specified by :param:`keep`).
