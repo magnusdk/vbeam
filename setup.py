@@ -9,7 +9,7 @@ setup(
     description="vbeam: a fast and differentiable beamformer",
     author="Magnus Dalen Kvalevåg",
     author_email="magnus.kvalevag@ntnu.no",
-    url="https://bitbucket.org/ntnuultrasoundgroup/vbeam/src/main/",
+    url="https://github.com/magnusdk/vbeam",
     packages=find_packages(),
     install_requires=[
         "numpy",
