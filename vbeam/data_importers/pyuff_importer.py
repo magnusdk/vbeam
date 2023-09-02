@@ -18,7 +18,7 @@ from vbeam.data_importers.setup import SignalForPointSetup
 from vbeam.fastmath import numpy as np
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.scan import Scan, linear_scan, sector_scan
-from vbeam.wavefront import PlaneWavefront, UnifiedWavefront
+from vbeam.wavefront import PlaneWavefront, ReflectedWavefront, UnifiedWavefront
 
 
 def parse_pyuff_scan(scan: pyuff.Scan) -> Scan:
@@ -56,7 +56,7 @@ def import_pyuff(
         scan = parse_pyuff_scan(scan)
 
     speed_of_sound = np.array(float(channel_data.sound_speed), dtype="float32")
-    t_axis = FastInterpLinspace(
+    t_axis_interpolate = FastInterpLinspace(
         min=float(channel_data.initial_time),
         d=1 / float(channel_data.sampling_frequency),
         n=int(channel_data.N_samples),
@@ -120,7 +120,7 @@ given {all_wavefronts})."
 
     _wave_xyz = sequence[0].source.xyz
     if wavefront == pyuff.Wavefront.plane or numpy.isinf(_wave_xyz).any():
-        wavefront = PlaneWavefront()
+        transmitted_wavefront = PlaneWavefront()
         apodization = TxRxApodization(
             transmit=PlaneWaveTransmitApodization(array_bounds),
             receive=PlaneWaveReceiveApodization(Hamming(), 1.7),
@@ -131,8 +131,7 @@ given {all_wavefronts})."
             np.array(max(channel_data.probe.x) - min(channel_data.probe.x)),
             np.array(max(channel_data.probe.y) - min(channel_data.probe.y)),
         )
-
-        wavefront = UnifiedWavefront(array_bounds)
+        transmitted_wavefront = UnifiedWavefront(array_bounds)
         apodization = TxRxApodization(
             transmit=FocusedTransmitApodization(array_size),
             receive=NoApodization(),
@@ -155,20 +154,21 @@ given {all_wavefronts})."
     if has_multiple_frames:
         spec = spec.add_dimension("frames", ["signal"])
     return SignalForPointSetup(
-        # Kernel data
-        speed_of_sound,
-        t_axis,
-        receiver_signals,
-        modulation_frequency,
-        receivers,
-        sender,
-        None,  # point_position is dynamically set from the scan in SignalForPointSetup
-        wavefront,
-        wave_data,
-        apodization,
+        sender=sender,
+        # point_position is dynamically set from the scan in SignalForPointSetup,
+        point_position=None,
+        receiver=receivers,
+        signal=receiver_signals,
+        transmitted_wavefront=transmitted_wavefront,
+        reflected_wavefront=ReflectedWavefront(),
+        speed_of_sound=speed_of_sound,
+        wave_data=wave_data,
+        interpolate=t_axis_interpolate,
+        modulation_frequency=modulation_frequency,
+        apodization=apodization,
         # Additional setup
-        spec,
-        scan,
+        spec=spec,
+        scan=scan,
     )
 
 

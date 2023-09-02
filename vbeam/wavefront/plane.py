@@ -1,11 +1,11 @@
-from vbeam.core import ElementGeometry, WaveData, Wavefront
+from vbeam.core import ElementGeometry, WaveData, TransmittedWavefront
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 
 
 @traceable_dataclass()
-class PlaneWavefront(Wavefront):
-    def transmit_distance(
+class PlaneWavefront(TransmittedWavefront):
+    def __call__(
         self,
         sender: ElementGeometry,
         point_position: np.ndarray,
