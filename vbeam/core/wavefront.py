@@ -1,11 +1,11 @@
-"""Models the distance a wave has travelled between a :term:`sender` and a 
-:term:`point`, and back to a :term:`receiver`.
+"""Wavefront models that return the distance that a wave has traveled. 
+:class:`TransmittedWavefront` models the transmitted wave while 
+:class:`ReflectedWavefront` models a reflected/backscattered wave.
 
-The returned unit is meters rather than seconds because then we can decouple the 
-wavefront model from the speed of sound of the medium.
-"""
+Wavefront models return a distance in meters. This way they are decoupled from the 
+speed of sound of the medium."""
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Callable, Union
 
@@ -16,34 +16,34 @@ from .element_geometry import ElementGeometry
 from .wave_data import WaveData
 
 
-class Wavefront(ABC):
-    """The base class for defining wavefront models.
+class TransmittedWavefront(ABC):
+    """The base class for defining wavefront models of transmitted waves.
 
-    Wavefront models are used to calculate the *distance (in meters)* from a sending
-    element to a point, and from the point back to a receiving element. The distances
-    when divided by a speed-of-sound, can be used to delay the signal of a receiving
-    element.
+    :class:`TransmittedWavefront` models are used to calculate the *distance (in
+    meters)* from a sending element to a point. This distance, along with the distance
+    returned from :class:`ReflectedWavefront` and when divided by a speed-of-sound, can
+    be used to delay the signal of a receiving element.
 
-    For most wavefront models, the methods :meth:`transmit_distance` and
-    :meth:`receive_distance` returns a single scalar value. However,
-    :meth:`transmit_distance` may optionally return more than one distance value in the
-    form of a :class:`MultipleTransmitDistances` object. This is useful for wavefront
-    models that sample multiple distances for a single transmit.
+    Most :class:`TransmittedWavefront` models return a single distance for a wave.
+    However, it may optionally return more than one distance value in the form of a
+    :class:`MultipleTransmitDistances` object. This is useful for wavefront models that
+    sample multiple distances for a single transmit.
 
     See also:
+        :class:`ReflectedWavefront`
         :class:`MultipleTransmitDistances`
         :func:`~vbeam.core.kernels.signal_for_point`
 
     Examples:
         We can create a simple synthetic transmit aperture (STA) wavefront model where
-        a single sender element sends out a spherical wavefront. The
-        :meth:`transmit_distance` is then simply the euclidean distance between the
-        sender and point. To illustrate the use of :class:`MultipleTransmitDistances`,
-        we also add a small smoothing to the distance by averaging with two small
-        delays (+/- 0.1 millimeters):
+        a single sender element sends out a spherical wavefront. The returned distance
+        is then simply the euclidean distance between the sender and point. To
+        illustrate the use of :class:`MultipleTransmitDistances`, we also add a small
+        smoothing to the distance by averaging with two small delays (+/- 0.1
+        millimeters):
 
-        >>> class SmoothedSTAWavefront(Wavefront):
-        ...     def transmit_distance(self, sender, point_position, wave_data):
+        >>> class TransmittedWavefront(Wavefront):
+        ...     def __call__(self, sender, point_position, wave_data):
         ...         # Simply get the distance from sender to point (assume STA)
         ...         dist = distance(sender.position, point_position)
         ...         # Smooth the dist by averaging with the two neighboring distances
@@ -57,13 +57,14 @@ class Wavefront(ABC):
         ...         )
     """
 
-    def transmit_distance(
+    @abstractmethod
+    def __call__(
         self,
         sender: ElementGeometry,
         point_position: np.ndarray,
         wave_data: WaveData,
     ) -> Union[float, "MultipleTransmitDistances"]:
-        """Return the distance from the sender element to the point for a transmit.
+        """Return the *distance (in meters)* from the sender element to the point for a transmit.
 
         May optionally return a :class:`MultipleTransmitDistances` object for cases
         where the wavefront model samples multiple distances for a single transmit.
@@ -72,28 +73,31 @@ class Wavefront(ABC):
             :class:`MultipleTransmitDistances`
             :func:`~vbeam.core.kernels.signal_for_point`
         """
-        return distance(sender.position, point_position)
 
-    def receive_distance(
-        self,
-        point_position: np.ndarray,
-        receiver: ElementGeometry,
-        wave_data: WaveData,
-    ) -> float:
-        """Return the distance from a point and back to a receiving element for a
-        transmit."""
-        return distance(receiver.position, point_position)
+
+class ReflectedWavefront:
+    """The base class for defining wavefront models of reflected/backscattered waves.
+
+    This is usually just the euclidian distance as there are limits to what we can
+    model.
+
+    See also:
+        :class:`TransmittedWavefront`
+        :func:`~vbeam.core.kernels.signal_for_point`"""
+
+    def __call__(self, point_position: np.ndarray, receiver: ElementGeometry) -> float:
+        return distance(point_position, receiver.position)
 
 
 @dataclass
 class MultipleTransmitDistances:
-    """Multiple distance values returned from :meth:`Wavefront.transmit_distance`.
+    """Multiple distance values returned from a :class:`TransmittedWavefront`.
 
-    Some more advanced :class:`Wavefront` models may return multiple distances for a
-    transmitted wave. In this case, each returned distance will be used to delay the
-    element signals, and the delayed samples will be combined using the function set in
-    :attr:`aggregate_samples`. The :attr:`aggregate_samples` function may for example
-    weight the delayed signals differently before summing.
+    Some more advanced :class:`TransmittedWavefront` models may return multiple 
+    distances for a transmitted wave. In this case, each returned distance will be used 
+    to delay the element signals, and the delayed samples will be combined using the 
+    function set in :attr:`aggregate_samples`. The :attr:`aggregate_samples` function 
+    may for example weight the delayed signals differently before summing.
 
     See reference to :class:`MultipleTransmitDistances` in
     :func:`~vbeam.core.kernels.signal_for_point` for implementation details.
@@ -109,7 +113,7 @@ class MultipleTransmitDistances:
 
     See also:
         :func:`~vbeam.core.kernels.signal_for_point`
-        :meth:`Wavefront.transmit_distance`
+        :class:`TransmittedWavefront`
     """
 
     values: np.ndarray

@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from vbeam.core import ElementGeometry, WaveData, Wavefront
+from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry import Line
@@ -8,15 +8,15 @@ from vbeam.wavefront import FocusedSphericalWavefront
 
 
 @traceable_dataclass(("array_bounds", "base_wavefront"))
-class UnifiedWavefront(Wavefront):
+class UnifiedWavefront(TransmittedWavefront):
     """Implementation of the unified wavefront model
 
     https://doi.org/10.1109/tmi.2015.2456982"""
 
     array_bounds: Tuple[np.ndarray, np.ndarray]
-    base_wavefront: Wavefront = FocusedSphericalWavefront()
+    base_wavefront: TransmittedWavefront = FocusedSphericalWavefront()
 
-    def transmit_distance(
+    def __call__(
         self,
         sender: ElementGeometry,
         point_position: np.ndarray,
@@ -41,8 +41,8 @@ class UnifiedWavefront(Wavefront):
         weight_B = 1 - (dist_B / total_distance)
 
         # Interpolate the distances for the intersection points of the two regions
-        R1 = self.base_wavefront.transmit_distance(sender, A, wave_data)
-        R2 = self.base_wavefront.transmit_distance(sender, B, wave_data)
+        R1 = self.base_wavefront(sender, A, wave_data)
+        R2 = self.base_wavefront(sender, B, wave_data)
         interpolated_distance = R1 * weight_A + R2 * weight_B
 
         # Calculate whether the point is in region I or III using XOR
@@ -52,6 +52,6 @@ class UnifiedWavefront(Wavefront):
         # Select the correct distance based on which region the point belongs to
         return np.where(
             is_in_focus,
-            self.base_wavefront.transmit_distance(sender, point_position, wave_data),
+            self.base_wavefront(sender, point_position, wave_data),
             interpolated_distance,
         )

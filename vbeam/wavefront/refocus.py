@@ -1,20 +1,24 @@
-from vbeam.core import ElementGeometry, WaveData, Wavefront
+from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import distance
 
 
 @traceable_dataclass(("base_wavefront", "base_sender"))
-class REFoCUSWavefront(Wavefront):
+class REFoCUSWavefront(TransmittedWavefront):
     """A time-domain REFoCUS wavefront model.
 
-    This class models the diverging spherical wave from a single transmitting /element/ that was fired as part of an arbitrary focused transmit. It needs to know about the original transmitted wave and the original sender (the point that the wave passed through at time 0) in order to compensate for arbitrary transmit sequences. See :meth:`transmit_distance` for more details.
+    This class models the diverging spherical wave from a single transmitting /element/ 
+    that was fired as part of an arbitrary focused transmit. It needs to know about the 
+    original transmitted wave and the original sender (the point that the wave passed 
+    through at time 0) in order to compensate for arbitrary transmit sequences. See 
+    :meth:`__call__` for more details.
     """
 
-    base_wavefront: Wavefront
+    base_wavefront: TransmittedWavefront
     base_sender: ElementGeometry
 
-    def transmit_distance(
+    def __call__(
         self,
         sender: ElementGeometry,
         point_position: np.ndarray,
@@ -27,7 +31,7 @@ class REFoCUSWavefront(Wavefront):
         position, but we also need to compensate for when the element fired in the
         transmit sequence. This compensation is the distance that the full modeled
         wavefront passed through the sending element."""
-        focusing_compensation = self.base_wavefront.transmit_distance(
+        focusing_compensation = self.base_wavefront(
             self.base_sender, sender.position, wave_data
         )
         return distance(sender.position, point_position) + focusing_compensation
