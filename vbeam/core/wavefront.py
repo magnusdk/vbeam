@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Callable, Union
 
 from vbeam.fastmath import numpy as np
+from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import distance
 
 from .element_geometry import ElementGeometry
@@ -75,6 +76,7 @@ class TransmittedWavefront(ABC):
         """
 
 
+@traceable_dataclass()
 class ReflectedWavefront:
     """The base class for defining wavefront models of reflected/backscattered waves.
 
@@ -93,10 +95,10 @@ class ReflectedWavefront:
 class MultipleTransmitDistances:
     """Multiple distance values returned from a :class:`TransmittedWavefront`.
 
-    Some more advanced :class:`TransmittedWavefront` models may return multiple 
-    distances for a transmitted wave. In this case, each returned distance will be used 
-    to delay the element signals, and the delayed samples will be combined using the 
-    function set in :attr:`aggregate_samples`. The :attr:`aggregate_samples` function 
+    Some more advanced :class:`TransmittedWavefront` models may return multiple
+    distances for a transmitted wave. In this case, each returned distance will be used
+    to delay the element signals, and the delayed samples will be combined using the
+    function set in :attr:`aggregate_samples`. The :attr:`aggregate_samples` function
     may for example weight the delayed signals differently before summing.
 
     See reference to :class:`MultipleTransmitDistances` in

@@ -1,19 +1,14 @@
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 from vbeam.apodization.window import Window
 from vbeam.core import Apodization, ElementGeometry, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
+from vbeam.util import ensure_2d_point
 from vbeam.util.geometry.v2 import Line, distance
 
 
-def _ensure_2d(point: np.ndarray) -> np.ndarray:
-    if point.shape[-1] != 2:
-        point = point[..., np.array([0, -1])]
-    return point
-
-
-def focused_apodization(
+def rtb_apodization(
     point: np.ndarray,
     array_left: np.ndarray,
     array_right: np.ndarray,
@@ -34,17 +29,15 @@ def focused_apodization(
     line is weighted by 0.
     """
     # Ensure that all points are 2D (only 2D is supported)
-    point = _ensure_2d(point)
-    array_left = _ensure_2d(array_left)
-    array_right = _ensure_2d(array_right)
-    focus_point = _ensure_2d(focus_point)
+    point = ensure_2d_point(point)
+    array_left = ensure_2d_point(array_left)
+    array_right = ensure_2d_point(array_right)
+    focus_point = ensure_2d_point(focus_point)
 
     # Set up geometry
     line_left = Line.passing_through(array_left, focus_point)
     line_right = Line.passing_through(array_right, focus_point)
-    line_mid_angle = (line_left.angle + line_right.angle) / 2
-    line_mid_direction = np.array([np.cos(line_mid_angle), np.sin(line_mid_angle)])
-    line_mid = Line(focus_point, line_mid_direction)
+    line_mid = Line.with_angle(focus_point, (line_left.angle + line_right.angle) / 2)
     line_mid_perpendicular = Line(point, line_mid.normal)
 
     # Short circuit if no window is given (same as giving a Rectangular window)
@@ -77,9 +70,9 @@ def focused_apodization(
     )
 
 
-@traceable_dataclass((("array_size", "minimum_aperture", "window")))
-class FocusedTransmitApodization(Apodization):
-    array_size: Union[float, Tuple[float, float]]
+@traceable_dataclass((("array_bounds", "minimum_aperture", "window")))
+class RTBApodization(Apodization):
+    array_bounds: Tuple[float, float]
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     window: Optional[Window] = None
 
@@ -90,22 +83,11 @@ class FocusedTransmitApodization(Apodization):
         receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
-        array_size = (
-            self.array_size
-            if isinstance(self.array_size, tuple)
-            else (self.array_size, self.array_size)
-        )
-        focal_length = np.sqrt(np.sum((sender.position - wave_data.source) ** 2))
-        f_number = (focal_length / array_size[0], focal_length / array_size[1])
-        # TODO: Calculate minimum_aperture based on F# and wavelength
-        minimum_aperture = self.minimum_aperture
-        aperture_width = focal_length / f_number[0]
-        aperture_height = focal_length / f_number[1]
-        return focused_apodization(
+        return rtb_apodization(
             point_position,
-            sender.position - np.array([aperture_width / 2, 0, 0]),
-            sender.position + np.array([aperture_width / 2, 0, 0]),
+            self.array_bounds[0],
+            self.array_bounds[1],
             wave_data.source,
-            minimum_aperture,
+            self.minimum_aperture,
             self.window,
         )
