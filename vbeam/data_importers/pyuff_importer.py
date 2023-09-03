@@ -6,7 +6,7 @@ from scipy.signal import hilbert
 from spekk import Spec
 
 from vbeam.apodization import (
-    FocusedTransmitApodization,
+    RTBApodization,
     Hamming,
     NoApodization,
     PlaneWaveReceiveApodization,
@@ -127,13 +127,9 @@ given {all_wavefronts})."
         )
 
     elif wavefront == pyuff.Wavefront.spherical:
-        array_size = (
-            np.array(max(channel_data.probe.x) - min(channel_data.probe.x)),
-            np.array(max(channel_data.probe.y) - min(channel_data.probe.y)),
-        )
         transmitted_wavefront = UnifiedWavefront(array_bounds)
         apodization = TxRxApodization(
-            transmit=FocusedTransmitApodization(array_size),
+            transmit=RTBApodization(array_bounds),
             receive=NoApodization(),
         )
 

@@ -1,12 +1,13 @@
 from vbeam.apodization.combine import combine_apodizations
-from vbeam.apodization.focused import FocusedTransmitApodization
 from vbeam.apodization.mla import MLAApodization
 from vbeam.apodization.no_apodization import NoApodization
 from vbeam.apodization.plane_wave import (
     PlaneWaveReceiveApodization,
     PlaneWaveTransmitApodization,
 )
+from vbeam.apodization.rtb import RTBApodization
 from vbeam.apodization.tx_rx_apodization import TxRxApodization
+from vbeam.apodization.util import get_apodization_values
 from vbeam.apodization.window import (
     Bartlett,
     Hamming,
@@ -23,12 +24,13 @@ from vbeam.apodization.window import (
 
 __all__ = [
     "combine_apodizations",
-    "FocusedTransmitApodization",
     "MLAApodization",
     "NoApodization",
     "PlaneWaveReceiveApodization",
     "PlaneWaveTransmitApodization",
+    "RTBApodization",
     "TxRxApodization",
+    "get_apodization_values",
     "Bartlett",
     "Hamming",
     "Hanning",
