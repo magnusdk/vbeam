@@ -132,7 +132,7 @@ class FastInterpLinspace(InterpolationSpace1D):
         # Swap axes back to their original positions
         if depth_axis == 0 and azimuth_axis == 1:
             v = np.swapaxes(v, azimuth_axis, depth_axis)
-        else:
+        elif v.ndim >= 2:
             v = np.moveaxis(v, 1, depth_axis)
             v = np.moveaxis(v, 0, azimuth_axis)
         return v
