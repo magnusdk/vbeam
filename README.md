@@ -31,7 +31,7 @@ vbeam is a pixel-based beamformer. This means that it centers around [a function
 
 We take advantage of [JAX](https://github.com/google/jax)'s `vmap` transformation to call `signal_for_point` in parallel on the GPU. vbeam is a _"vmapped beamformer"_, hence the name.
 
-We refer to the dimensions of ultrasound data by name using [a library called spekk](https://github.com/magnusdk/spekk). This lets us write beamforming code that looks like this:
+We refer to the dimensions of our data by name, using [a library called spekk](https://github.com/magnusdk/spekk). This lets us write beamforming code that looks like this:
 
 ```python
 beamformer = compose(
@@ -60,7 +60,7 @@ But usually, vbeam's out-of-the-box beamformer will be enough:
 beamformer = jax.jit(get_das_beamformer(setup))
 ```
 
-The above example refers to 4 dimensions: `"points"`, `"senders"`, `"receivers"`, and `"transmits"`. `"senders"`, in this case, refers to the individual contributing elements used during wave transmission, and is in fact part of [our time-domain REFoCUS implementation ![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/magnusdk/vbeam/blob/c78d57651ffa75209e6bfa80cb8b213f1fe0678b/docs/examples/refocus_with_speed_of_sound_map.ipynb#scrollTo=4maDNPWwvZS4). vbeam allows you to run any arbitrary dimension in parallel as part of your beamformer: perhaps you want to beamform multiple frames in parallel, or with multiple F#s.
+The above example refers to 4 dimensions: `"points"`, `"senders"`, `"receivers"`, and `"transmits"`. In this case, `"senders"` refers to the individual contributing elements used during wave transmission, and is part of [our time-domain REFoCUS implementation ![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/magnusdk/vbeam/blob/c78d57651ffa75209e6bfa80cb8b213f1fe0678b/docs/examples/refocus_with_speed_of_sound_map.ipynb#scrollTo=4maDNPWwvZS4). vbeam allows you to run any arbitrary dimension in parallel as part of your beamformer: perhaps you want to beamform multiple frames in parallel, or with multiple F#s.
 
 If you want to use a different wavefront model, or a different apodization function, you simply pass in the new object when you call the beamformer:
 
@@ -75,7 +75,7 @@ Every beamforming component in vbeam is differentiable, so you can use vbeam to 
 ```python
 from vbeam.util.jax import grad_for_argname
 
-# Minimize the pixel-values (jsut for illustration purposes) of the beamformed image by 
+# Minimize the pixel-values (just for illustration purposes) of the beamformed image by 
 # "optimizing" the apodization:
 my_loss = lambda **kwargs: jnp.sum(beamformer(**kwargs))
 loss_grad = grad_for_argname(my_loss, "apodization")
