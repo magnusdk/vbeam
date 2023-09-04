@@ -44,7 +44,8 @@ In equation :eq:`das_general_beamformer`:
 
 * :math:`d(a, m, p)` is the distance the wave has travelled from the :term:`sender` to 
   the :term:`point`, and back to the :term:`receiver`. This is represented by the 
-  :class:`~vbeam.core.wavefront.Wavefront` class.
+  :class:`~vbeam.core.wavefront.ReflectedWavefront` and 
+  :class:`~vbeam.core.wavefront.TransmittedWavefront` classes.
 
 * :math:`t := \\frac{d(a, m, p)}{c}` is the delay in seconds, computed by dividing the 
   distance by the speed of sound. The speed of sound may be just a number, or in  more 
