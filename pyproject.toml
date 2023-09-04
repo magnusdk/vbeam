@@ -1,3 +1,24 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[project]
+authors = [
+  {name = "Magnus Dalen Kvalevåg", email = "magnus.kvalevag@ntnu.no"},
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+]
+dependencies = ["numpy", "pyuff_ustb", "scipy", "spekk"]
+description = "vbeam: a fast and differentiable beamformer"
+name = "vbeam"
+readme = "README.md"
+requires-python = ">=3.9"
+version = "0.1.1"
+
+[project.urls]
+"Homepage" = "https://github.com/magnusdk/vbeam/"
+"Documentation" = "https://vbeam.readthedocs.io/en/latest/"
+"Bug Tracker" = "https://github.com/magnusdk/vbeam/issues"
