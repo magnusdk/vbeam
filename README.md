@@ -82,7 +82,7 @@ loss_grad = grad_for_argname(my_loss, "apodization")
 ```
 
 # Documentation
-You can read the [documentation of vbeam's core here](https://vbeam.readthedocs.io/en/latest/).
+You can read the [documentation of vbeam's core here](https://vbeam.readthedocs.io/en/latest/vbeam/core.html).
 
 # Citing vbeam
 If you use vbeam in your research, please cite the following paper:
