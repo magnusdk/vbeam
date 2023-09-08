@@ -16,7 +16,7 @@ Run one of the examples in your browser via Google Colab:
 
 # Installation
 ```bash
-pythin3 -m pip install vbeam
+python3 -m pip install vbeam
 ```
 
 **You probably also want to install JAX**. See [JAX installation instructions](https://github.com/google/jax#installation) for how to do so.
