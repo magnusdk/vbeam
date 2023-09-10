@@ -1,0 +1,4 @@
+numpy
+pyuff_ustb
+scipy
+spekk
