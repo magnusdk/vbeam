@@ -16,6 +16,6 @@ setup = import_pyuff(channel_data, scan, frames=0)
 beamformer = jax.jit(get_das_beamformer(setup))
 
 result = beamformer(**setup.data)
-plt.imshow(result.T, aspect="auto", cmap="gray", vmin=-120)
+plt.imshow(result.T, aspect="auto", cmap="gray", vmin=-60)
 plt.colorbar()
 plt.show(block=True)
