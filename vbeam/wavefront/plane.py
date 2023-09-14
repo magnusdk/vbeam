@@ -1,4 +1,4 @@
-from vbeam.core import ElementGeometry, WaveData, TransmittedWavefront
+from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 
@@ -17,4 +17,4 @@ class PlaneWavefront(TransmittedWavefront):
             x * np.sin(wave_data.azimuth) * np.cos(wave_data.elevation)
             + y * np.sin(wave_data.elevation)
             + z * np.cos(wave_data.azimuth) * np.cos(wave_data.elevation)
-        ) - wave_data.delay_distance
+        )

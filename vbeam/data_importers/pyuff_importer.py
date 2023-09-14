@@ -6,11 +6,11 @@ from scipy.signal import hilbert
 from spekk import Spec
 
 from vbeam.apodization import (
-    RTBApodization,
     Hamming,
     NoApodization,
     PlaneWaveReceiveApodization,
     PlaneWaveTransmitApodization,
+    RTBApodization,
     TxRxApodization,
 )
 from vbeam.core import ElementGeometry, WaveData
@@ -137,7 +137,7 @@ given {all_wavefronts})."
         azimuth=np.array([wave.source.azimuth for wave in sequence]),
         elevation=np.array([wave.source.elevation for wave in sequence]),
         source=np.array([wave.source.xyz for wave in sequence]),
-        delay_distance=np.array([wave.delay * wave.sound_speed for wave in sequence]),
+        t0=np.array([wave.delay for wave in sequence]),
     )
     spec = Spec(
         {

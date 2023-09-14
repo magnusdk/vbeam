@@ -14,11 +14,9 @@ class FocusedSphericalWavefront(TransmittedWavefront):
     ) -> float:
         sender_source_dist = np.sqrt(np.sum((sender.position - wave_data.source) ** 2))
         source_point_dist = np.sqrt(np.sum((wave_data.source - point_position) ** 2))
-        return (
-            sender_source_dist * np.sign(wave_data.source[2] - sender.position[2])
-            - source_point_dist * np.sign(wave_data.source[2] - point_position[2])
-            - (wave_data.delay_distance if wave_data.delay_distance is not None else 0)
-        )
+        return sender_source_dist * np.sign(
+            wave_data.source[2] - sender.position[2]
+        ) - source_point_dist * np.sign(wave_data.source[2] - point_position[2])
 
 
 @traceable_dataclass(("pw_margin",))
