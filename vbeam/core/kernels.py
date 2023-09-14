@@ -36,7 +36,7 @@ def signal_for_point(
     modulation_frequency: Optional[float],
     apodization: Apodization,
 ) -> np.ndarray:
-    """The core beamforming function. Return the delayed and interpolated signal from a 
+    """The core beamforming function. Return the delayed and interpolated signal from a
     single transmit, for a single receiver, for a single point (pixel).
 
     To make a full beamformer, this function should be made to run (in parallel) for a
@@ -70,7 +70,7 @@ def signal_for_point(
         signal.
 
     Returns:
-      The delayed and interpolated signal from a single transmit, for a single 
+      The delayed and interpolated signal from a single transmit, for a single
       receiver, for a single point (pixel).
     """
     tx_distance = transmitted_wavefront(sender, point_position, wave_data)
@@ -82,7 +82,7 @@ def signal_for_point(
             sender.position, point_position, receiver.position
         )
 
-    delay = (tx_distance + rx_distance) / speed_of_sound
+    delay = (tx_distance + rx_distance) / speed_of_sound - wave_data.t0
     signal = interpolate(delay, signal)
 
     if modulation_frequency is not None:

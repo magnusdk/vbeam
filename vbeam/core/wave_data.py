@@ -17,7 +17,7 @@ from vbeam.fastmath.traceable import traceable_dataclass
 identity_fn = lambda x: x  # Just return value as-is
 
 
-@traceable_dataclass(("source", "azimuth", "elevation", "delay_distance"))
+@traceable_dataclass(("source", "azimuth", "elevation", "t0"))
 class WaveData:
     """A vectorizable container of wave data: anything that is specific to a single
     transmitted wave. See this class' fields for what that could be.
@@ -34,7 +34,7 @@ class WaveData:
     # The azimuth angle of a plane wave
     azimuth: Optional[float] = None
     elevation: Optional[float] = None
-    delay_distance: Optional[float] = None
+    t0: Optional[float] = None
 
     def __getitem__(self, *args) -> "WaveData":
         """Index the wave data.
@@ -44,7 +44,7 @@ class WaveData:
 
         >>> wave_data = WaveData(np.array([[0,0,0], [1,1,1]]), np.array([0,1]))
         >>> wave_data[1]
-        WaveData(source=array([1, 1, 1]), azimuth=1, elevation=None, delay_distance=None)
+        WaveData(source=array([1, 1, 1]), azimuth=1, elevation=None, t0=None)
         """
         _maybe_getitem = (
             lambda attr: attr.__getitem__(*args) if attr is not None else None
@@ -53,7 +53,7 @@ class WaveData:
             _maybe_getitem(self.source),
             _maybe_getitem(self.azimuth),
             _maybe_getitem(self.elevation),
-            _maybe_getitem(self.delay_distance),
+            _maybe_getitem(self.t0),
         )
 
     @property
@@ -64,8 +64,8 @@ class WaveData:
             return self.azimuth.shape
         if self.elevation is not None:
             return self.elevation.shape
-        if self.delay_distance is not None:
-            return self.delay_distance.shape
+        if self.t0 is not None:
+            return self.t0.shape
 
     @property
     def ndim(self) -> int:
@@ -77,7 +77,7 @@ class WaveData:
         source: Callable[[np.ndarray], np.ndarray] = identity_fn,
         azimuth: Callable[[float], float] = identity_fn,
         elevation: Callable[[float], float] = identity_fn,
-        delay_distance: Callable[[float], float] = identity_fn,
+        t0: Callable[[float], float] = identity_fn,
     ) -> "WaveData":
         """Return a copy with updated values for the given fields.
 
@@ -85,18 +85,16 @@ class WaveData:
         function applied to the current field. Example:
         >>> wave_data = WaveData(np.array([0, 0, 0]))
         >>> wave_data.with_updates_to(source=lambda x: x+1)
-        WaveData(source=array([1, 1, 1]), azimuth=None, elevation=None, delay_distance=None)
+        WaveData(source=array([1, 1, 1]), azimuth=None, elevation=None, t0=None)
 
         If the given value for a field is not a function then the field will simply be
         set to that value. Example:
         >>> wave_data.with_updates_to(azimuth=1)
-        WaveData(source=array([0, 0, 0]), azimuth=1, elevation=None, delay_distance=None)
+        WaveData(source=array([0, 0, 0]), azimuth=1, elevation=None, t0=None)
         """
         return WaveData(
             source=source(self.source) if callable(source) else source,
             azimuth=azimuth(self.azimuth) if callable(azimuth) else azimuth,
             elevation=elevation(self.elevation) if callable(elevation) else elevation,
-            delay_distance=delay_distance(self.delay_distance)
-            if callable(delay_distance)
-            else delay_distance,
+            t0=t0(self.t0) if callable(t0) else t0,
         )
