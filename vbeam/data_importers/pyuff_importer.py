@@ -18,6 +18,7 @@ from vbeam.data_importers.setup import SignalForPointSetup
 from vbeam.fastmath import numpy as np
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.scan import Scan, linear_scan, sector_scan
+from vbeam.util.geometry.v2 import distance
 from vbeam.wavefront import PlaneWavefront, ReflectedWavefront, UnifiedWavefront
 
 
@@ -147,6 +148,21 @@ given {all_wavefronts})."
             "wave_data": ["transmits"],
         }
     )
+
+    # Check if we are dealing with a STAI dataset: is each virtual source placed at
+    # exactly at an element position?
+    if receivers.position.shape == wave_data.source.shape and (
+        numpy.allclose(receivers.position, wave_data.source)
+    ):
+        # We are dealing with a STAI dataset! Senders are each element in the array
+        sender = receivers.copy()
+        # One sending element for each transmitted wave
+        spec = spec.at["sender"].set(["transmits"])
+        # Redefine t0 to be when the wave passes through the sender position
+        wave_data = wave_data.with_updates_to(
+            t0=lambda t0: t0 - distance(sender.position) / speed_of_sound
+        )
+
     if has_multiple_frames:
         spec = spec.add_dimension("frames", ["signal"])
     return SignalForPointSetup(
