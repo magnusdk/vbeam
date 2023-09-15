@@ -10,7 +10,7 @@ from vbeam.fastmath.traceable import traceable_dataclass
 identity_fn = lambda x: x  # Just return value as-is
 
 
-@traceable_dataclass(("position", "theta", "phi", "sub_elements","parent_element"))
+@traceable_dataclass(("position", "theta", "phi", "sub_elements", "parent_element"))
 class ElementGeometry:
     """A vectorizable container of element geometry.
 
@@ -47,7 +47,7 @@ class ElementGeometry:
             _maybe_getitem(self.theta),
             _maybe_getitem(self.phi),
             _maybe_getitem(self.sub_elements),
-                        _maybe_getitem(self.parent_element),
+            _maybe_getitem(self.parent_element),
         )
 
     @property
@@ -87,5 +87,10 @@ class ElementGeometry:
             sub_elements=sub_elements(self.sub_elements)
             if callable(sub_elements)
             else sub_elements,
-            parent_element=parent_element(self.parent_element) if callable(parent_element) else parent_element,
+            parent_element=parent_element(self.parent_element)
+            if callable(parent_element)
+            else parent_element,
         )
+
+    def copy(self) -> "ElementGeometry":
+        return self.with_updates_to()
