@@ -188,4 +188,4 @@ def parse_beamformed_data(beamformed_data: pyuff.BeamformedData) -> np.ndarray:
     "Parse the beamformed data from a PyUFF file into an array with the correct shape."
     imaged_points = np.squeeze(beamformed_data.data)
     scan = parse_pyuff_scan(beamformed_data.scan)
-    return scan.unflatten(imaged_points)
+    return scan.unflatten(imaged_points, points_axis=0)
