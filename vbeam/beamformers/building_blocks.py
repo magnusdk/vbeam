@@ -16,7 +16,11 @@ def do_nothing(f):
     return f
 
 
-def vectorize_over_datacube(setup: SignalForPointSetup) -> Transformation:
+def vectorize_over_datacube(
+    setup: SignalForPointSetup,
+    *,  # Always use keyword arguments for remaining args for clarity/readability
+    ignore: Union[Sequence[str], Set[str]] = (),
+) -> Transformation:
     """Return a :class:`Transformation` that vectorizes it to run for all points,
     receivers, transmits, and frames (if part of the spec).
 
@@ -24,11 +28,12 @@ def vectorize_over_datacube(setup: SignalForPointSetup) -> Transformation:
     "receivers", "transmits", and "frames". A check is made whether the spec has the
     dimension before vectorizing over it — if the spec does not have the dimension then
     it is ignored."""
+    ignore = set(ignore)
     return compose(
         *[
             ForAll(dim)
             for dim in ["points", "receivers", "senders", "transmits", "frames"]
-            if setup.spec.has_dimension(dim)
+            if setup.spec.has_dimension(dim) and dim not in ignore
         ]
     )
 

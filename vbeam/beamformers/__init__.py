@@ -42,11 +42,12 @@ def get_coherence_beamformer(
     scan_convert: bool = True,
     keep_dimensions: Union[Sequence[str], Set[str]] = (),
 ):
-    keep_dimensions = set(keep_dimensions) | {"receivers"}
+    keep_dimensions = set(keep_dimensions) | {"receivers", "transmits"}
     return compose(
         signal_for_point,
-        vectorize_over_datacube(setup),
+        vectorize_over_datacube(setup, ignore=["transmits"]),
         sum_over_dimensions(setup, keep=keep_dimensions),
+        Reduce.Sum("transmits"),
         unflatten_points(setup),
         Apply(coherence_factor, Axis("receivers")),
         building_blocks.scan_convert(setup) if scan_convert else do_nothing,
