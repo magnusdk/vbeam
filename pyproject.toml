@@ -11,7 +11,7 @@ classifiers = [
   "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
 ]
-dependencies = ["numpy", "pyuff_ustb", "scipy", "spekk"]
+dependencies = ["numpy", "pyuff_ustb>=2.0.7", "scipy", "spekk"]
 description = "vbeam: a fast and differentiable beamformer"
 name = "vbeam"
 readme = "README.md"

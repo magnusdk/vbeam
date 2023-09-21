@@ -13,7 +13,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy",
-        "pyuff_ustb",
+        "pyuff_ustb>=2.0.7",
         "scipy",
         "spekk",
     ],
