@@ -20,4 +20,4 @@ class Reduce(spekk.transformations.Reduce):
         super().__post_init__()
 
 
-__all__ = spekk.transformations.__all__
+__all__ = [*spekk.transformations.__all__, "do_nothing"]
