@@ -100,23 +100,14 @@ updating the scan instead."
     def copy(self) -> "SignalForPointSetup":
         return SignalForPointSetup(**self.data, spec=self.spec, scan=self.scan)
 
-    def get_apodization_values(
-        self,
-        dimensions: Sequence[str],
-        sum_fn: Union[
-            Literal["sum"], Callable[[np.ndarray, Sequence[int]], np.ndarray]
-        ] = "sum",
-    ):
+    def get_apodization_values(self, dimensions: Sequence[str]):
         """Return the apodization values for the dimensions. All other relevant
         dimensions are (by default) summed over.
 
         If you want the apodization values for each transmit and point, you'd call
         setup.get_apodization_values(["transmits", "points"]). Likewise, if you only
         want the points, you'd call setup.get_apodization_values(["points"]). All other
-        dimensions are summed over.
-
-        By default, all dimensions not specified in the list are summed over. You can
-        override this by passing in a sum_fn."""
+        dimensions are summed over."""
         return get_apodization_values(
             self.apodization,
             self.sender,
@@ -125,5 +116,4 @@ updating the scan instead."
             self.wave_data,
             self.spec,
             dimensions,
-            sum_fn,
         )

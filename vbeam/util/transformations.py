@@ -4,6 +4,10 @@ from spekk.transformations import *
 from vbeam.fastmath import numpy as np
 
 
+def do_nothing(f):
+    return f
+
+
 class ForAll(spekk.transformations.ForAll):
     def __post_init__(self):
         self.vmap_impl = np.vmap
