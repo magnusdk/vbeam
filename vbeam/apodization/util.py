@@ -45,15 +45,17 @@ def get_apodization_values(
     sum_dimensions = vmap_dimensions - set(dimensions)
     reduce_sum_dimension = spec["wave_data"].dimensions & sum_dimensions
     if reduce_sum_dimension:
-        reduce_sum_dimension = reduce_sum_dimension.pop()
-        vmap_dimensions.remove(reduce_sum_dimension)
+        # Make it only one of the dimensions (doesn't matter which one)
+        reduce_sum_dimension = {reduce_sum_dimension.pop()}
+        vmap_dimensions -= reduce_sum_dimension
 
     # Define how to calculate the apodization values
     calculate_apodization = compose(
         lambda apodization, *args, **kwargs: apodization(*args, **kwargs),
         *[ForAll(dim) for dim in vmap_dimensions],
-        Apply(np.sum, [Axis(dim) for dim in sum_dimensions - {reduce_sum_dimension}]),
-        Reduce.Sum(reduce_sum_dimension) if reduce_sum_dimension else do_nothing,
+        Apply(np.sum, [Axis(dim) for dim in sum_dimensions - reduce_sum_dimension]),
+        # [*reduce_sum_dimension][0] gets the "first element" of the set
+        Reduce.Sum([*reduce_sum_dimension][0]) if reduce_sum_dimension else do_nothing,
         # Put the dimensions in the order defined by keep
         Apply(np.transpose, [Axis(dim, keep=True) for dim in dimensions]),
         Wrap(np.jit),  # Make it run faster, if the backend supports it.
