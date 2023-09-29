@@ -21,7 +21,7 @@ def get_das_beamformer(
     log_compress: bool = True,
     scan_convert: bool = True,
 ):
-    reduce_over_transmits = not (
+    reduce_over_transmits = setup.spec.has_dimension("transmits") and not (
         isinstance(setup.scan, ExtraDimsScanMixin)
         and "transmits" in setup.scan.required_dimensions_for_unflatten
     )
