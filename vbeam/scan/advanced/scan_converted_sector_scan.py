@@ -64,7 +64,7 @@ class ScanConvertedSectorScan(WrappedScan):
             return np.add.at(image, self._indices, imaged_points_1)
 
         unflatten_all = vmap_all_except(unflatten_1, axis=points_axis)
-        return self.base_scan.unflatten(unflatten_all(imaged_points))
+        return self.base_scan.unflatten(unflatten_all(imaged_points), points_axis)
 
     @property
     def num_points(self) -> Tuple[int, ...]:
