@@ -31,7 +31,8 @@ def vmap_all_except(f: Union[Callable, int], axis: Optional[int] = None):
             axis += x.ndim
         dims = [f"dim{i}" for i in range(x.ndim)]
         vmapped_f = compose(
-            lambda x: f(x), *[ForAll(dim) for dim in dims if dim != f"dim{axis}"]
+            lambda x: f(x),
+            *[ForAll(dim) for dim in reversed(dims) if dim != f"dim{axis}"],
         )
         vmapped_f = vmapped_f.build(Spec({"x": dims}))
         result = vmapped_f(x=x)
@@ -43,8 +44,8 @@ def vmap_all_except(f: Union[Callable, int], axis: Optional[int] = None):
                 result,
                 [
                     *range(axis),
-                    *range(axis, axis + f_ndim),
-                    *range(axis + f_ndim, result.ndim),
+                    *range(result.ndim - f_ndim, result.ndim),
+                    *range(axis, result.ndim - f_ndim),
                 ],
             )
 
