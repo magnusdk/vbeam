@@ -2,7 +2,6 @@ from typing import Sequence, Set, Union
 
 import vbeam.beamformers.building_blocks as building_blocks
 from vbeam.beamformers.building_blocks import (
-    do_nothing,
     sum_over_dimensions,
     unflatten_points,
     vectorize_over_datacube,
@@ -10,6 +9,7 @@ from vbeam.beamformers.building_blocks import (
 from vbeam.core import signal_for_point
 from vbeam.data_importers import SignalForPointSetup
 from vbeam.postprocess import coherence_factor, normalized_decibels
+from vbeam.scan.advanced import ExtraDimsScanMixin
 from vbeam.util.transformations import *
 
 
@@ -21,10 +21,19 @@ def get_das_beamformer(
     log_compress: bool = True,
     scan_convert: bool = True,
 ):
+    reduce_over_transmits = not (
+        isinstance(setup.scan, ExtraDimsScanMixin)
+        and "transmits" in setup.scan.required_dimensions_for_unflatten
+    )
+    if reduce_over_transmits:
+        keep_dimensions = set(keep_dimensions) | {"transmits"}
     return compose(
         signal_for_point,
-        vectorize_over_datacube(setup),
+        vectorize_over_datacube(
+            setup, ignore=["transmits"] if reduce_over_transmits else []
+        ),
         sum_over_dimensions(setup, keep=keep_dimensions),
+        Reduce.Sum("transmits") if reduce_over_transmits else do_nothing,
         unflatten_points(setup),
         (
             building_blocks.compensate_for_apodization_overlap(setup)
