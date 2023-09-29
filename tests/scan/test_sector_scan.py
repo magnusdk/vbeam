@@ -2,6 +2,7 @@ import numpy
 from hypothesis import given
 from vbeam_test_helpers.generators import sector_scans
 
+from vbeam.fastmath import backend_manager
 from vbeam.scan import SectorScan
 
 
@@ -21,13 +22,15 @@ def _get_cartesian_bounds_brute_force(scan: SectorScan):
 
 @given(sector_scans([200, 2]))
 def test_cartesian_bounds_2D(scan: SectorScan):
-    bounds_brute_force = _get_cartesian_bounds_brute_force(scan)
-    bounds = scan.cartesian_bounds
-    numpy.testing.assert_allclose(bounds_brute_force, bounds, rtol=1e-4, atol=1e-12)
+    with backend_manager.using_backend("numpy"):
+        bounds_brute_force = _get_cartesian_bounds_brute_force(scan)
+        bounds = scan.cartesian_bounds
+        numpy.testing.assert_allclose(bounds_brute_force, bounds, rtol=1e-4, atol=1e-12)
 
 
 @given(sector_scans([10, 10, 10]))
 def test_cartesian_bounds_3D(scan: SectorScan):
-    bounds_brute_force = _get_cartesian_bounds_brute_force(scan)
-    bounds = scan.cartesian_bounds
-    numpy.testing.assert_allclose(bounds_brute_force, bounds, rtol=1e-4, atol=1e-12)
+    with backend_manager.using_backend("numpy"):
+        bounds_brute_force = _get_cartesian_bounds_brute_force(scan)
+        bounds = scan.cartesian_bounds
+        numpy.testing.assert_allclose(bounds_brute_force, bounds, rtol=1e-4, atol=1e-12)
