@@ -72,7 +72,7 @@ def rtb_apodization(
 
 @traceable_dataclass((("array_bounds", "minimum_aperture", "window")))
 class RTBApodization(Apodization):
-    array_bounds: Tuple[float, float]
+    array_bounds: Tuple[np.ndarray, np.ndarray]
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     window: Optional[Window] = None
 
