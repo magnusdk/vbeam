@@ -117,6 +117,10 @@ class SectorScan(Scan):
                 "Please create an issue on Github if this is something you need.",
             )
         min_az, max_az, min_d, max_d = self.bounds
+        # Ensure that the min and max are actually min and max
+        min_az, max_az = np.where(min_az > max_az, (max_az, min_az), (min_az, max_az))
+        min_d, max_d = np.where(min_d > max_d, (max_d, min_d), (min_d, max_d))
+        
         # We get the bounds by calculating the bound for each edge of the bounding box
         # individually. _right_bound gets the right-most x coordinate of the bounding
         # box and we can get the other sides by rotating the azimuth bounds by 90, 180,
@@ -153,7 +157,7 @@ def _right_bound(
     get the other edges of the bounding box by rotating the azimuth bounds by 90, 180,
     and 270 degrees.
 
-    See ``docs/tutorials/scan/sector_scan_bounds.ipynb`` for a visualization of the 
+    See ``docs/tutorials/scan/sector_scan_bounds.ipynb`` for a visualization of the
     bounding box of the arcs."""
     cos_min, cos_max = np.cos(min_azimuth), np.cos(max_azimuth)
     sin_min, sin_max = np.sin(min_azimuth), np.sin(max_azimuth)
