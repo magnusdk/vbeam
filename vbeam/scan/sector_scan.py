@@ -1,15 +1,22 @@
 from typing import Callable, Literal, Optional, Tuple, Union, overload
 
-import numpy
-
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
-from vbeam.interpolation import FastInterpLinspace
 from vbeam.scan.base import CoordinateSystem, Scan
 from vbeam.scan.util import parse_axes
-from vbeam.util import ensure_positive_index
 from vbeam.util.arrays import grid
 from vbeam.util.coordinate_systems import as_cartesian
+
+
+def _ensure_min_and_max(min_x: float, max_x: float) -> Tuple[float, float]:
+    "Swap ``min_x`` and ``max_x`` if ``min_x`` > ``max_x``."
+    return tuple(
+        np.where(
+            min_x > max_x,
+            np.array([max_x, min_x]),
+            np.array([min_x, max_x]),
+        )
+    )
 
 
 @traceable_dataclass(("azimuths", "elevations", "depths", "apex"))
@@ -118,9 +125,9 @@ class SectorScan(Scan):
             )
         min_az, max_az, min_d, max_d = self.bounds
         # Ensure that the min and max are actually min and max
-        min_az, max_az = np.where(min_az > max_az, (max_az, min_az), (min_az, max_az))
-        min_d, max_d = np.where(min_d > max_d, (max_d, min_d), (min_d, max_d))
-        
+        min_az, max_az = _ensure_min_and_max(min_az, max_az)
+        min_d, max_d = _ensure_min_and_max(min_d, max_d)
+
         # We get the bounds by calculating the bound for each edge of the bounding box
         # individually. _right_bound gets the right-most x coordinate of the bounding
         # box and we can get the other sides by rotating the azimuth bounds by 90, 180,
