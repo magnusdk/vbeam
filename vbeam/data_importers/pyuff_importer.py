@@ -24,12 +24,11 @@ from vbeam.wavefront import PlaneWavefront, ReflectedWavefront, UnifiedWavefront
 
 def parse_pyuff_scan(scan: pyuff.Scan) -> Scan:
     "Convert a PyUFF Scan to a vbeam Scan."
-    if not isinstance(scan, pyuff.Scan):
-        raise ValueError("Scan is not an instance of pyuff.Scan")
-
-    if isinstance(scan, pyuff.LinearScan):
+    if isinstance(scan, Scan):
+        return scan
+    elif isinstance(scan, pyuff.LinearScan):
         return linear_scan(np.squeeze(scan.x_axis), np.squeeze(scan.z_axis))
-    if isinstance(scan, pyuff.SectorScan):
+    elif isinstance(scan, pyuff.SectorScan):
         origin = (
             scan.origin.xyz
             if isinstance(scan.origin, pyuff.Point)
@@ -40,6 +39,8 @@ def parse_pyuff_scan(scan: pyuff.Scan) -> Scan:
             np.squeeze(scan.depth_axis),
             apex=np.array(origin),
         )
+    else:
+        raise ValueError("The scan is not an instance of pyuff.Scan")
 
 
 def import_pyuff(
@@ -53,7 +54,7 @@ def import_pyuff(
 
     The scan may also be a vbeam.scan.Scan, in which case the resulting beamformer will
     be optimized for that scan."""
-    if scan and isinstance(scan, pyuff.Scan):
+    if scan is not None:
         scan = parse_pyuff_scan(scan)
 
     speed_of_sound = np.array(float(channel_data.sound_speed), dtype="float32")
