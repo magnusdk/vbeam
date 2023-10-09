@@ -70,7 +70,11 @@ from vbeam.core.interpolation import InterpolationSpace1D
 from vbeam.core.kernels import KernelData, SignalForPointData, signal_for_point
 from vbeam.core.speed_of_sound import SpeedOfSound
 from vbeam.core.wave_data import WaveData
-from vbeam.core.wavefront import MultipleTransmitDistances, TransmittedWavefront
+from vbeam.core.wavefront import (
+    MultipleTransmitDistances,
+    ReflectedWavefront,
+    TransmittedWavefront,
+)
 
 __all__ = [
     "Apodization",
@@ -82,5 +86,6 @@ __all__ = [
     "SpeedOfSound",
     "WaveData",
     "MultipleTransmitDistances",
+    "ReflectedWavefront",
     "TransmittedWavefront",
 ]
