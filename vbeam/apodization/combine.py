@@ -1,5 +1,3 @@
-from functools import reduce
-from operator import mul
 from typing import Callable, Iterable, Optional
 
 from vbeam.core import Apodization
@@ -17,7 +15,7 @@ class CombinedApodization(Apodization):
         values = np.array([apod(*args, **kwargs) for apod in self.apodizations])
         if self.combiner is not None:
             return self.combiner(values)
-        return np.min(values)
+        return np.prod(values)
 
 
 def combine_apodizations(
@@ -26,5 +24,5 @@ def combine_apodizations(
 ) -> CombinedApodization:
     """Return a new Apodization object that combines all the given apodizations.
     
-    By default, apodizations are combined by taking the minimum of all their results."""
+    By default, apodizations are combined by taking the product of all their results."""
     return CombinedApodization(apodizations, combiner)
