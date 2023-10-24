@@ -68,4 +68,4 @@ def Tukey80() -> Tukey:
 @traceable_dataclass()
 class Bartlett(Window):
     def __call__(self, ratio: float) -> float:
-        return (0.5 - ratio) * 2
+        return np.where((ratio>=0) & (ratio<0.5),(0.5 - ratio) * 2,0)
