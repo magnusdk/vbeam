@@ -70,35 +70,21 @@ def rtb_apodization(
     )
 
 
-@traceable_dataclass((("array_bounds", "minimum_aperture", "window")))
+@traceable_dataclass(
+    data_fields=("array_bounds", "array_width", "minimum_aperture", "window"),
+    aux_fields=("use_parent",),
+)
 class RTBApodization(Apodization):
-    array_bounds: Tuple[np.ndarray, np.ndarray]
-    minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
-    window: Optional[Window] = None
-
-    def __call__(
-        self,
-        sender: ElementGeometry,
-        point_position: np.ndarray,
-        receiver: ElementGeometry,
-        wave_data: WaveData,
-    ) -> float:
-        return rtb_apodization(
-            point_position,
-            self.array_bounds[0],
-            self.array_bounds[1],
-            wave_data.source,
-            self.minimum_aperture,
-            self.window,
-        )
-
-@traceable_dataclass((("array_width","minimum_aperture", "window","use_parent")))
-class SteppingApertureRTBApodization(Apodization):
-    array_width: float
+    array_bounds: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    array_width: Optional[float] = None
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     window: Optional[Window] = None
     use_parent: bool = False
 
+    def __post_init__(self):
+        if self.array_bounds is None and self.array_width is None:
+            raise ValueError("Either array bounds or array width must be set")
+
     def __call__(
         self,
         sender: ElementGeometry,
@@ -106,16 +92,43 @@ class SteppingApertureRTBApodization(Apodization):
         receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
-        sender_element_position = np.where(self.use_parent, sender.parent_element.position,sender.position)
-        sender_element_theta = np.where(self.use_parent, sender.parent_element.theta,sender.theta)
-        sender_normal = np.array([np.sin(sender_element_theta), 0.0, np.cos(sender_element_theta)])
-        array_left = sender_element_position + np.cross(np.array([0,-1,0]),sender_normal)*self.array_width/2
-        array_right = sender_element_position + np.cross(np.array([0,1,0]),sender_normal)*self.array_width/2
+        array_bounds = (
+            self.array_bounds
+            if self.array_bounds is not None
+            else get_bounds(
+                array_width=self.array_width, sender=sender, use_parent=self.use_parent
+            )
+        )
         return rtb_apodization(
             point_position,
-            array_left,
-            array_right,
+            array_bounds[0],
+            array_bounds[1],
             wave_data.source,
             self.minimum_aperture,
             self.window,
         )
+
+
+def get_bounds(
+    array_width,
+    sender,
+    use_parent,
+):
+    sender_element_position = np.where(
+        use_parent, sender.parent_element.position, sender.position
+    )
+    sender_element_theta = np.where(
+        use_parent, sender.parent_element.theta, sender.theta
+    )
+    sender_normal = np.array(
+        [np.sin(sender_element_theta), 0.0, np.cos(sender_element_theta)]
+    )
+    array_left = (
+        sender_element_position
+        + np.cross(np.array([0, -1, 0]), sender_normal) * array_width / 2
+    )
+    array_right = (
+        sender_element_position
+        + np.cross(np.array([0, 1, 0]), sender_normal) * array_width / 2
+    )
+    return [array_left, array_right]
