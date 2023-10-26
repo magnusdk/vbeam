@@ -6,7 +6,7 @@ from vbeam.util.geometry.v2 import Line
 from .window import Window
 
 
-@traceable_dataclass(("window", "beam_width"))
+@traceable_dataclass(("window", "beam_width", "use_parent"))
 class MLAApodization(Apodization):
     """Perform multiple line acquisition (MLA) in cartesian space.
 
@@ -17,6 +17,7 @@ class MLAApodization(Apodization):
 
     window: Window
     beam_width: float
+    use_parent: bool = False
 
     def __call__(
         self,
@@ -26,7 +27,7 @@ class MLAApodization(Apodization):
         wave_data: WaveData,
     ) -> float:
         # Geometry assumes 2D points
-        sender_position = sender.position[np.array([0, 2])]
+        sender_position = np.where(self.use_parent, sender.parent_element.position,sender.position)[np.array([0, 2])]
         point_position = point_position[np.array([0, 2])]
         source = wave_data.source[np.array([0, 2])]
 
