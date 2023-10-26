@@ -91,3 +91,31 @@ class RTBApodization(Apodization):
             self.minimum_aperture,
             self.window,
         )
+
+@traceable_dataclass((("array_width","minimum_aperture", "window","use_parent")))
+class SteppingApertureRTBApodization(Apodization):
+    array_width: float
+    minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
+    window: Optional[Window] = None
+    use_parent: bool = False
+
+    def __call__(
+        self,
+        sender: ElementGeometry,
+        point_position: np.ndarray,
+        receiver: ElementGeometry,
+        wave_data: WaveData,
+    ) -> float:
+        sender_element_position = np.where(self.use_parent, sender.parent_element.position,sender.position)
+        sender_element_theta = np.where(self.use_parent, sender.parent_element.theta,sender.theta)
+        sender_normal = np.array([np.sin(sender_element_theta), 0.0, np.cos(sender_element_theta)])
+        array_left = sender_element_position + np.cross(np.array([0,-1,0]),sender_normal)*self.array_width/2
+        array_right = sender_element_position + np.cross(np.array([0,1,0]),sender_normal)*self.array_width/2
+        return rtb_apodization(
+            point_position,
+            array_left,
+            array_right,
+            wave_data.source,
+            self.minimum_aperture,
+            self.window,
+        )
