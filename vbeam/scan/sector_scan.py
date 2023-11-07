@@ -99,20 +99,11 @@ class SectorScan(Scan):
         )
 
     @property
-    def shape(self) -> Tuple[int, ...]:
-        return (
-            (len(self.azimuths), len(self.elevations), len(self.depths))
-            if self.elevations is not None
-            else (len(self.azimuths), len(self.depths))
-        )
-
-    @property
-    def bounds(self):
-        bounds = []
-        for axis in [self.azimuths, self.elevations, self.depths]:
-            if axis is not None:
-                bounds += [axis[0], axis[-1]]
-        return tuple(bounds)
+    def axes(self) -> Tuple[np.ndarray, ...]:
+        if self.elevations is not None:
+            return self.azimuths, self.elevations, self.depths
+        else:
+            return self.azimuths, self.depths
 
     @property
     def cartesian_bounds(self):

@@ -1,5 +1,4 @@
-from functools import partial
-from typing import Callable, Literal, Optional, Tuple, Union
+from typing import Optional, Tuple
 
 from vbeam.fastmath import backend_manager
 from vbeam.fastmath import numpy as np
