@@ -16,7 +16,7 @@ description = "vbeam: a fast and differentiable beamformer"
 name = "vbeam"
 readme = "README.md"
 requires-python = ">=3.9"
-version = "1.0.3"
+version = "1.0.4"
 
 [project.urls]
 "Homepage" = "https://github.com/magnusdk/vbeam/"

@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="vbeam",
-    version="1.0.3",
+    version="1.0.4",
     description="vbeam: a fast and differentiable beamformer",
     author="Magnus Dalen Kvalevåg",
     author_email="magnus.kvalevag@ntnu.no",
