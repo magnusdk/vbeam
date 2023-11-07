@@ -16,10 +16,14 @@ class NoWindow(Window):
         return 1.0
 
 
+def _within_valid(ratio: float) -> bool:
+    return np.logical_and(0 <= ratio, ratio <= 0.5)
+
+
 @traceable_dataclass()
 class Rectangular(Window):
     def __call__(self, ratio: float) -> float:
-        return (ratio <= 0.5) * 1.0
+        return _within_valid(ratio) * 1.0
 
 
 @traceable_dataclass(("a0", "a1"))
@@ -28,7 +32,7 @@ class Hanning(Window):
     a1: float = 0.5
 
     def __call__(self, ratio: float) -> float:
-        return (ratio <= 0.5) * (self.a0 + self.a1 * np.cos(2 * np.pi * ratio))
+        return _within_valid(ratio) * (self.a0 + self.a1 * np.cos(2 * np.pi * ratio))
 
 
 @traceable_dataclass()
@@ -46,7 +50,7 @@ class Tukey(Window):
         p2 = ratio > (1 / 2 * (1 - self.roll))
         p3 = (ratio < (1 / 2)) * 0.5
         p4 = 1 + np.cos(2 * np.pi / self.roll * (ratio - self.roll / 2 - 1 / 2))
-        return p1 + p2 * p3 * p4
+        return _within_valid(ratio) * (p1 + p2 * p3 * p4)
 
 
 def Tukey25() -> Tukey:
@@ -68,4 +72,4 @@ def Tukey80() -> Tukey:
 @traceable_dataclass()
 class Bartlett(Window):
     def __call__(self, ratio: float) -> float:
-        return np.where((ratio>=0) & (ratio<0.5),(0.5 - ratio) * 2,0)
+        return _within_valid(ratio) * (0.5 - ratio) * 2
