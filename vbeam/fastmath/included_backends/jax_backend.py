@@ -69,6 +69,12 @@ class JaxBackend(Backend):
     def max(self, a, axis=None):
         return jnp.max(a, axis=axis)
 
+    def minimum(self, a, b):
+        return jnp.minimum(a, b)
+
+    def maximum(self, a, b):
+        return jnp.maximum(a, b)
+
     def sum(self, a, axis=None):
         return jnp.sum(a, axis=axis)
 
@@ -77,6 +83,9 @@ class JaxBackend(Backend):
 
     def mean(self, a, axis=None):
         return jnp.mean(a, axis=axis)
+
+    def var(self, a, axis=None):
+        return jnp.var(a, axis=axis)
 
     def cumsum(self, a, axis=None):
         return jnp.cumsum(a, axis=axis)
@@ -125,6 +134,9 @@ class JaxBackend(Backend):
 
     def floor(self, x):
         return jnp.floor(x)
+
+    def modf(self, x):
+        return jnp.modf(x)
 
     def round(self, x):
         return jnp.round(x)

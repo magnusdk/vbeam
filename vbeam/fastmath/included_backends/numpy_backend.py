@@ -70,6 +70,12 @@ class NumpyBackend(Backend):
     def max(self, a, axis=None):
         return np.max(a, axis=axis)
 
+    def minimum(self, a, b):
+        return np.minimum(a, b)
+
+    def maximum(self, a, b):
+        return np.maximum(a, b)
+
     def sum(self, a, axis=None):
         return np.sum(a, axis=axis)
 
@@ -78,6 +84,9 @@ class NumpyBackend(Backend):
 
     def mean(self, a, axis=None):
         return np.mean(a, axis=axis)
+
+    def var(self, a, axis=None):
+        return np.var(a, axis=axis)
 
     def cumsum(self, a, axis=None):
         return np.cumsum(a, axis=axis)
@@ -126,6 +135,9 @@ class NumpyBackend(Backend):
 
     def floor(self, x):
         return np.floor(x)
+
+    def modf(self, x):
+        return np.modf(x)
 
     def round(self, x):
         return np.round(x)

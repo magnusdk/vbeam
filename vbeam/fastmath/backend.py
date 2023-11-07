@@ -106,6 +106,14 @@ class Backend:
     def max(self, a, axis=None):
         raise NotImplementedError
 
+    @wraps(np.minimum)
+    def minimum(self, a, b):
+        raise NotImplementedError
+
+    @wraps(np.maximum)
+    def maximum(self, a, b):
+        raise NotImplementedError
+
     @wraps(np.sum)
     def sum(self, a, axis=None):
         raise NotImplementedError
@@ -116,6 +124,10 @@ class Backend:
 
     @wraps(np.mean)
     def mean(self, a, axis=None):
+        raise NotImplementedError
+
+    @wraps(np.var)
+    def var(self, a, axis=None):
         raise NotImplementedError
 
     @wraps(np.cumsum)
@@ -180,6 +192,10 @@ class Backend:
 
     @wraps(np.floor)
     def floor(self, x):
+        raise NotImplementedError
+
+    @wraps(np.modf)
+    def modf(self, x):
         raise NotImplementedError
 
     @wraps(np.round)

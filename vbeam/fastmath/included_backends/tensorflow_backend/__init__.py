@@ -106,6 +106,12 @@ class TensorflowBackend(Backend):
     def max(self, a, axis=None):
         return tnp.max(a, axis=axis)
 
+    def minimum(self, a, b):
+        return tnp.minimum(a, b)
+
+    def maximum(self, a, b):
+        return tnp.maximum(a, b)
+
     def sum(self, a, axis=None):
         return tnp.sum(a, axis=axis)
 
@@ -114,6 +120,9 @@ class TensorflowBackend(Backend):
 
     def mean(self, a, axis=None):
         return tnp.mean(a, axis=axis)
+
+    def var(self, a, axis=None):
+        return tnp.var(a, axis=axis)
 
     def cumsum(self, a, axis=None):
         return tnp.cumsum(a, axis=axis)
@@ -187,6 +196,9 @@ class TensorflowBackend(Backend):
 
     def floor(self, x):
         return tnp.floor(x)
+
+    def modf(self, x):
+        return tnp.modf(x)
 
     def round(self, x):
         return tnp.round(x)
