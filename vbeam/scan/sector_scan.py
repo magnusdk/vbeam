@@ -3,7 +3,7 @@ from typing import Callable, Literal, Optional, Tuple, Union, overload
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.scan.base import CoordinateSystem, Scan
-from vbeam.scan.util import parse_axes
+from vbeam.scan.util import parse_axes, scan_convert
 from vbeam.util.arrays import grid
 from vbeam.util.coordinate_systems import as_cartesian
 
@@ -132,6 +132,19 @@ class SectorScan(Scan):
             _right_bound(min_az - quarter_turn, max_az - quarter_turn, min_d, max_d),
             -_right_bound(min_az + half_turn, max_az + half_turn, min_d, max_d),
             _right_bound(min_az, max_az, min_d, max_d),
+        )
+
+    def scan_convert(
+        self,
+        imaged_points: np.ndarray,
+        azimuth_axis: int = -2,
+        depth_axis: int = -1,
+        *,  # Remaining args must be passed by name (to avoid confusion)
+        shape: Optional[Tuple[int, int]] = None,
+        padding: Optional[np.ndarray] = 0.0,
+    ):
+        return scan_convert(
+            imaged_points, self, azimuth_axis, depth_axis, shape=shape, padding=padding
         )
 
     @property
