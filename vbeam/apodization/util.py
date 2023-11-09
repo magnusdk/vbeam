@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 from spekk import Spec
 
@@ -14,7 +14,7 @@ def get_apodization_values(
     receiver: ElementGeometry,
     wave_data: WaveData,
     spec: Spec,
-    dimensions: Sequence[str],
+    dimensions: Optional[Sequence[str]] = None,
     average_overlap: bool = False,
 ):
     """Return the apodization values for the dimensions. All other relevant
@@ -34,6 +34,11 @@ def get_apodization_values(
         "receiver": receiver,
         "wave_data": wave_data,
     }
+
+    # Return the full datacube if dimensions are not given
+    # Careful! This may allocate a lot of memory.
+    if dimensions is None:
+        dimensions = list(spec.dimensions)
 
     # Define what dimensions to vmap and sum over and how
     vmap_dimensions = (
