@@ -7,11 +7,20 @@ from spekk.util.slicing import IndicesT, slice_data, slice_spec
 
 from vbeam.apodization.plotting import plot_apodization
 from vbeam.apodization.util import get_apodization_values
-from vbeam.core import Apodization, SignalForPointData
+from vbeam.core import (
+    Apodization,
+    ReflectedWavefront,
+    SignalForPointData,
+    TransmittedWavefront,
+)
 from vbeam.fastmath import numpy as np
 from vbeam.scan import Scan
 from vbeam.scan.advanced import ExtraDimsScanMixin
 from vbeam.util.transformations import *
+from vbeam.wavefront.plotting import (
+    plot_reflected_wavefront,
+    plot_transmitted_wavefront,
+)
 
 
 @dataclass
@@ -151,6 +160,51 @@ updating the scan instead."
             self.scan.get_points(flatten=False),
             self.receiver,
             self.wave_data,
+            spec,
+            postprocess,
+            ax,
+        )
+
+    def plot_transmitted_wavefront(
+        self,
+        wavefront: Optional[TransmittedWavefront] = None,
+        wavefront_spec: Optional[Spec] = None,
+        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        ax=None,  # : Optional[matplotlib.pyplot.Axes]
+    ):
+        spec = self.spec.at["point_position"].set(["x", "z"])
+        if wavefront is None:
+            wavefront = self.transmitted_wavefront
+        elif wavefront_spec is not None:
+            spec = spec.at["transmitted_wavefront"].set(wavefront_spec)
+
+        return plot_transmitted_wavefront(
+            wavefront,
+            self.sender,
+            self.scan.get_points(flatten=False),
+            self.wave_data,
+            spec,
+            postprocess,
+            ax,
+        )
+
+    def plot_reflected_wavefront(
+        self,
+        wavefront: Optional[ReflectedWavefront] = None,
+        wavefront_spec: Optional[Spec] = None,
+        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        ax=None,  # : Optional[matplotlib.pyplot.Axes]
+    ):
+        spec = self.spec.at["point_position"].set(["x", "z"])
+        if wavefront is None:
+            wavefront = self.reflected_wavefront
+        elif wavefront_spec is not None:
+            spec = spec.at["reflected_wavefront"].set(wavefront_spec)
+
+        return plot_reflected_wavefront(
+            wavefront,
+            self.scan.get_points(flatten=False),
+            self.receiver,
             spec,
             postprocess,
             ax,
