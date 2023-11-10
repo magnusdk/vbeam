@@ -23,13 +23,13 @@ def get_transmitted_wavefront_values(
     jit: bool = True,
 ):
     """
-    Calculate and return the (transmit) wavefront distance values based on the provided 
+    Calculate and return the (transmit) wavefront distance values based on the provided
     arguments (``sender``, ``point_position``, and ``wave_data``).
 
-    The ``dimensions`` argument determines what dimensions to keep; all others are 
-    summed over (except when ``dimesions`` is None where we keep all dimensions 
+    The ``dimensions`` argument determines what dimensions to keep; all others are
+    summed over (except when ``dimesions`` is None where we keep all dimensions
     instead). ``spec`` describes the dimensions of the data. E.g., if ``dimensions`` is
-    ``["transmits", "x", "z"]``, the result will be a 3D array with shape (Nt, Nx, Nz), 
+    ``["transmits", "x", "z"]``, the result will be a 3D array with shape (Nt, Nx, Nz),
     where Nt, Nx, Nz are the sizes of the given dimensions in the data.
 
     Args:
@@ -38,18 +38,18 @@ def get_transmitted_wavefront_values(
         point_position (np.ndarray): The point_position argument to ``wavefront``.
         wave_data (WaveData): The wave data argument to ``wavefront``.
         spec (Spec): A spec describing the dimensions/shape of the arguments.
-        dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned 
-            result. If it is an empty list, all dimensions are summed over. If it is 
+        dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
+            result. If it is an empty list, all dimensions are summed over. If it is
             None, all dimensions from the spec are kept.
         average_overlap (bool): If True, the result is averaged instead of summed.
         jit (bool): If True, the process is JIT-compiled (if the backend supports it).
 
     Returns:
-        np.ndarray: The calculated wavefront distance values with shape corresponding 
+        np.ndarray: The calculated wavefront distance values with shape corresponding
         to the dimensions defined in ``dimensions``.
     """
     kwargs = {
-        "wavefront": wavefront,
+        "transmitted_wavefront": wavefront,
         "sender": sender,
         "point_position": point_position,
         "wave_data": wave_data,
@@ -62,7 +62,7 @@ def get_transmitted_wavefront_values(
 
     # Define what dimensions to vmap and sum over and how
     vmap_dimensions = (
-        spec["wavefront"].dimensions
+        spec["transmitted_wavefront"].dimensions
         | spec["sender"].dimensions
         | spec["point_position"].dimensions
         | spec["wave_data"].dimensions
@@ -76,7 +76,9 @@ def get_transmitted_wavefront_values(
 
     # Define how to calculate the wavefront values
     calculate_wavefront_values = compose(
-        lambda wavefront, *args, **kwargs: wavefront(*args, **kwargs),
+        lambda transmitted_wavefront, *args, **kwargs: transmitted_wavefront(
+            *args, **kwargs
+        ),
         *[ForAll(dim) for dim in vmap_dimensions],
         Apply(np.sum, [Axis(dim) for dim in sum_dimensions - reduce_sum_dimension]),
         # [*reduce_sum_dimension][0] gets the "first element" of the set
@@ -105,13 +107,13 @@ def get_reflected_wavefront_values(
     jit: bool = True,
 ):
     """
-    Calculate and return the (receive) wavefront distance values based on the provided 
+    Calculate and return the (receive) wavefront distance values based on the provided
     arguments (``point_position`` and ``receiver``).
 
-    The ``dimensions`` argument determines what dimensions to keep; all others are 
-    summed over (except when ``dimesions`` is None where we keep all dimensions 
+    The ``dimensions`` argument determines what dimensions to keep; all others are
+    summed over (except when ``dimesions`` is None where we keep all dimensions
     instead). ``spec`` describes the dimensions of the data. E.g., if ``dimensions`` is
-    ``["receivers", "x", "z"]``, the result will be a 3D array with shape (Nr, Nx, Nz), 
+    ``["receivers", "x", "z"]``, the result will be a 3D array with shape (Nr, Nx, Nz),
     where Nr, Nx, Nz are the sizes of the given dimensions in the data.
 
     Args:
@@ -119,18 +121,18 @@ def get_reflected_wavefront_values(
         point_position (np.ndarray): The point_position argument to ``wavefront``.
         receiver (ElementGeometry): The receiver argument to ``wavefront``.
         spec (Spec): A spec describing the dimensions/shape of the arguments.
-        dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned 
-            result. If it is an empty list, all dimensions are summed over. If it is 
+        dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
+            result. If it is an empty list, all dimensions are summed over. If it is
             None, all dimensions from the spec are kept.
         average_overlap (bool): If True, the result is averaged instead of summed.
         jit (bool): If True, the process is JIT-compiled (if the backend supports it).
 
     Returns:
-        np.ndarray: The calculated wavefront distance values with shape corresponding 
+        np.ndarray: The calculated wavefront distance values with shape corresponding
         to the dimensions defined in ``dimensions``.
     """
     kwargs = {
-        "wavefront": wavefront,
+        "reflected_wavefront": wavefront,
         "point_position": point_position,
         "receiver": receiver,
     }
@@ -142,7 +144,7 @@ def get_reflected_wavefront_values(
 
     # Define what dimensions to vmap and sum over and how
     vmap_dimensions = (
-        spec["wavefront"].dimensions
+        spec["reflected_wavefront"].dimensions
         | spec["point_position"].dimensions
         | spec["receiver"].dimensions
     )
@@ -155,7 +157,9 @@ def get_reflected_wavefront_values(
 
     # Define how to calculate the wavefront values
     calculate_wavefront_values = compose(
-        lambda wavefront, *args, **kwargs: wavefront(*args, **kwargs),
+        lambda reflected_wavefront, *args, **kwargs: reflected_wavefront(
+            *args, **kwargs
+        ),
         *[ForAll(dim) for dim in vmap_dimensions],
         Apply(np.sum, [Axis(dim) for dim in sum_dimensions - reduce_sum_dimension]),
         # [*reduce_sum_dimension][0] gets the "first element" of the set
