@@ -16,17 +16,35 @@ def get_apodization_values(
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
     average_overlap: bool = False,
+    jit: bool = True,
 ):
-    """Return the apodization values for the dimensions. All other relevant
-    dimensions are (by default) summed over.
+    """
+    Calculate and return the apodization values based on the provided arguments
+    (``sender``, ``point_position``, ``receiver``, and ``wave_data``).
 
-    If you want the apodization values for each transmit and point, you'd call
-    setup.get_apodization_values(["transmits", "points"]). Likewise, if you only
-    want the points, you'd call setup.get_apodization_values(["points"]). All other
-    dimensions are summed over.
+    The ``dimensions`` argument determines what dimensions to keep; all others are 
+    summed over (except when ``dimesions`` is None where we keep all dimensions 
+    instead). ``spec`` describes the dimensions of the data. E.g., if ``dimensions`` is
+    ``["transmits", "x", "z"]``, the result will be a 3D array with shape (Nt, Nx, Nz), 
+    where Nt, Nx, Nz are the sizes of the given dimensions in the data.
 
-    If average_overlap is True, then the apodization values are averaged instead of
-    summed."""
+    Args:
+        apodization (Apodization): The apodization function to use.
+        sender (ElementGeometry): The sender argument to ``apodization``.
+        point_position (np.ndarray): The point_position argument to ``apodization``.
+        receiver (ElementGeometry): The receiver argument to ``apodization``.
+        wave_data (WaveData): The wave data argument to ``apodization``.
+        spec (Spec): A spec describing the dimensions/shape of the arguments.
+        dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
+            result. If it is an empty list, all dimensions are summed over. If it is
+            None, all dimensions from the spec are kept.
+        average_overlap (bool): If True, the result is averaged instead of summed.
+        jit (bool): If True, the process is JIT-compiled (if the backend supports it).
+
+    Returns:
+        np.ndarray: The calculated apodization values with shape corresponding to the
+        dimensions defined in ``dimensions``.
+    """
     kwargs = {
         "apodization": apodization,
         "sender": sender,
@@ -42,7 +60,8 @@ def get_apodization_values(
 
     # Define what dimensions to vmap and sum over and how
     vmap_dimensions = (
-        spec["sender"].dimensions
+        spec["apodization"].dimensions
+        | spec["sender"].dimensions
         | spec["point_position"].dimensions
         | spec["receiver"].dimensions
         | spec["wave_data"].dimensions
@@ -63,12 +82,13 @@ def get_apodization_values(
         Reduce.Sum([*reduce_sum_dimension][0]) if reduce_sum_dimension else do_nothing,
         # Put the dimensions in the order defined by keep
         Apply(np.transpose, [Axis(dim, keep=True) for dim in dimensions]),
-        Wrap(np.jit),  # Make it run faster, if the backend supports it.
+        # Make it run faster if `jit` is True and if the backend supports it.
+        Wrap(np.jit) if jit else do_nothing,
     ).build(spec)
 
     # Calculate the apodization values
     values = calculate_apodization(**kwargs)
     # Divide by the number of points summed over, if average_overlap is True
-    if average_overlap:
+    if average_overlap and sum_dimensions:
         values /= sum(spec.size(kwargs, dim) for dim in sum_dimensions)
     return values
