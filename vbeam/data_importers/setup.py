@@ -1,12 +1,13 @@
 import warnings
 from dataclasses import dataclass
-from typing import Callable, Dict, Literal, Optional, Sequence, Union
+from typing import Callable, Dict, Optional, Sequence, Union
 
 from spekk import Spec, trees
 from spekk.util.slicing import IndicesT, slice_data, slice_spec
 
+from vbeam.apodization.plotting import plot_apodization
 from vbeam.apodization.util import get_apodization_values
-from vbeam.core import SignalForPointData
+from vbeam.core import Apodization, SignalForPointData
 from vbeam.fastmath import numpy as np
 from vbeam.scan import Scan
 from vbeam.scan.advanced import ExtraDimsScanMixin
@@ -116,4 +117,41 @@ updating the scan instead."
             self.wave_data,
             self.spec,
             dimensions,
+        )
+
+    def plot_apodization(
+        self,
+        apodization: Optional[Apodization] = None,
+        apodization_spec: Optional[Spec] = None,
+        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        ax=None,  # : Optional[matplotlib.pyplot.Axes]
+    ):
+        """Plot the apodization values using matplotlib.
+
+        To plot just a single transmit, slice the setup object before calling, i.e.:
+        `setup.slice["transmits", 20].plot_apodization()`. This also works for other
+        dimensions, like "receivers", "frames", etc.
+
+        Args:
+            apodization: The apodization to plot. Defaults to the apodization set on
+                this :class:`SignalForPointSetup` object.
+            apodization_spec: Optional spec of the provided apodization (in case the
+                apodization changes over a dimension). Defaults to None.
+            ax: The axis used to plot. Defaults to `matplotlib.pyplot.gca()`.
+        """
+        spec = self.spec.at["point_position"].set(["x", "z"])
+        if apodization is None:
+            apodization = self.apodization
+        elif apodization_spec is not None:
+            spec = spec.at["apodization"].set(apodization_spec)
+
+        return plot_apodization(
+            apodization,
+            self.sender,
+            self.scan.get_points(flatten=False),
+            self.receiver,
+            self.wave_data,
+            spec,
+            postprocess,
+            ax,
         )
