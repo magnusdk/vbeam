@@ -106,6 +106,14 @@ class Backend:
     def max(self, a, axis=None):
         raise NotImplementedError
 
+    @wraps(np.argmin)
+    def argmin(self, a, axis=None):
+        raise NotImplementedError
+
+    @wraps(np.argmax)
+    def argmax(self, a, axis=None):
+        raise NotImplementedError
+
     @wraps(np.minimum)
     def minimum(self, a, b):
         raise NotImplementedError
@@ -136,6 +144,10 @@ class Backend:
 
     @wraps(np.cross)
     def cross(self, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
+        raise NotImplementedError
+
+    @wraps(np.nansum)
+    def nansum(self, a, axis=None):
         raise NotImplementedError
 
     @wraps(np.histogram)

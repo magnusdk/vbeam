@@ -70,6 +70,12 @@ class NumpyBackend(Backend):
     def max(self, a, axis=None):
         return np.max(a, axis=axis)
 
+    def argmin(self, a, axis=None):
+        return np.argmin(a, axis=axis)
+
+    def argmax(self, a, axis=None):
+        return np.argmax(a, axis=axis)
+
     def minimum(self, a, b):
         return np.minimum(a, b)
 
@@ -93,6 +99,9 @@ class NumpyBackend(Backend):
 
     def cross(self, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
         return np.cross(a, b, axisa=axisa, axisb=axisb, axisc=axisc, axis=axis)
+
+    def nansum(self, a, axis=None):
+        return np.nansum(a, axis=axis)
 
     def histogram(self, a, bins=10, weights=None):
         return np.histogram(a, bins=bins, weights=weights)
