@@ -1,3 +1,4 @@
+import math
 from typing import Optional, Sequence
 
 from spekk import Spec
@@ -15,17 +16,17 @@ def get_apodization_values(
     wave_data: WaveData,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
-    average_overlap: bool = False,
+    average: bool = False,
     jit: bool = True,
 ):
     """
     Calculate and return the apodization values based on the provided arguments
     (``sender``, ``point_position``, ``receiver``, and ``wave_data``).
 
-    The ``dimensions`` argument determines what dimensions to keep; all others are 
-    summed over (except when ``dimesions`` is None where we keep all dimensions 
+    The ``dimensions`` argument determines what dimensions to keep; all others are
+    summed over (except when ``dimesions`` is None where we keep all dimensions
     instead). ``spec`` describes the dimensions of the data. E.g., if ``dimensions`` is
-    ``["transmits", "x", "z"]``, the result will be a 3D array with shape (Nt, Nx, Nz), 
+    ``["transmits", "x", "z"]``, the result will be a 3D array with shape (Nt, Nx, Nz),
     where Nt, Nx, Nz are the sizes of the given dimensions in the data.
 
     Args:
@@ -38,7 +39,7 @@ def get_apodization_values(
         dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
             result. If it is an empty list, all dimensions are summed over. If it is
             None, all dimensions from the spec are kept.
-        average_overlap (bool): If True, the result is averaged instead of summed.
+        average (bool): If True, the result is averaged instead of summed.
         jit (bool): If True, the process is JIT-compiled (if the backend supports it).
 
     Returns:
@@ -88,7 +89,7 @@ def get_apodization_values(
 
     # Calculate the apodization values
     values = calculate_apodization(**kwargs)
-    # Divide by the number of points summed over, if average_overlap is True
-    if average_overlap and sum_dimensions:
-        values /= sum(spec.size(kwargs, dim) for dim in sum_dimensions)
+    # Divide by the number of points summed over, if average is True
+    if average:
+        values /= max(1, math.prod(spec.size(kwargs, dim) for dim in sum_dimensions))
     return values

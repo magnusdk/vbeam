@@ -133,6 +133,8 @@ updating the scan instead."
         apodization: Optional[Apodization] = None,
         apodization_spec: Optional[Spec] = None,
         postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        average: bool = True,
+        jit: bool = True,
         ax=None,  # : Optional[matplotlib.pyplot.Axes]
     ):
         """Plot the apodization values using matplotlib.
@@ -146,6 +148,12 @@ updating the scan instead."
                 this :class:`SignalForPointSetup` object.
             apodization_spec: Optional spec of the provided apodization (in case the
                 apodization changes over a dimension). Defaults to None.
+            postprocess: Process the apodization values further before plotting, for 
+                example to scan convert.
+            average: Average the apodization values across dimensions instead of 
+                summing. Can for example average over receivers and/or transmits.
+            jit: If True, the calculation of apodzation values is JIT-compiled (if the 
+                backend supports it).
             ax: The axis used to plot. Defaults to `matplotlib.pyplot.gca()`.
         """
         spec = self.spec.at["point_position"].set(["x", "z"])
@@ -162,6 +170,8 @@ updating the scan instead."
             self.wave_data,
             spec,
             postprocess,
+            average,
+            jit,
             ax,
         )
 

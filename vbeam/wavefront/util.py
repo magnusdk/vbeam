@@ -1,3 +1,4 @@
+import math
 from typing import Optional, Sequence
 
 from spekk import Spec
@@ -19,7 +20,6 @@ def get_transmitted_wavefront_values(
     wave_data: WaveData,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
-    average_overlap: bool = True,
     jit: bool = True,
 ):
     """
@@ -41,7 +41,6 @@ def get_transmitted_wavefront_values(
         dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
             result. If it is an empty list, all dimensions are summed over. If it is
             None, all dimensions from the spec are kept.
-        average_overlap (bool): If True, the result is averaged instead of summed.
         jit (bool): If True, the process is JIT-compiled (if the backend supports it).
 
     Returns:
@@ -91,9 +90,8 @@ def get_transmitted_wavefront_values(
 
     # Calculate the wavefront values
     values = calculate_wavefront_values(**kwargs)
-    # Divide by the number of points summed over, if average_overlap is True
-    if average_overlap and sum_dimensions:
-        values /= sum(spec.size(kwargs, dim) for dim in sum_dimensions)
+    # Return the average delay values
+    values /= max(1, math.prod(spec.size(kwargs, dim) for dim in sum_dimensions))
     return values
 
 
@@ -103,7 +101,6 @@ def get_reflected_wavefront_values(
     receiver: ElementGeometry,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
-    average_overlap: bool = True,
     jit: bool = True,
 ):
     """
@@ -124,7 +121,6 @@ def get_reflected_wavefront_values(
         dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
             result. If it is an empty list, all dimensions are summed over. If it is
             None, all dimensions from the spec are kept.
-        average_overlap (bool): If True, the result is averaged instead of summed.
         jit (bool): If True, the process is JIT-compiled (if the backend supports it).
 
     Returns:
@@ -172,7 +168,6 @@ def get_reflected_wavefront_values(
 
     # Calculate the wavefront values
     values = calculate_wavefront_values(**kwargs)
-    # Divide by the number of points summed over, if average_overlap is True
-    if average_overlap and sum_dimensions:
-        values /= sum(spec.size(kwargs, dim) for dim in sum_dimensions)
+    # Return the average delay values
+    values /= max(1, math.prod(spec.size(kwargs, dim) for dim in sum_dimensions))
     return values
