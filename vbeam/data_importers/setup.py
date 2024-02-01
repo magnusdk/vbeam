@@ -51,9 +51,25 @@ class SignalForPointSetup(SignalForPointData):
 updating the scan instead."
             )
         if name == "scan":
-            if self.point_position is not None:
-                warnings.warn("point_position will be overwritten by the scan.")
+            # If user is setting scan to None then that's OK. Otherwise:
+            if value is not None:
+                if self.point_position is not None:
+                    warnings.warn("point_position will be overwritten by the scan.")
 
+                # Try to automatically convert pyuff_ustb Scan to vbeam Scan
+                try:
+                    import pyuff_ustb
+
+                    from vbeam.data_importers import parse_pyuff_scan
+
+                    if isinstance(value, pyuff_ustb.Scan):
+                        value = parse_pyuff_scan(value)
+                except ModuleNotFoundError:
+                    pass
+
+                # Validate value
+                if not isinstance(value, Scan):
+                    raise ValueError(f"Scan must be a Scan object, got {type(value)}")
         return super().__setattr__(name, value)
 
     def __getattribute__(self, name: str):
@@ -148,11 +164,11 @@ updating the scan instead."
                 this :class:`SignalForPointSetup` object.
             apodization_spec: Optional spec of the provided apodization (in case the
                 apodization changes over a dimension). Defaults to None.
-            postprocess: Process the apodization values further before plotting, for 
+            postprocess: Process the apodization values further before plotting, for
                 example to scan convert.
-            average: Average the apodization values across dimensions instead of 
+            average: Average the apodization values across dimensions instead of
                 summing. Can for example average over receivers and/or transmits.
-            jit: If True, the calculation of apodzation values is JIT-compiled (if the 
+            jit: If True, the calculation of apodzation values is JIT-compiled (if the
                 backend supports it).
             ax: The axis used to plot. Defaults to `matplotlib.pyplot.gca()`.
         """
