@@ -183,6 +183,9 @@ class JaxBackend(Backend):
     def gather(self, a, indices):
         return a[indices]
 
+    def shape(self, x):
+        return jnp.shape(x)
+
     class add:
         @staticmethod
         def at(a, indices, b):

@@ -250,6 +250,10 @@ class Backend:
     def interp(self, x, xp, fp, left=None, right=None, period=None):
         raise NotImplementedError
 
+    @wraps(np.shape)
+    def shape(self, x):
+        raise NotImplementedError
+
     class add:
         @staticmethod
         @wraps(np.add.at)

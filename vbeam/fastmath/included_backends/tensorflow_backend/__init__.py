@@ -250,6 +250,9 @@ class TensorflowBackend(Backend):
     def gather(self, a, indices):
         return tf.gather(a, indices)
 
+    def shape(self, x):
+        return tnp.shape(x)
+
     class add:
         @staticmethod
         def at(a, indices, b):
