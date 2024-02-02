@@ -5,9 +5,11 @@ from spekk import Spec
 
 from vbeam.core import Apodization, ElementGeometry, WaveData
 from vbeam.fastmath import numpy as np
+from vbeam.util import _deprecations
 from vbeam.util.transformations import *
 
 
+@_deprecations.renamed_kwargs("1.0.5", average_overlap="average")
 def get_apodization_values(
     apodization: Apodization,
     sender: ElementGeometry,
