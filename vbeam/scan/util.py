@@ -9,6 +9,58 @@ if TYPE_CHECKING:
     from vbeam.scan import SectorScan
 
 
+def _ensure_min_and_max(min_x: float, max_x: float) -> Tuple[float, float]:
+    "Swap ``min_x`` and ``max_x`` if ``min_x`` > ``max_x``."
+    return tuple(
+        np.where(
+            min_x > max_x,
+            np.array([max_x, min_x]),
+            np.array([min_x, max_x]),
+        )
+    )
+
+
+def _right_bound(
+    min_azimuth: float,
+    max_azimuth: float,
+    min_depth: float,
+    max_depth: float,
+) -> float:
+    """For the two arcs defined by the azimuth bounds (one for ``min_depth`` and one
+    for ``max_depth``), find the right-most x coordinate of the two arcs.
+
+    This will be the right-edge of a bounding box that encompasses the arcs. You can
+    get the other edges of the bounding box by rotating the azimuth bounds by 90, 180,
+    and 270 degrees.
+
+    See ``docs/tutorials/scan/sector_scan_bounds.ipynb`` for a visualization of the
+    bounding box of the arcs."""
+    cos_min, cos_max = np.cos(min_azimuth), np.cos(max_azimuth)
+    sin_min, sin_max = np.sin(min_azimuth), np.sin(max_azimuth)
+
+    # Get the maximum x coordinate of the corners of both the inner and outer arc.
+    max_corner_x = np.max(
+        np.array(
+            [
+                cos_min * min_depth,  # Inner arc
+                cos_max * min_depth,  # Inner arc
+                cos_min * max_depth,  # Outer arc
+                cos_max * max_depth,  # Outer arc
+            ]
+        )
+    )
+
+    # The right-most part of the arcs may either be ``max_corner_x``, or it may be on
+    # the right-most *tangent* of the outer arc. We have to make some additional checks
+    # to make this work. The code for this is a bit terse, so just trust the generative
+    # unit tests for :attr:`SectorScan.cartesian_bounds` :)
+    return np.where(
+        (max_azimuth - min_azimuth) < np.pi,
+        np.where(np.logical_and(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
+        np.where(np.logical_or(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
+    )
+
+
 def polar_bounds_to_cartesian_bounds(
     bounds: Tuple[float, float, float, float]
 ) -> Tuple[float, float, float, float]:
@@ -49,14 +101,16 @@ def scan_convert(
     shape: Optional[Tuple[int, int]] = None,
     padding: Optional[np.ndarray] = 0.0,
 ):
-    from vbeam.scan import SectorScan
+    from vbeam.scan import CoordinateSystem, Scan
 
-    if isinstance(bounds, SectorScan):
+    if isinstance(bounds, Scan):
+        if not bounds.coordinate_system == CoordinateSystem.POLAR:
+            raise ValueError("You may only scan convert from polar coordinates.")
         bounds = bounds.bounds
     if shape is None:
-        shape = image.shape
+        shape = image.shape[azimuth_axis], image.shape[depth_axis]
 
-    width, height = image.shape
+    width, height = image.shape[azimuth_axis], image.shape[depth_axis]
     min_az, max_az, min_depth, max_depth = bounds
 
     # Get the points in the cartesian grid
@@ -74,8 +128,8 @@ def scan_convert(
     return FastInterpLinspace.interp2d(
         angles,
         radii,
-        FastInterpLinspace(min_az, (max_az - min_az) / width, width),
-        FastInterpLinspace(min_depth, (max_depth - min_depth) / height, height),
+        FastInterpLinspace(min_az, (max_az - min_az) / (width - 1), width),
+        FastInterpLinspace(min_depth, (max_depth - min_depth) / (height - 1), height),
         image,
         azimuth_axis,
         depth_axis,
