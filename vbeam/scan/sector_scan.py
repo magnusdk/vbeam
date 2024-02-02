@@ -3,7 +3,8 @@ from typing import Callable, Literal, Optional, Tuple, Union, overload
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.scan.base import CoordinateSystem, Scan
-from vbeam.scan.util import parse_axes, scan_convert
+from vbeam.scan.util import parse_axes, polar_bounds_to_cartesian_bounds, scan_convert
+from vbeam.util import _deprecations
 from vbeam.util.arrays import grid
 from vbeam.util.coordinate_systems import as_cartesian
 
@@ -114,29 +115,12 @@ class SectorScan(Scan):
                 "Cartesian bounds are not implemented for 3D scans yet.",
                 "Please create an issue on Github if this is something you need.",
             )
-        min_az, max_az, min_d, max_d = self.bounds
-        # Ensure that the min and max are actually min and max
-        min_az, max_az = _ensure_min_and_max(min_az, max_az)
-        min_d, max_d = _ensure_min_and_max(min_d, max_d)
+        return polar_bounds_to_cartesian_bounds(self.bounds)
 
-        # We get the bounds by calculating the bound for each edge of the bounding box
-        # individually. _right_bound gets the right-most x coordinate of the bounding
-        # box and we can get the other sides by rotating the azimuth bounds by 90, 180,
-        # and 270 degrees. Because in ultrasound, "straight down" is at 0 degrees, we
-        # have to rotate everything by an additional 90 degrees.
-        quarter_turn = np.pi / 2
-        half_turn = np.pi
-        # Return (left, right, top, bottom)
-        return (
-            -_right_bound(min_az + quarter_turn, max_az + quarter_turn, min_d, max_d),
-            _right_bound(min_az - quarter_turn, max_az - quarter_turn, min_d, max_d),
-            -_right_bound(min_az + half_turn, max_az + half_turn, min_d, max_d),
-            _right_bound(min_az, max_az, min_d, max_d),
-        )
-
+    @_deprecations.renamed_kwargs("1.0.5", imaged_points="image")
     def scan_convert(
         self,
-        imaged_points: np.ndarray,
+        image: np.ndarray,
         azimuth_axis: int = -2,
         depth_axis: int = -1,
         *,  # Remaining args must be passed by name (to avoid confusion)
@@ -144,7 +128,7 @@ class SectorScan(Scan):
         padding: Optional[np.ndarray] = 0.0,
     ):
         return scan_convert(
-            imaged_points, self, azimuth_axis, depth_axis, shape=shape, padding=padding
+            image, self, azimuth_axis, depth_axis, shape=shape, padding=padding
         )
 
     @property
