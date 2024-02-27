@@ -1,4 +1,5 @@
 from vbeam.apodization.combine import combine_apodizations
+from vbeam.apodization.expanding_aperture import ExpandingApertureApodization
 from vbeam.apodization.mla import MLAApodization
 from vbeam.apodization.no_apodization import NoApodization
 from vbeam.apodization.plane_wave import (
@@ -24,6 +25,7 @@ from vbeam.apodization.window import (
 
 __all__ = [
     "combine_apodizations",
+    "ExpandingApertureApodization",
     "MLAApodization",
     "NoApodization",
     "PlaneWaveReceiveApodization",
