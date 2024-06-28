@@ -1,3 +1,4 @@
+from dataclasses import field
 from typing import Tuple
 
 from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
@@ -14,7 +15,9 @@ class UnifiedWavefront(TransmittedWavefront):
     https://doi.org/10.1109/tmi.2015.2456982"""
 
     array_bounds: Tuple[np.ndarray, np.ndarray]
-    base_wavefront: TransmittedWavefront = FocusedSphericalWavefront()
+    base_wavefront: TransmittedWavefront = field(
+        default_factory=FocusedSphericalWavefront
+    )
 
     def __call__(
         self,
