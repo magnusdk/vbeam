@@ -101,9 +101,17 @@ class Backend:
     @wraps(np.min)
     def min(self, a, axis=None):
         raise NotImplementedError
+    
+    @wraps(np.minimum)
+    def minimum(self, a, b):
+        raise NotImplementedError
 
     @wraps(np.max)
     def max(self, a, axis=None):
+        raise NotImplementedError
+    
+    @wraps(np.maximum)
+    def maximum(self, a, b):
         raise NotImplementedError
 
     @wraps(np.argmin)

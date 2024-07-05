@@ -66,9 +66,15 @@ class NumpyBackend(Backend):
 
     def min(self, a, axis=None):
         return np.min(a, axis=axis)
-
+    
+    def minimum(self, a, b):
+        return np.minimum(a, b)
+    
     def max(self, a, axis=None):
         return np.max(a, axis=axis)
+    
+    def maximum(self, a, b):
+        return np.minimum(a, b)
 
     def argmin(self, a, axis=None):
         return np.argmin(a, axis=axis)

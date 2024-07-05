@@ -65,9 +65,15 @@ class JaxBackend(Backend):
 
     def min(self, a, axis=None):
         return jnp.min(a, axis=axis)
+    
+    def minimum(self, a, b):
+        return jnp.minimum(a, b)
 
     def max(self, a, axis=None):
         return jnp.max(a, axis=axis)
+    
+    def maximum(self, a, b):
+        return jnp.maximum(a, b)
 
     def argmin(self, a, axis=None):
         return jnp.argmin(a, axis=axis)
