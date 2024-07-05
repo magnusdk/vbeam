@@ -58,24 +58,24 @@ def distance(point1: np.ndarray, point2: Optional[np.ndarray] = None):
     return np.sqrt(np.sum(diff**2, axis=-1))
 
 
-def rotate(
-    point: np.ndarray, radians: float, anchor: Optional[np.ndarray] = None
-) -> np.ndarray:
-    """Rotate a point around an anchor point."""
-    if anchor is None:
-        anchor = np.array([0, 0])
-    return (
-        np.array(
-            [
-                np.cos(radians) * (point[0] - anchor[0])
-                - np.sin(radians) * (point[1] - anchor[1]),
-                np.sin(radians) * (point[0] - anchor[0])
-                + np.cos(radians) * (point[1] - anchor[1]),
-            ]
-        )
-        + anchor
+def rotate(point: np.ndarray, theta: float, phi: float) -> np.ndarray:
+    # Define the rotation matrices
+    rotation_matrix_theta = np.array(
+        [
+            [np.cos(theta), 0, np.sin(theta)],
+            [0, 1, 0],
+            [-np.sin(theta), 0, np.cos(theta)],
+        ]
     )
-
+    rotation_matrix_phi = np.array(
+        [
+            [np.cos(phi), -np.sin(phi), 0],
+            [np.sin(phi), np.cos(phi), 0],
+            [0, 0, 1],
+        ]
+    )
+    # Rotate the point
+    return rotation_matrix_theta @ rotation_matrix_phi @ point
 
 ####
 # Curve classes
