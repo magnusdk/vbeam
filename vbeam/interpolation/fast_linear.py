@@ -97,6 +97,7 @@ class FastInterpLinspace(InterpolationSpace1D):
         depth_axis: int = 1,
         *,  # Remaining args must be passed by name (to avoid confusion)
         padding: float = 0.0,
+        edge_handling: str = "Value",
     ) -> np.ndarray:
         # Ensure that the axes are positive numbers
         azimuth_axis = ensure_positive_index(z.ndim, azimuth_axis)
@@ -123,11 +124,16 @@ class FastInterpLinspace(InterpolationSpace1D):
         px1, px2, py1, py2 = [broadcastable(p) for p in [px1, px2, py1, py2]]
         bounds_flag_x = broadcastable(bounds_flag_x)
         bounds_flag_y = broadcastable(bounds_flag_y)
-
+        
         v0 = z[clipped_xi1, clipped_yi1] * px1 + z[clipped_xi2, clipped_yi1] * px2
         v1 = z[clipped_xi1, clipped_yi2] * px1 + z[clipped_xi2, clipped_yi2] * px2
         v = v0 * py1 + v1 * py2
-        v = np.where(np.logical_or(bounds_flag_x != 0, bounds_flag_y != 0), padding, v)
+        if edge_handling=="Value":
+            v = np.where(np.logical_or(bounds_flag_x != 0, bounds_flag_y != 0), padding, v)
+        elif edge_handling=="Nearest":
+            ...
+        else:
+            raise ValueError("Only Value and Nearest edge handling is implemented")
 
         # Swap axes back to their original positions
         if depth_axis == 0 and azimuth_axis == 1:
