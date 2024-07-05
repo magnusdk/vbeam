@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Tuple, Union
 
 from vbeam.fastmath import numpy as np
 from vbeam.interpolation import FastInterpLinspace
@@ -17,10 +17,22 @@ def normalized_decibels(data: np.ndarray):
     return data_db - data_db.max()
 
 
+def _upsampling_indices(n: int, data_size: int) -> np.ndarray:
+    """Return the sampling indices of data with size data_size after upsampling by n.
+
+    The formula is a bit complicated because it is as general as possible. Check out
+    the notebook `docs/tutorials/postprocess/upsampling.ipynb` for some visualizations.
+    """
+    is_even = n % 2 == 0
+    is_odd = not is_even
+    d = (n // 2 + is_odd) * 2
+    return np.arange(n * data_size - d + is_odd) / n + (is_even + d - n) / (2 * n)
+
+
 def upsample_by_interpolation(
     data: np.ndarray,
-    n: Union[int, tuple],
-    axis: Union[int, tuple, None] = None,
+    n: int,
+    axis: Union[int, Tuple[int, ...]] = 0,
 ) -> np.ndarray:
     """Upsample the data along the given axes. Multiple axes may be given."""
     # No axis has been given: upsample all axes
@@ -37,7 +49,7 @@ def upsample_by_interpolation(
         return data  # ...and return the data that has been upsampled along all axes
 
     # Only one axis has been given: upsample that axis
-    sample_indices = np.arange(n * data.shape[axis]) / n - (1 / (2 * n))
+    sample_indices = _upsampling_indices(n, data.shape[axis])
     data = np.swapaxes(data, axis, 0)
     interpolator = FastInterpLinspace(0, 1, data.shape[0])
     interpolated_data = interpolator.interp1d(

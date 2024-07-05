@@ -1,16 +1,26 @@
 import warnings
 from dataclasses import dataclass
-from typing import Callable, Dict, Literal, Optional, Sequence, Union
+from typing import Callable, Dict, Optional, Sequence, Union
 
 from spekk import Spec, trees
 from spekk.util.slicing import IndicesT, slice_data, slice_spec
 
+from vbeam.apodization.plotting import plot_apodization
 from vbeam.apodization.util import get_apodization_values
-from vbeam.core import SignalForPointData
+from vbeam.core import (
+    Apodization,
+    ReflectedWavefront,
+    SignalForPointData,
+    TransmittedWavefront,
+)
 from vbeam.fastmath import numpy as np
 from vbeam.scan import Scan
 from vbeam.scan.advanced import ExtraDimsScanMixin
 from vbeam.util.transformations import *
+from vbeam.wavefront.plotting import (
+    plot_reflected_wavefront,
+    plot_transmitted_wavefront,
+)
 
 
 @dataclass
@@ -41,9 +51,25 @@ class SignalForPointSetup(SignalForPointData):
 updating the scan instead."
             )
         if name == "scan":
-            if self.point_position is not None:
-                warnings.warn("point_position will be overwritten by the scan.")
+            # If user is setting scan to None then that's OK. Otherwise:
+            if value is not None:
+                if self.point_position is not None:
+                    warnings.warn("point_position will be overwritten by the scan.")
 
+                # Try to automatically convert pyuff_ustb Scan to vbeam Scan
+                try:
+                    import pyuff_ustb
+
+                    from vbeam.data_importers import parse_pyuff_scan
+
+                    if isinstance(value, pyuff_ustb.Scan):
+                        value = parse_pyuff_scan(value)
+                except ModuleNotFoundError:
+                    pass
+
+                # Validate value
+                if not isinstance(value, Scan):
+                    raise ValueError(f"Scan must be a Scan object, got {type(value)}")
         return super().__setattr__(name, value)
 
     def __getattribute__(self, name: str):
@@ -116,4 +142,96 @@ updating the scan instead."
             self.wave_data,
             self.spec,
             dimensions,
+        )
+
+    def plot_apodization(
+        self,
+        apodization: Optional[Apodization] = None,
+        apodization_spec: Optional[Spec] = None,
+        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        average: bool = True,
+        jit: bool = True,
+        ax=None,  # : Optional[matplotlib.pyplot.Axes]
+    ):
+        """Plot the apodization values using matplotlib.
+
+        To plot just a single transmit, slice the setup object before calling, i.e.:
+        `setup.slice["transmits", 20].plot_apodization()`. This also works for other
+        dimensions, like "receivers", "frames", etc.
+
+        Args:
+            apodization: The apodization to plot. Defaults to the apodization set on
+                this :class:`SignalForPointSetup` object.
+            apodization_spec: Optional spec of the provided apodization (in case the
+                apodization changes over a dimension). Defaults to None.
+            postprocess: Process the apodization values further before plotting, for
+                example to scan convert.
+            average: Average the apodization values across dimensions instead of
+                summing. Can for example average over receivers and/or transmits.
+            jit: If True, the calculation of apodzation values is JIT-compiled (if the
+                backend supports it).
+            ax: The axis used to plot. Defaults to `matplotlib.pyplot.gca()`.
+        """
+        spec = self.spec.at["point_position"].set(["x", "z"])
+        if apodization is None:
+            apodization = self.apodization
+        elif apodization_spec is not None:
+            spec = spec.at["apodization"].set(apodization_spec)
+
+        return plot_apodization(
+            apodization,
+            self.sender,
+            self.scan.get_points(flatten=False),
+            self.receiver,
+            self.wave_data,
+            spec,
+            postprocess,
+            average,
+            jit,
+            ax,
+        )
+
+    def plot_transmitted_wavefront(
+        self,
+        wavefront: Optional[TransmittedWavefront] = None,
+        wavefront_spec: Optional[Spec] = None,
+        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        ax=None,  # : Optional[matplotlib.pyplot.Axes]
+    ):
+        spec = self.spec.at["point_position"].set(["x", "z"])
+        if wavefront is None:
+            wavefront = self.transmitted_wavefront
+        elif wavefront_spec is not None:
+            spec = spec.at["transmitted_wavefront"].set(wavefront_spec)
+
+        return plot_transmitted_wavefront(
+            wavefront,
+            self.sender,
+            self.scan.get_points(flatten=False),
+            self.wave_data,
+            spec,
+            postprocess,
+            ax,
+        )
+
+    def plot_reflected_wavefront(
+        self,
+        wavefront: Optional[ReflectedWavefront] = None,
+        wavefront_spec: Optional[Spec] = None,
+        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        ax=None,  # : Optional[matplotlib.pyplot.Axes]
+    ):
+        spec = self.spec.at["point_position"].set(["x", "z"])
+        if wavefront is None:
+            wavefront = self.reflected_wavefront
+        elif wavefront_spec is not None:
+            spec = spec.at["reflected_wavefront"].set(wavefront_spec)
+
+        return plot_reflected_wavefront(
+            wavefront,
+            self.scan.get_points(flatten=False),
+            self.receiver,
+            spec,
+            postprocess,
+            ax,
         )

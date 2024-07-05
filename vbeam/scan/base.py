@@ -33,13 +33,23 @@ class Scan(ABC):
 
     @property
     @abstractmethod
-    def shape(self) -> Tuple[int, ...]:
-        "Return the shape of the grid of points defined by the scan."
+    def axes(self) -> Tuple[np.ndarray, ...]:
+        """Return the axes of the scan.
+
+        E.g.: if the scan is a sector scan, return the azimuth and depths axes."""
 
     @property
-    @abstractmethod
+    def shape(self) -> Tuple[int, ...]:
+        "Return the shape of the grid of points defined by the scan."
+        return tuple([len(axis) for axis in self.axes])
+
+    @property
     def bounds(self) -> np.ndarray:
         "Return the bounds of the axes of the scan."
+        bounds = []
+        for ax in self.axes:
+            bounds += [ax[0], ax[-1]]
+        return tuple(bounds)
 
     @property
     @abstractmethod

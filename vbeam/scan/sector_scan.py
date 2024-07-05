@@ -3,20 +3,10 @@ from typing import Callable, Literal, Optional, Tuple, Union, overload
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.scan.base import CoordinateSystem, Scan
-from vbeam.scan.util import parse_axes
+from vbeam.scan.util import parse_axes, polar_bounds_to_cartesian_bounds, scan_convert
+from vbeam.util import _deprecations
 from vbeam.util.arrays import grid
 from vbeam.util.coordinate_systems import as_cartesian
-
-
-def _ensure_min_and_max(min_x: float, max_x: float) -> Tuple[float, float]:
-    "Swap ``min_x`` and ``max_x`` if ``min_x`` > ``max_x``."
-    return tuple(
-        np.where(
-            min_x > max_x,
-            np.array([max_x, min_x]),
-            np.array([min_x, max_x]),
-        )
-    )
 
 
 @traceable_dataclass(("azimuths", "elevations", "depths", "apex"))
@@ -99,20 +89,11 @@ class SectorScan(Scan):
         )
 
     @property
-    def shape(self) -> Tuple[int, ...]:
-        return (
-            (len(self.azimuths), len(self.elevations), len(self.depths))
-            if self.elevations is not None
-            else (len(self.azimuths), len(self.depths))
-        )
-
-    @property
-    def bounds(self):
-        bounds = []
-        for axis in [self.azimuths, self.elevations, self.depths]:
-            if axis is not None:
-                bounds += [axis[0], axis[-1]]
-        return tuple(bounds)
+    def axes(self) -> Tuple[np.ndarray, ...]:
+        if self.elevations is not None:
+            return self.azimuths, self.elevations, self.depths
+        else:
+            return self.azimuths, self.depths
 
     @property
     def cartesian_bounds(self):
@@ -123,24 +104,20 @@ class SectorScan(Scan):
                 "Cartesian bounds are not implemented for 3D scans yet.",
                 "Please create an issue on Github if this is something you need.",
             )
-        min_az, max_az, min_d, max_d = self.bounds
-        # Ensure that the min and max are actually min and max
-        min_az, max_az = _ensure_min_and_max(min_az, max_az)
-        min_d, max_d = _ensure_min_and_max(min_d, max_d)
+        return polar_bounds_to_cartesian_bounds(self.bounds)
 
-        # We get the bounds by calculating the bound for each edge of the bounding box
-        # individually. _right_bound gets the right-most x coordinate of the bounding
-        # box and we can get the other sides by rotating the azimuth bounds by 90, 180,
-        # and 270 degrees. Because in ultrasound, "straight down" is at 0 degrees, we
-        # have to rotate everything by an additional 90 degrees.
-        quarter_turn = np.pi / 2
-        half_turn = np.pi
-        # Return (left, right, top, bottom)
-        return (
-            -_right_bound(min_az + quarter_turn, max_az + quarter_turn, min_d, max_d),
-            _right_bound(min_az - quarter_turn, max_az - quarter_turn, min_d, max_d),
-            -_right_bound(min_az + half_turn, max_az + half_turn, min_d, max_d),
-            _right_bound(min_az, max_az, min_d, max_d),
+    @_deprecations.renamed_kwargs("1.0.5", imaged_points="image")
+    def scan_convert(
+        self,
+        image: np.ndarray,
+        azimuth_axis: int = -2,
+        depth_axis: int = -1,
+        *,  # Remaining args must be passed by name (to avoid confusion)
+        shape: Optional[Tuple[int, int]] = None,
+        padding: Optional[np.ndarray] = 0.0,
+    ):
+        return scan_convert(
+            image, self, azimuth_axis, depth_axis, shape=shape, padding=padding
         )
 
     @property
@@ -151,54 +128,12 @@ class SectorScan(Scan):
         return f"SectorScan(<shape={self.shape}>, apex={self.apex})"
 
 
-def _right_bound(
-    min_azimuth: float,
-    max_azimuth: float,
-    min_depth: float,
-    max_depth: float,
-) -> float:
-    """For the two arcs defined by the azimuth bounds (one for ``min_depth`` and one
-    for ``max_depth``), find the right-most x coordinate of the two arcs.
-
-    This will be the right-edge of a bounding box that encompasses the arcs. You can
-    get the other edges of the bounding box by rotating the azimuth bounds by 90, 180,
-    and 270 degrees.
-
-    See ``docs/tutorials/scan/sector_scan_bounds.ipynb`` for a visualization of the
-    bounding box of the arcs."""
-    cos_min, cos_max = np.cos(min_azimuth), np.cos(max_azimuth)
-    sin_min, sin_max = np.sin(min_azimuth), np.sin(max_azimuth)
-
-    # Get the maximum x coordinate of the corners of both the inner and outer arc.
-    max_corner_x = np.max(
-        np.array(
-            [
-                cos_min * min_depth,  # Inner arc
-                cos_max * min_depth,  # Inner arc
-                cos_min * max_depth,  # Outer arc
-                cos_max * max_depth,  # Outer arc
-            ]
-        )
-    )
-
-    # The right-most part of the arcs may either be ``max_corner_x``, or it may be on
-    # the right-most *tangent* of the outer arc. We have to make some additional checks
-    # to make this work. The code for this is a bit terse, so just trust the generative
-    # unit tests for :attr:`SectorScan.cartesian_bounds` :)
-    return np.where(
-        (max_azimuth - min_azimuth) < np.pi,
-        np.where(np.logical_and(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
-        np.where(np.logical_or(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
-    )
-
-
 @overload
 def sector_scan(
     azimuths: np.ndarray,
     depths: np.ndarray,
     apex: Union[np.ndarray, float] = 0.0,
-) -> SectorScan:
-    ...  # 2D scan
+) -> SectorScan: ...  # 2D scan
 
 
 @overload
@@ -207,8 +142,7 @@ def sector_scan(
     elevations: np.ndarray,
     depths: np.ndarray,
     apex: Union[np.ndarray, float] = 0.0,
-) -> SectorScan:
-    ...  # 3D scan
+) -> SectorScan: ...  # 3D scan
 
 
 def sector_scan(*axes: np.ndarray, apex: Union[np.ndarray, float] = 0.0) -> SectorScan:

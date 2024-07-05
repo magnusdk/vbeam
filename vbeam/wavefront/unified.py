@@ -1,3 +1,4 @@
+from dataclasses import field
 from typing import Tuple
 
 from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
@@ -14,7 +15,9 @@ class UnifiedWavefront(TransmittedWavefront):
     https://doi.org/10.1109/tmi.2015.2456982"""
 
     array_bounds: Tuple[np.ndarray, np.ndarray]
-    base_wavefront: TransmittedWavefront = FocusedSphericalWavefront()
+    base_wavefront: TransmittedWavefront = field(
+        default_factory=FocusedSphericalWavefront
+    )
 
     def __call__(
         self,
@@ -26,8 +29,12 @@ class UnifiedWavefront(TransmittedWavefront):
         array_left, array_right = self.array_bounds
         line_left = Line.passing_through(array_left, wave_data.source)
         line_right = Line.passing_through(array_right, wave_data.source)
-        scanline = Line.passing_through(sender.position, wave_data.source)
-        intersection_line = Line.from_anchor_and_angle(point_position, scanline.angle)
+        midline = Line.from_anchor_and_angle(
+            wave_data.source,
+            # We subtract pi/2 because the angle is measured in reference to the x-axis
+            (line_left.angle + line_right.angle) / 2 - np.pi / 2,
+        )
+        intersection_line = Line.from_anchor_and_angle(point_position, midline.angle)
 
         # The points where the scanline intersects the region boundaries
         A = line_left.intersection(intersection_line)

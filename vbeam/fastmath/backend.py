@@ -106,6 +106,22 @@ class Backend:
     def max(self, a, axis=None):
         raise NotImplementedError
 
+    @wraps(np.argmin)
+    def argmin(self, a, axis=None):
+        raise NotImplementedError
+
+    @wraps(np.argmax)
+    def argmax(self, a, axis=None):
+        raise NotImplementedError
+
+    @wraps(np.minimum)
+    def minimum(self, a, b):
+        raise NotImplementedError
+
+    @wraps(np.maximum)
+    def maximum(self, a, b):
+        raise NotImplementedError
+
     @wraps(np.sum)
     def sum(self, a, axis=None):
         raise NotImplementedError
@@ -118,12 +134,20 @@ class Backend:
     def mean(self, a, axis=None):
         raise NotImplementedError
 
+    @wraps(np.var)
+    def var(self, a, axis=None):
+        raise NotImplementedError
+
     @wraps(np.cumsum)
     def cumsum(self, a, axis=None):
         raise NotImplementedError
 
     @wraps(np.cross)
     def cross(self, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
+        raise NotImplementedError
+
+    @wraps(np.nansum)
+    def nansum(self, a, axis=None):
         raise NotImplementedError
 
     @wraps(np.histogram)
@@ -182,6 +206,10 @@ class Backend:
     def floor(self, x):
         raise NotImplementedError
 
+    @wraps(np.modf)
+    def modf(self, x):
+        raise NotImplementedError
+
     @wraps(np.round)
     def round(self, x):
         raise NotImplementedError
@@ -220,6 +248,10 @@ class Backend:
 
     @wraps(np.interp)
     def interp(self, x, xp, fp, left=None, right=None, period=None):
+        raise NotImplementedError
+
+    @wraps(np.shape)
+    def shape(self, x):
         raise NotImplementedError
 
     class add:

@@ -14,19 +14,19 @@ def rtb_apodization(
     array_right: np.ndarray,
     focus_point: np.ndarray,
     minimum_aperture: float,
+    maximum_aperture: Optional[float] = None,
     window: Optional[Window] = None,
 ):
     """Focused apodization used for retrospective transmit beamforming (RTB).
 
-    A focused apodization has two main parts:
+    A focused apodization has three main parts:
     - An hourglass shape constructed by the area between two lines drawn from either
       side of the array and passing through the focus point (line_left and line_right).
-    - A line with a thickness given by minimum_aperture that passes through the focus point,
-      to account for the fact that the hourglass apodization is infinitely narrow at the
-      focus point.
-
-    A point that lies both outside of the hourglass and outside of the thickness of the
-    line is weighted by 0.
+    - A line with a thickness given by minimum_aperture that passes through the focus 
+      point, to account for the fact that the hourglass apodization is infinitely 
+      narrow at the focus point.
+    - A line with a thickness given by maximum_aperture that passes through the focus 
+      point that sets the maximum width of the hourglass apodization.
     """
     # Ensure that all points are 2D (only 2D is supported)
     point = ensure_2d_point(point)
@@ -42,11 +42,19 @@ def rtb_apodization(
 
     # Short circuit if no window is given (same as giving a Rectangular window)
     if window is None:
-        return np.logical_or(
-            # Hourglass apodization
-            line_left.signed_distance(point) * line_right.signed_distance(point) <= 0,
-            # Middle line apodization
-            np.abs(line_mid.signed_distance(point)) < minimum_aperture,
+        is_within_hourglass = (
+            line_left.signed_distance(point) * line_right.signed_distance(point) <= 0
+        )
+        is_within_min_aperture = (
+            np.abs(line_mid.signed_distance(point)) < minimum_aperture
+        )
+        is_within_max_aperture = (
+            maximum_aperture is None
+            or np.abs(line_mid.signed_distance(point)) < maximum_aperture
+        )
+        return np.logical_and(
+            np.logical_or(is_within_hourglass, is_within_min_aperture),
+            is_within_max_aperture,
         )
 
     # Calculate distances
@@ -56,24 +64,26 @@ def rtb_apodization(
     total_distance = distance(intersection_left, intersection_right)
     distance_mid = np.abs(line_mid.signed_distance(point))
 
-    # Calculate apodization
-    p = distance_left / total_distance  # Window parameter
+    # Calculate apodizations
     valid = line_left.signed_distance(point) * line_right.signed_distance(point) <= 0
-    hourglass_apodization = window(np.abs(p - 0.5)) * valid
-    mid_line_apodization = window(distance_mid / minimum_aperture)
+    hourglass_apodization = window(np.abs(distance_left / total_distance - 0.5)) * valid
+    minimum_aperture_apodization = window(distance_mid / minimum_aperture)
 
-    # Take the max of the two apodizations
-    return np.where(
-        hourglass_apodization >= mid_line_apodization,
-        hourglass_apodization,
-        mid_line_apodization,
-    )
+    # Combine hourglass, minimum aperture, and maximum aperture (assumes window is
+    # monotonically decreasing from 0 to 0.5).
+    value = np.maximum(hourglass_apodization, minimum_aperture_apodization)
+    if maximum_aperture is not None:
+        value = np.minimum(value, window(distance_mid / maximum_aperture))
+    return value
 
 
-@traceable_dataclass((("array_bounds", "minimum_aperture", "window")))
+@traceable_dataclass(
+    (("array_bounds", "minimum_aperture", "maximum_aperture", "window"))
+)
 class RTBApodization(Apodization):
     array_bounds: Tuple[np.ndarray, np.ndarray]
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
+    maximum_aperture: Optional[float] = None
     window: Optional[Window] = None
 
     def __call__(
@@ -89,5 +99,6 @@ class RTBApodization(Apodization):
             self.array_bounds[1],
             wave_data.source,
             self.minimum_aperture,
+            self.maximum_aperture,
             self.window,
         )

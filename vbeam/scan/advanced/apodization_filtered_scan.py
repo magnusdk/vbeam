@@ -185,7 +185,7 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
             self.wave_data,
             self.spec,
             self.dimensions,
-            average_overlap=True,
+            average=True,
         )
 
         points = self.base_scan.get_points()
