@@ -103,8 +103,14 @@ class TensorflowBackend(Backend):
     def min(self, a, axis=None):
         return tnp.min(a, axis=axis)
 
+    def minimum(self, a, b):
+        return tnp.minimum(a, b)
+
     def max(self, a, axis=None):
         return tnp.max(a, axis=axis)
+
+    def maximum(self, a, b):
+        return tnp.maximum(a, b)
 
     def argmin(self, a, axis=None):
         return tnp.argmin(a, axis=axis)
