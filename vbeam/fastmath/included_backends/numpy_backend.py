@@ -96,6 +96,15 @@ class NumpyBackend(Backend):
 
     def mean(self, a, axis=None):
         return np.mean(a, axis=axis)
+    
+    def median(self, a, axis=None):
+        return np.median(a, axis=axis)
+
+    def deg2rad(self, a):
+        return np.deg2rad(a)
+
+    def diff(self, a, axis=-1):
+        return np.diff(a, axis=axis)
 
     def var(self, a, axis=None):
         return np.var(a, axis=axis)
@@ -114,6 +123,9 @@ class NumpyBackend(Backend):
 
     def array(self, x, dtype=None):
         return np.array(x, dtype=dtype)
+    
+    def flip(self, a, axis=None):
+        return np.flip(a, axis=axis)
 
     def transpose(self, a, axes=None):
         return np.transpose(a, axes=axes)
