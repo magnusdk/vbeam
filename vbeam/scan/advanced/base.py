@@ -37,6 +37,10 @@ class WrappedScan(Scan, ABC):
         return _wrap_with_new_base_scan(self.base_scan.resize(**kwargs))
 
     @property
+    def axes(self) -> Tuple[np.ndarray, ...]:
+        return self.base_scan.axes
+
+    @property
     def shape(self) -> Tuple[int, ...]:
         return self.base_scan.shape
 

@@ -29,8 +29,12 @@ class UnifiedWavefront(TransmittedWavefront):
         array_left, array_right = self.array_bounds
         line_left = Line.passing_through(array_left, wave_data.source)
         line_right = Line.passing_through(array_right, wave_data.source)
-        scanline = Line.passing_through(sender.position, wave_data.source)
-        intersection_line = Line.from_anchor_and_angle(point_position, scanline.angle)
+        midline = Line.from_anchor_and_angle(
+            wave_data.source,
+            # We subtract pi/2 because the angle is measured in reference to the x-axis
+            (line_left.angle + line_right.angle) / 2 - np.pi / 2,
+        )
+        intersection_line = Line.from_anchor_and_angle(point_position, midline.angle)
 
         # The points where the scanline intersects the region boundaries
         A = line_left.intersection(intersection_line)

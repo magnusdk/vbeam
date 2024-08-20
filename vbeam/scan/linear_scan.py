@@ -58,20 +58,11 @@ class LinearScan(Scan):
         )
 
     @property
-    def shape(self) -> Tuple[int, ...]:
-        return (
-            (len(self.x), len(self.y), len(self.z))
-            if self.y is not None
-            else (len(self.x), len(self.z))
-        )
-
-    @property
-    def bounds(self):
-        bounds = []
-        for axis in [self.x, self.y, self.z]:
-            if axis is not None:
-                bounds += [axis[0], axis[-1]]
-        return tuple(bounds)
+    def axes(self) -> Tuple[np.ndarray, ...]:
+        if self.y is not None:
+            return self.x, self.y, self.z
+        else:
+            return self.x, self.z
 
     @property
     def cartesian_bounds(self):

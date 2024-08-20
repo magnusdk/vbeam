@@ -70,6 +70,18 @@ class NumpyBackend(Backend):
     def max(self, a, axis=None):
         return np.max(a, axis=axis)
 
+    def argmin(self, a, axis=None):
+        return np.argmin(a, axis=axis)
+
+    def argmax(self, a, axis=None):
+        return np.argmax(a, axis=axis)
+
+    def minimum(self, a, b):
+        return np.minimum(a, b)
+
+    def maximum(self, a, b):
+        return np.maximum(a, b)
+
     def sum(self, a, axis=None):
         return np.sum(a, axis=axis)
 
@@ -79,11 +91,17 @@ class NumpyBackend(Backend):
     def mean(self, a, axis=None):
         return np.mean(a, axis=axis)
 
+    def var(self, a, axis=None):
+        return np.var(a, axis=axis)
+
     def cumsum(self, a, axis=None):
         return np.cumsum(a, axis=axis)
 
     def cross(self, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
         return np.cross(a, b, axisa=axisa, axisb=axisb, axisc=axisc, axis=axis)
+
+    def nansum(self, a, axis=None):
+        return np.nansum(a, axis=axis)
 
     def histogram(self, a, bins=10, weights=None):
         return np.histogram(a, bins=bins, weights=weights)
@@ -127,6 +145,9 @@ class NumpyBackend(Backend):
     def floor(self, x):
         return np.floor(x)
 
+    def modf(self, x):
+        return np.modf(x)
+
     def round(self, x):
         return np.round(x)
 
@@ -159,6 +180,9 @@ class NumpyBackend(Backend):
 
     def gather(self, a, indices):
         return a[indices]
+
+    def shape(self, x):
+        return np.shape(x)
 
     class add:
         @staticmethod
