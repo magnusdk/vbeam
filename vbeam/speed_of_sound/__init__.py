@@ -67,7 +67,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
                 self.x_axis,
                 self.z_axis,
                 self.values,
-                padding=self.default_speed_of_sound,
+                default_value=self.default_speed_of_sound,
             ),
             np.arange(self.n_samples),
             np.array(0.0, dtype=self.values.dtype),
@@ -119,7 +119,7 @@ class DistributedGlobalSpeedOfSound(SpeedOfSound):
             xp=self.x_axis,
             yp=self.z_axis,
             z=self.speed_of_sound_map,
-            padding=self.default_speed_of_sound,
             edge_handling="Nearest",
+            default_value=self.default_speed_of_sound,
         )
         return interpolated_speed_of_sound_samples
