@@ -53,9 +53,9 @@ def intersect_circle_line(
 # Some helper functions
 
 
-def distance(point1: np.ndarray, point2: Optional[np.ndarray] = None):
+def distance(point1: np.ndarray, point2: Optional[np.ndarray] = None, axis: int = -1):
     diff = point1 if point2 is None else point2 - point1
-    return np.sqrt(np.sum(diff**2, axis=-1))
+    return np.sqrt(np.sum(diff**2, axis=axis))
 
 
 def rotate(point: np.ndarray, theta: float, phi: float) -> np.ndarray:
