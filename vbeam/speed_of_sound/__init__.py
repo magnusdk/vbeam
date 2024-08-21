@@ -67,7 +67,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
                 self.x_axis,
                 self.z_axis,
                 self.values,
-                padding=self.default_speed_of_sound,
+                default_value=self.default_speed_of_sound,
             ),
             np.arange(self.n_samples),
             np.array(0.0, dtype=self.values.dtype),
@@ -97,3 +97,29 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
             n_samples=n_samples,
             default_speed_of_sound=default_speed_of_sound,
         )
+
+
+@traceable_dataclass(data_fields=("speed_of_sound_map", "x_axis", "z_axis", "default_speed_of_sound"))
+class DistributedGlobalSpeedOfSound(SpeedOfSound):
+    speed_of_sound_map: np.ndarray
+    x_axis: FastInterpLinspace
+    z_axis: FastInterpLinspace
+    default_speed_of_sound: float = 1540.0
+
+    def average(
+        self,
+        sender_position: np.ndarray,
+        point_position: np.ndarray,
+        receiver_position: np.ndarray,
+    ) -> float:
+        x, _, z = point_position[...,0], point_position[...,1], point_position[...,2]
+        interpolated_speed_of_sound_samples = FastInterpLinspace.interp2d(
+            x=x,
+            y=z,
+            xp=self.x_axis,
+            yp=self.z_axis,
+            z=self.speed_of_sound_map,
+            edge_handling="Nearest",
+            default_value=self.default_speed_of_sound,
+        )
+        return interpolated_speed_of_sound_samples

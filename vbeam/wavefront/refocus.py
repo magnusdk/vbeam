@@ -4,7 +4,7 @@ from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import distance
 
 
-@traceable_dataclass(("base_wavefront", "base_sender"))
+@traceable_dataclass(("base_wavefront", "base_sender", "compensation_scalar"))
 class REFoCUSWavefront(TransmittedWavefront):
     """A time-domain REFoCUS wavefront model.
 
@@ -17,6 +17,7 @@ class REFoCUSWavefront(TransmittedWavefront):
 
     base_wavefront: TransmittedWavefront
     base_sender: ElementGeometry
+    compensation_scalar: float = 1.0
 
     def __call__(
         self,
@@ -34,4 +35,4 @@ class REFoCUSWavefront(TransmittedWavefront):
         focusing_compensation = self.base_wavefront(
             self.base_sender, sender.position, wave_data
         )
-        return distance(sender.position, point_position) + focusing_compensation
+        return distance(sender.position, point_position) + focusing_compensation * self.compensation_scalar

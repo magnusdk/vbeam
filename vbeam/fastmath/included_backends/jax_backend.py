@@ -65,9 +65,15 @@ class JaxBackend(Backend):
 
     def min(self, a, axis=None):
         return jnp.min(a, axis=axis)
+    
+    def minimum(self, a, b):
+        return jnp.minimum(a, b)
 
     def max(self, a, axis=None):
         return jnp.max(a, axis=axis)
+    
+    def maximum(self, a, b):
+        return jnp.maximum(a, b)
 
     def argmin(self, a, axis=None):
         return jnp.argmin(a, axis=axis)
@@ -90,6 +96,15 @@ class JaxBackend(Backend):
     def mean(self, a, axis=None):
         return jnp.mean(a, axis=axis)
 
+    def median(self, a, axis=None):
+        return jnp.median(a, axis=axis)
+
+    def deg2rad(self, a):
+        return jnp.deg2rad(a)
+
+    def diff(self, a, axis=-1):
+        return jnp.diff(a, axis=axis)
+
     def var(self, a, axis=None):
         return jnp.var(a, axis=axis)
 
@@ -107,6 +122,9 @@ class JaxBackend(Backend):
 
     def array(self, x, dtype=None):
         return jnp.array(x, dtype=dtype)
+
+    def flip(self, a, axis=None):
+        return jnp.flip(a, axis=axis)
 
     def transpose(self, a, axes=None):
         return jnp.transpose(a, axes=axes)
