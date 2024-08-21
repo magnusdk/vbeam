@@ -101,17 +101,9 @@ class Backend:
     @wraps(np.min)
     def min(self, a, axis=None):
         raise NotImplementedError
-    
-    @wraps(np.minimum)
-    def minimum(self, a, b):
-        raise NotImplementedError
 
     @wraps(np.max)
     def max(self, a, axis=None):
-        raise NotImplementedError
-    
-    @wraps(np.maximum)
-    def maximum(self, a, b):
         raise NotImplementedError
 
     @wraps(np.argmin)
@@ -142,18 +134,6 @@ class Backend:
     def mean(self, a, axis=None):
         raise NotImplementedError
 
-    @wraps(np.median)
-    def median(self, a, axis=None):
-        raise NotImplementedError
-
-    @wraps(np.deg2rad)
-    def deg2rad(self, a):
-        raise NotImplementedError
-
-    @wraps(np.diff)
-    def diff(self, a, axis=None):
-        raise NotImplementedError
-
     @wraps(np.var)
     def var(self, a, axis=None):
         raise NotImplementedError
@@ -176,10 +156,6 @@ class Backend:
 
     @wraps(np.array)
     def array(self, x, dtype=None):
-        raise NotImplementedError
-
-    @wraps(np.flip)
-    def flip(self, a, axis=None):
         raise NotImplementedError
 
     @wraps(np.transpose)

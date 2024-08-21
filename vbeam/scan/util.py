@@ -99,7 +99,7 @@ def scan_convert(
     depth_axis: int = -1,
     *,  # Remaining args must be passed by name (to avoid confusion)
     shape: Optional[Tuple[int, int]] = None,
-    default_value: Optional[np.ndarray] = 0.0,
+    padding: Optional[np.ndarray] = 0.0,
 ):
     from vbeam.scan import CoordinateSystem, Scan
 
@@ -133,7 +133,7 @@ def scan_convert(
         image,
         azimuth_axis,
         depth_axis,
-        default_value=default_value,
+        padding=padding,
     )
 
 

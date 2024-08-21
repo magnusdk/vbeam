@@ -114,10 +114,10 @@ class SectorScan(Scan):
         depth_axis: int = -1,
         *,  # Remaining args must be passed by name (to avoid confusion)
         shape: Optional[Tuple[int, int]] = None,
-        default_value: Optional[np.ndarray] = 0.0,
+        padding: Optional[np.ndarray] = 0.0,
     ):
         return scan_convert(
-            image, self, azimuth_axis, depth_axis, shape=shape, default_value=default_value
+            image, self, azimuth_axis, depth_axis, shape=shape, padding=padding
         )
 
     @property
