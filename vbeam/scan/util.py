@@ -100,6 +100,7 @@ def scan_convert(
     *,  # Remaining args must be passed by name (to avoid confusion)
     shape: Optional[Tuple[int, int]] = None,
     default_value: Optional[np.ndarray] = 0.0,
+    edge_handling: str = "Value",
 ):
     from vbeam.scan import CoordinateSystem, Scan
 
@@ -134,7 +135,8 @@ def scan_convert(
         azimuth_axis,
         depth_axis,
         default_value=default_value,
-    )
+        edge_handling=edge_handling,
+    ),x_axis,z_axis
 
 
 def parse_axes(xyz):
