@@ -62,6 +62,14 @@ class Backend:
     def log10(self, x):
         raise NotImplementedError
 
+    @wraps(np.conj)
+    def conj(self, x):
+        raise NotImplementedError
+    
+    @wraps(np.angle)
+    def angle(self, x):
+        raise NotImplementedError
+
     @wraps(np.sin)
     def sin(self, x):
         raise NotImplementedError
@@ -131,7 +139,7 @@ class Backend:
         raise NotImplementedError
 
     @wraps(np.sum)
-    def sum(self, a, axis=None):
+    def sum(self, a, axis=None,keepdims=False):
         raise NotImplementedError
 
     @wraps(np.prod)
@@ -197,6 +205,10 @@ class Backend:
     @wraps(np.stack)
     def stack(self, arrays, axis=0):
         raise NotImplementedError
+    
+    @wraps(np.repeat)
+    def repeat(self, a, repeats, axis=None):
+        raise NotImplementedError
 
     @wraps(np.tile)
     def tile(self, A, reps):
@@ -261,6 +273,10 @@ class Backend:
     @wraps(np.squeeze)
     def squeeze(self, a, axis=None):
         raise NotImplementedError
+    
+    @wraps(np.reshape)
+    def reshape(self, a, shape=None):
+        raise NotImplementedError
 
     @wraps(np.ravel)
     def ravel(self, a):
@@ -276,6 +292,22 @@ class Backend:
 
     @wraps(np.shape)
     def shape(self, x):
+        raise NotImplementedError
+    
+    @wraps(np.hanning)
+    def hanning(self, x):
+        raise NotImplementedError
+    
+    @wraps(np.hamming)
+    def hamming(self, x):
+        raise NotImplementedError
+    
+    @wraps(np.bartlett)
+    def bartlett(self, x):
+        raise NotImplementedError
+    
+    @wraps(np.convolve)
+    def convolve(self, a,v,mode=None):
         raise NotImplementedError
 
     class add:

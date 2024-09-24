@@ -35,7 +35,13 @@ class JaxBackend(Backend):
 
     def log10(self, x):
         return jnp.log10(x)
+    
+    def conj(self, x):
+        return jnp.conj(x)
 
+    def angle(self, x):
+        return jnp.angle(x)
+    
     def sin(self, x):
         return jnp.sin(x)
 
@@ -87,8 +93,8 @@ class JaxBackend(Backend):
     def maximum(self, a, b):
         return jnp.maximum(a, b)
 
-    def sum(self, a, axis=None):
-        return jnp.sum(a, axis=axis)
+    def sum(self, a, axis=None,keepdims=False):
+        return jnp.sum(a, axis=axis,keepdims=keepdims)
 
     def prod(self, a, axis=None):
         return jnp.prod(a, axis=axis)
@@ -137,6 +143,9 @@ class JaxBackend(Backend):
 
     def stack(self, arrays, axis=0):
         return jnp.stack(arrays, axis=axis)
+    
+    def repeat(self, a, repeats, axis=None):
+        return jnp.repeat(a, repeats, axis=axis)
 
     def tile(self, A, reps):
         return jnp.tile(A, reps)
@@ -185,6 +194,9 @@ class JaxBackend(Backend):
 
     def squeeze(self, a, axis=None):
         return jnp.squeeze(a, axis=axis)
+    
+    def reshape(self, a, shape=None):
+        return jnp.reshape(a, shape=shape)
 
     def ravel(self, a):
         return jnp.ravel(a)
@@ -203,6 +215,18 @@ class JaxBackend(Backend):
 
     def shape(self, x):
         return jnp.shape(x)
+    
+    def hanning(self, x):
+        return jnp.hanning(x)
+    
+    def hamming(self, x):
+        return jnp.hamming(x)
+    
+    def bartlett(self, x):
+        return jnp.bartlett(x)
+    
+    def convolve(self,a,v,mode='full'):
+        return jnp.convolve(a,v,mode=mode)
 
     class add:
         @staticmethod

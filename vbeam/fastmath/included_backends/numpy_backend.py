@@ -36,6 +36,12 @@ class NumpyBackend(Backend):
 
     def log10(self, x):
         return np.log10(x)
+    
+    def conj(self, x):
+        return np.conj(x)
+    
+    def angle(self, x):
+        return np.angle(x)
 
     def sin(self, x):
         return np.sin(x)
@@ -88,8 +94,8 @@ class NumpyBackend(Backend):
     def maximum(self, a, b):
         return np.maximum(a, b)
 
-    def sum(self, a, axis=None):
-        return np.sum(a, axis=axis)
+    def sum(self, a, axis=None,keepdims=False):
+        return np.sum(a, axis=axis,keepdims=keepdims)
 
     def prod(self, a, axis=None):
         return np.prod(a, axis=axis)
@@ -138,6 +144,9 @@ class NumpyBackend(Backend):
 
     def stack(self, arrays, axis=0):
         return np.stack(arrays, axis=axis)
+    
+    def repeat(self, a, repeats, axis=None):
+        return np.repeat(a,repeats, axis=axis)
 
     def tile(self, A, reps):
         return np.tile(A, reps)
@@ -187,6 +196,9 @@ class NumpyBackend(Backend):
     def squeeze(self, a, axis=None):
         return np.squeeze(a, axis=axis)
 
+    def reshape(self, a, shape=None):
+        return np.reshape(a, shape=shape)
+
     def ravel(self, a):
         return np.ravel(a)
 
@@ -201,6 +213,18 @@ class NumpyBackend(Backend):
 
     def shape(self, x):
         return np.shape(x)
+    
+    def hanning(self, x):
+        return np.hanning(x)
+    
+    def hamming(self, x):
+        return np.hamming(x)
+    
+    def bartlett(self, x):
+        return np.bartlett(x)
+    
+    def convolve(self,a,v,mode='full'):
+        return np.convolve(a,v,mode=mode)
 
     class add:
         @staticmethod
