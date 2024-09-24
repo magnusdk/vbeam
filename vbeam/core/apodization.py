@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from vbeam.fastmath import numpy as np
 
 from .element_geometry import ElementGeometry
+from .probe_geometry import ProbeGeometry
 from .wave_data import WaveData
 
 
@@ -12,9 +13,10 @@ class Apodization(ABC):
     @abstractmethod
     def __call__(
         self,
-        sender: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: np.ndarray,
+        receiver: np.ndarray,
         point_position: np.ndarray,
-        receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
         """

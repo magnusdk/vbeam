@@ -13,7 +13,7 @@ from vbeam.apodization import (
     RTBApodization,
     TxRxApodization,
 )
-from vbeam.core import ElementGeometry, WaveData
+from vbeam.core import ProbeGeometry, WaveData
 from vbeam.data_importers.setup import SignalForPointSetup
 from vbeam.fastmath import numpy as np
 from vbeam.interpolation import FastInterpLinspace
@@ -100,12 +100,20 @@ def import_pyuff(
     if numpy.abs(modulation_frequency) == 0:
         receiver_signals = np.array(hilbert(receiver_signals), dtype="complex64")
 
-    receivers = ElementGeometry(
-        np.array(channel_data.probe.xyz),
-        np.array(channel_data.probe.theta),
-        np.array(channel_data.probe.phi),
-    )
-    sender = ElementGeometry(np.array([0.0, 0.0, 0.0], dtype="float32"), 0.0, 0.0)
+    if channel_data.probe.__class__ == 'pyuff_ustb.objects.probes.curvilinear_array.CurvilinearArray':
+        ROC_azimuth = channel_data.probe.radius
+    elif channel_data.probe.__class__ == 'pyuff_ustb.objects.probes.curvilinear_matrix_array.CurvilinearMatrixArray':
+        ROC_azimuth = channel_data.probe.radius_x
+    else:
+        ROC_azimuth = 10
+    ROC_elevation = 10
+
+    probe = ProbeGeometry(ROC = (ROC_azimuth, ROC_elevation))
+    probe.rx_aperture_length_s = (np.max(channel_data.probe.x) - np.min(channel_data.probe.x) , np.max(channel_data.probe.y) - np.min(channel_data.probe.y))
+    probe.tx_aperture_length_s = (np.max(channel_data.probe.x) - np.min(channel_data.probe.x) , np.max(channel_data.probe.y) - np.min(channel_data.probe.y))
+    
+    sender =  np.array([0.0, 0.0, 0.0], dtype="float32")
+    receiver = np.array(channel_data.probe.xyz)
 
     sequence: List[pyuff.Wave] = channel_data.sequence
     all_wavefronts = {wave.wavefront for wave in sequence}
@@ -115,23 +123,18 @@ def import_pyuff(
 given {all_wavefronts})."
     (wavefront,) = all_wavefronts
 
-    array_bounds = (
-        np.array([np.min(channel_data.probe.x), 0.0, 0.0]),
-        np.array([np.max(channel_data.probe.x), 0.0, 0.0]),
-    )
-
     _wave_xyz = sequence[0].source.xyz
     if wavefront == pyuff.Wavefront.plane or numpy.isinf(_wave_xyz).any():
         transmitted_wavefront = PlaneWavefront()
         apodization = TxRxApodization(
-            transmit=PlaneWaveTransmitApodization(array_bounds),
+            transmit=PlaneWaveTransmitApodization(),
             receive=PlaneWaveReceiveApodization(Hamming(), 1.7),
         )
 
     elif wavefront == pyuff.Wavefront.spherical:
-        transmitted_wavefront = UnifiedWavefront(array_bounds)
+        transmitted_wavefront = UnifiedWavefront()
         apodization = TxRxApodization(
-            transmit=RTBApodization(array_bounds),
+            transmit=RTBApodization(),
             receive=NoApodization(),
         )
 
@@ -152,25 +155,26 @@ given {all_wavefronts})."
 
     # Check if we are dealing with a STAI dataset: is each virtual source placed at
     # exactly at an element position?
-    if receivers.position.shape == wave_data.source.shape and (
-        numpy.allclose(receivers.position, wave_data.source)
+    if receiver.shape == wave_data.source.shape and (
+        numpy.allclose(probe.receiver_position, wave_data.source)
     ):
         # We are dealing with a STAI dataset! Senders are each element in the array
-        sender = receivers.copy()
+        probe.sender_position = probe.receiver_position.copy()
         # One sending element for each transmitted wave
-        spec = spec.at["sender"].set(["transmits"])
+        spec = spec.at["probe"].set(["transmits","receivers"])
         # Redefine t0 to be when the wave passes through the sender position
         wave_data = wave_data.with_updates_to(
-            t0=lambda t0: t0 - distance(sender.position) / speed_of_sound
+            t0=lambda t0: t0 - distance(probe.sender_position) / speed_of_sound
         )
 
     if has_multiple_frames:
         spec = spec.add_dimension("frames", ["signal"])
     return SignalForPointSetup(
+        probe=probe,
         sender=sender,
+        receiver=receiver,
         # point_position is dynamically set from the scan in SignalForPointSetup,
         point_position=None,
-        receiver=receivers,
         signal=receiver_signals,
         transmitted_wavefront=transmitted_wavefront,
         reflected_wavefront=ReflectedWavefront(),
