@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from spekk import Spec
 
 from vbeam.core import (
-    ElementGeometry,
+    ProbeGeometry,
     ReflectedWavefront,
     TransmittedWavefront,
     WaveData,
@@ -15,7 +15,8 @@ from vbeam.util.transformations import *
 
 def get_transmitted_wavefront_values(
     wavefront: TransmittedWavefront,
-    sender: ElementGeometry,
+    probe: ProbeGeometry,
+    sender: np.ndarray,
     point_position: np.ndarray,
     wave_data: WaveData,
     spec: Spec,
@@ -24,7 +25,7 @@ def get_transmitted_wavefront_values(
 ):
     """
     Calculate and return the (transmit) wavefront distance values based on the provided
-    arguments (``sender``, ``point_position``, and ``wave_data``).
+    arguments (``probe``, ``sender``, ``point_position``, and ``wave_data``).
 
     The ``dimensions`` argument determines what dimensions to keep; all others are
     summed over (except when ``dimesions`` is None where we keep all dimensions
@@ -34,7 +35,7 @@ def get_transmitted_wavefront_values(
 
     Args:
         wavefront (TransmittedWavefront): The wavefront function to use.
-        sender (ElementGeometry): The sender argument to ``wavefront``.
+        sender (np.ndarray): The sender argument to ``wavefront``.
         point_position (np.ndarray): The point_position argument to ``wavefront``.
         wave_data (WaveData): The wave data argument to ``wavefront``.
         spec (Spec): A spec describing the dimensions/shape of the arguments.
@@ -49,6 +50,7 @@ def get_transmitted_wavefront_values(
     """
     kwargs = {
         "transmitted_wavefront": wavefront,
+        "probe": probe,
         "sender": sender,
         "point_position": point_position,
         "wave_data": wave_data,
@@ -62,6 +64,7 @@ def get_transmitted_wavefront_values(
     # Define what dimensions to vmap and sum over and how
     vmap_dimensions = (
         spec["transmitted_wavefront"].dimensions
+        | spec["probe"].dimensions
         | spec["sender"].dimensions
         | spec["point_position"].dimensions
         | spec["wave_data"].dimensions
@@ -98,7 +101,7 @@ def get_transmitted_wavefront_values(
 def get_reflected_wavefront_values(
     wavefront: ReflectedWavefront,
     point_position: np.ndarray,
-    receiver: ElementGeometry,
+    receiver: np.ndarray,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
     jit: bool = True,
@@ -116,7 +119,7 @@ def get_reflected_wavefront_values(
     Args:
         wavefront (ReflectedWavefront): The wavefront function to use.
         point_position (np.ndarray): The point_position argument to ``wavefront``.
-        receiver (ElementGeometry): The receiver argument to ``wavefront``.
+        receiver (np.ndarray): The receiver argument to ``wavefront``.
         spec (Spec): A spec describing the dimensions/shape of the arguments.
         dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
             result. If it is an empty list, all dimensions are summed over. If it is

@@ -1,6 +1,6 @@
 from typing import Optional, Tuple, Union
 
-from vbeam.core import Apodization, ElementGeometry, WaveData
+from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util import ensure_2d_point
@@ -9,22 +9,22 @@ from vbeam.util.geometry.v2 import Line, distance
 from .window import Window
 
 
-@traceable_dataclass(("array_bounds", "window"))
+@traceable_dataclass(("window",))
 class PlaneWaveTransmitApodization(Apodization):
-    array_bounds: Tuple[np.ndarray, np.ndarray]
     window: Optional[Window] = None
 
     def __call__(
         self,
-        sender: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: np.ndarray,
+        receiver: np.ndarray,
         point_position: np.ndarray,
-        receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
         # Set up the geometry. There is one line originating from each side of the
         # array, going in the direction of the transmitted wave. If the point is
         # outside of those lines, then it is weighted by 0.
-        array_left, array_right = self.array_bounds
+        array_left, array_right,array_up, array_down = probe.get_tx_aperture_borders(sender=sender)
 
         # We are only supporting 2D points (for now).
         array_left = ensure_2d_point(array_left)
@@ -72,9 +72,10 @@ class PlaneWaveReceiveApodization(Apodization):
 
     def __call__(
         self,
-        sender: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: np.ndarray,
+        receiver: np.ndarray,
         point_position: np.ndarray,
-        receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
         f_number = (
@@ -82,7 +83,7 @@ class PlaneWaveReceiveApodization(Apodization):
             if isinstance(self.f_number, tuple) and len(self.f_number) == 2
             else (self.f_number, self.f_number)
         )
-        dist = point_position - receiver.position
+        dist = point_position - receiver
         x_dist, y_dist, z_dist = dist[0], dist[1], dist[2]
         tan_theta = x_dist / z_dist
         tan_phi = y_dist / z_dist

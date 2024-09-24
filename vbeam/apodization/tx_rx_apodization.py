@@ -1,6 +1,6 @@
 from typing import Optional
 
-from vbeam.core import Apodization, ElementGeometry, WaveData
+from vbeam.core import Apodization, ElementGeometry, ProbeGeometry, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 
@@ -15,14 +15,15 @@ class TxRxApodization(Apodization):
 
     def __call__(
         self,
-        sender: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: np.ndarray,
+        receiver: np.ndarray,
         point_position: np.ndarray,
-        receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
         weight = 1.0
         if self.transmit:
-            weight *= self.transmit(sender, point_position, receiver, wave_data)
+            weight *= self.transmit(probe, sender, receiver, point_position, wave_data)
         if self.receive:
-            weight *= self.receive(sender, point_position, receiver, wave_data)
+            weight *= self.receive(probe, sender,receiver, point_position, wave_data)
         return weight
