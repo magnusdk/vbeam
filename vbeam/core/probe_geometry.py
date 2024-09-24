@@ -12,8 +12,8 @@ identity_fn = lambda x: x  # Just return value as-is
 
 @traceable_dataclass(("ROC", "rx_aperture_length_s", "tx_aperture_length_s"))
 class ProbeGeometry:
-    """A container for probe parameters geometries.
-
+    """A container for probe parameters.
+    The aperture lengths are arc lenghts of the probe surface in azimuth and elevation. 
     """
     ROC: tuple[float, float] # (azimuth, elevation)
     rx_aperture_length_s: tuple[float, float] = None # (width, height)
@@ -29,7 +29,6 @@ class ProbeGeometry:
             _maybe_getitem(self.tx_aperture_length_s),
         )
 
-    
     @property
     def curvature_center(self):
         return (np.array([0.0,0.0,-self.ROC[0]]), np.array([0.0,0.0,-self.ROC[1]]) ) 
@@ -75,12 +74,6 @@ class ProbeGeometry:
         down = self.surface2cart((0.0, -self.tx_aperture_length_s[1]/2))
         up = self.surface2cart((0.0, self.tx_aperture_length_s[1]/2))
         return (left, right, up, down)
-        return [
-                np.array([self.ROC[0]*np.sin(self.rx_aperture_length_s[0]/2/self.ROC[0]),0.0,self.ROC[0]-self.ROC[0]*np.cos(self.rx_aperture_length_s[0]/2/self.ROC[0])]),
-                np.array([-self.ROC[0]*np.sin(self.rx_aperture_length_s[0]/2/self.ROC[0]),0.0,self.ROC[0]-self.ROC[0]*np.cos(self.rx_aperture_length_s[0]/2/self.ROC[0])]),
-                np.array([0.0,self.ROC[1]*np.sin(self.rx_aperture_length_s[1]/2/self.ROC[1]),self.ROC[1]-self.ROC[1]*np.cos(self.rx_aperture_length_s[1]/2/self.ROC[1])]),
-                np.array([0.0,-self.ROC[1]*np.sin(self.rx_aperture_length_s[1]/2/self.ROC[1]),self.ROC-self.ROC[1]*np.cos(self.rx_aperture_length_s[1]/2/self.ROC[1])])
-        ]
 
     def get_tx_aperture_borders(self, sender):
         left = self.surface2cart((self.cart2surface(position=sender)[0] - self.tx_aperture_length_s[0]/2,0.0))
