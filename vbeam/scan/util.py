@@ -136,7 +136,7 @@ def scan_convert(
         depth_axis,
         default_value=default_value,
         edge_handling=edge_handling,
-    ),x_axis,z_axis
+    )
 
 
 def parse_axes(xyz):
