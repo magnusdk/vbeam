@@ -155,6 +155,18 @@ given {all_wavefronts})."
         }
     )
 
+    # Set sender
+    sender = np.array(list(map(lambda x: x.origin.xyz,channel_data.sequence)),dtype="float32")
+    if sender.any():
+        # Walking aperture
+        # Redefine t0 to be when the wave passes through the sender position
+        wave_data = wave_data.with_updates_to(
+            t0=lambda t0: t0 +(distance(sender,wave_data.source)-distance(wave_data.source)) / speed_of_sound
+        )
+        spec = spec.at["sender"].set(["transmits"])
+    else:
+        sender =  np.array([0.0, 0.0, 0.0], dtype="float32")
+
     # Check if we are dealing with a STAI dataset: is each virtual source placed at
     # exactly at an element position?
     if receiver.shape == wave_data.source.shape and (
