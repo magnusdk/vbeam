@@ -33,12 +33,10 @@ class ProbeGeometry:
     def curvature_center(self):
         return (np.array([0.0,0.0,-self.ROC[0]]), np.array([0.0,0.0,-self.ROC[1]]) ) 
     
-    @property
     def get_sender_normal(self):
         vector = self.sender_position - self.curvature_center
         return vector / distance(vector)
     
-    @property
     def get_receiver_normal(self):
         vector = self.receiver_position - self.curvature_center
         return vector / distance(vector)
@@ -49,17 +47,13 @@ class ProbeGeometry:
     def get_phi(self,position):
         return np.arctan2(position[1],self.ROC[1]+position[2])
     
-    def get_surface_length(self, position):
-        theta = self.get_theta(position=position)
-        phi = self.get_phi(position=position)
-        return (self.ROC*theta, self.ROC*phi)
 
     def aperture_distance(self,position1, position2):
         if position2 is None:
             return np.sqrt(self.get_surface_length(position=position1)[0]**2 + self.get_surface_length(position=position1)[1]**2)
         else:
-            pos1_s = self.get_surface_length(position=position1)
-            pos2_s = self.get_surface_length(position=position2)
+            pos1_s = self.cart2surface(position=position1)
+            pos2_s = self.cart2surface(position=position2)
             return (np.sqrt( (pos1_s[0]-pos2_s[0])**2 + (pos1_s[1]-pos2_s[1])**2 ))
 
     def cart2surface(self, position):
@@ -75,12 +69,11 @@ class ProbeGeometry:
                         )
         ))
     
-    @property
     def get_rx_aperture_borders(self):
         left = self.surface2cart((-self.rx_aperture_length_s[0]/2,0.0))
-        right = self.surface2cart((self.tx_aperture_length_s[0]/2,0.0))
-        down = self.surface2cart((0.0, -self.tx_aperture_length_s[1]/2))
-        up = self.surface2cart((0.0, self.tx_aperture_length_s[1]/2))
+        right = self.surface2cart((self.rx_aperture_length_s[0]/2,0.0))
+        down = self.surface2cart((0.0, -self.rx_aperture_length_s[1]/2))
+        up = self.surface2cart((0.0, self.rx_aperture_length_s[1]/2))
         return (left, right, up, down)
 
     def get_tx_aperture_borders(self, sender):
