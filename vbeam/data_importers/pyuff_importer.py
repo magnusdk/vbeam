@@ -69,6 +69,7 @@ def import_pyuff(
         4,
     ), "Shape of data assumed to be either (n_samples, n_elements, n_waves) or \
 (n_samples, n_elements, n_waves, n_frames). "
+
     # Selecting a single frame
     if isinstance(frames, int):
         if channel_data.data.ndim == 4:
@@ -95,9 +96,10 @@ def import_pyuff(
         else:
             receiver_signals = np.transpose(channel_data.data, (2, 1, 0))
             has_multiple_frames = False
+
     # Apply hilbert transform if modulation_frequency is 0
     modulation_frequency = np.array(channel_data.modulation_frequency)
-    if numpy.abs(modulation_frequency) == 0:
+    if np.abs(modulation_frequency) == 0:
         receiver_signals = np.array(hilbert(receiver_signals), dtype="complex64")
 
     if channel_data.probe.__class__ == 'pyuff_ustb.objects.probes.curvilinear_array.CurvilinearArray':
@@ -111,8 +113,7 @@ def import_pyuff(
     probe = ProbeGeometry(ROC = (ROC_azimuth, ROC_elevation))
     probe.rx_aperture_length_s = (np.max(channel_data.probe.x) - np.min(channel_data.probe.x) , np.max(channel_data.probe.y) - np.min(channel_data.probe.y))
     probe.tx_aperture_length_s = (np.max(channel_data.probe.x) - np.min(channel_data.probe.x) , np.max(channel_data.probe.y) - np.min(channel_data.probe.y))
-    
-    sender =  np.array([0.0, 0.0, 0.0], dtype="float32")
+
     receiver = np.array(channel_data.probe.xyz)
 
     sequence: List[pyuff.Wave] = channel_data.sequence
@@ -144,6 +145,7 @@ given {all_wavefronts})."
         source=np.array([wave.source.xyz for wave in sequence]),
         t0=np.array([wave.delay for wave in sequence]),
     )
+
     spec = Spec(
         {
             "signal": ["transmits", "receivers", "signal_time"],
@@ -159,9 +161,9 @@ given {all_wavefronts})."
         numpy.allclose(probe.receiver_position, wave_data.source)
     ):
         # We are dealing with a STAI dataset! Senders are each element in the array
-        probe.sender_position = probe.receiver_position.copy()
+        sender = receiver.copy()
         # One sending element for each transmitted wave
-        spec = spec.at["probe"].set(["transmits","receivers"])
+        spec = spec.at["sender"].set(["transmits"])
         # Redefine t0 to be when the wave passes through the sender position
         wave_data = wave_data.with_updates_to(
             t0=lambda t0: t0 - distance(probe.sender_position) / speed_of_sound
