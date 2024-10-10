@@ -227,6 +227,12 @@ class JaxBackend(Backend):
     
     def convolve(self,a,v,mode='full'):
         return jnp.convolve(a,v,mode=mode)
+    
+    def pad(self,array, pad_width, mode='constant'):
+        return jnp.pad(array, pad_width, mode=mode)
+    
+    def polyfit(self,x,y, deg):
+        return jnp.polyfit(x,y,deg)
 
     class add:
         @staticmethod

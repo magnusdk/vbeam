@@ -309,6 +309,14 @@ class Backend:
     @wraps(np.convolve)
     def convolve(self, a,v,mode=None):
         raise NotImplementedError
+    
+    @wraps(np.pad)
+    def pad(self, array, pad_width, mode='constant'):
+        raise NotImplementedError
+    
+    @wraps(np.polyfit)
+    def polyfit(self, x, y, deg):
+        raise NotImplementedError
 
     class add:
         @staticmethod
