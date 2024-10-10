@@ -86,6 +86,9 @@ You can read the [documentation of vbeam's core here](https://vbeam.readthedocs.
 
 # Citing vbeam
 If you use vbeam in your research, please cite the following paper:
+https://doi.org/10.1109/IUS51837.2023.10307255
 ```
-Please wait for the in-proceedings article to be published :)
+M. D. Kvalevåg et al., "vbeam: a Fast and Differentiable Beamformer for Optimizing Ultrasound Imaging,"
+2023 IEEE International Ultrasonics Symposium (IUS), Montreal, QC, Canada, 2023, pp. 1-4,
+doi: 10.1109/IUS51837.2023.10307255.
 ```
