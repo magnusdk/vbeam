@@ -225,6 +225,12 @@ class NumpyBackend(Backend):
     
     def convolve(self,a,v,mode='full'):
         return np.convolve(a,v,mode=mode)
+    
+    def pad(self,array, pad_width, mode='constant'):
+        return np.pad(array, pad_width, mode=mode)
+
+    def polyfit(self,x,y, deg):
+        return np.polyfit(x,y,deg)
 
     class add:
         @staticmethod
