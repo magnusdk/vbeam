@@ -102,9 +102,9 @@ def import_pyuff(
     if np.abs(modulation_frequency) == 0:
         receiver_signals = np.array(hilbert(receiver_signals), dtype="complex64")
 
-    if channel_data.probe.__class__ == 'pyuff_ustb.objects.probes.curvilinear_array.CurvilinearArray':
+    if channel_data.probe.__class__ == pyuff.objects.probes.curvilinear_array.CurvilinearArray:
         ROC_azimuth = channel_data.probe.radius
-    elif channel_data.probe.__class__ == 'pyuff_ustb.objects.probes.curvilinear_matrix_array.CurvilinearMatrixArray':
+    elif channel_data.probe.__class__ == pyuff.objects.probes.curvilinear_matrix_array.CurvilinearMatrixArray:
         ROC_azimuth = channel_data.probe.radius_x
     else:
         ROC_azimuth = 10
