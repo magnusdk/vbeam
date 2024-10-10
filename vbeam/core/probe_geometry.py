@@ -49,12 +49,12 @@ class ProbeGeometry:
     
 
     def aperture_distance(self,position1, position2):
+        pos1_s = self.cart2surface(position=position1)
         if position2 is None:
-            return np.sqrt(self.get_surface_length(position=position1)[0]**2 + self.get_surface_length(position=position1)[1]**2)
+            pos2_s = (0.0, 0.0)
         else:
-            pos1_s = self.cart2surface(position=position1)
             pos2_s = self.cart2surface(position=position2)
-            return (np.sqrt( (pos1_s[0]-pos2_s[0])**2 + (pos1_s[1]-pos2_s[1])**2 ))
+        return (np.sqrt( (pos1_s[0]-pos2_s[0])**2 + (pos1_s[1]-pos2_s[1])**2 ))
 
     def cart2surface(self, position):
         return (self.ROC[0]*self.get_theta(position=position), self.ROC[1]*self.get_phi(position=position))
@@ -64,8 +64,8 @@ class ProbeGeometry:
             self.ROC[0]*np.sin(position_s[0]/self.ROC[0]),
             self.ROC[1]*np.sin(position_s[1]/self.ROC[1]),
             np.where(self.ROC[0]-self.ROC[0]*np.cos(position_s[0]/self.ROC[0])>self.ROC[1]-self.ROC[1]*np.cos(position_s[1]/self.ROC[1]),
-                        self.ROC[0]-self.ROC[0]*np.cos(position_s[0]/self.ROC[0]),
-                        self.ROC[1]-self.ROC[1]*np.cos(position_s[1]/self.ROC[1])
+                        self.ROC[0]*np.cos(position_s[0]/self.ROC[0])-self.ROC[0],
+                        self.ROC[1]*np.cos(position_s[1]/self.ROC[1])-self.ROC[1]
                         )
         ))
     
