@@ -13,7 +13,7 @@ from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import distance
 
-from .element_geometry import ElementGeometry
+from .probe_geometry import ProbeGeometry
 from .wave_data import WaveData
 
 
@@ -61,7 +61,8 @@ class TransmittedWavefront(ABC):
     @abstractmethod
     def __call__(
         self,
-        sender: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: np.ndarray,
         point_position: np.ndarray,
         wave_data: WaveData,
     ) -> Union[float, "MultipleTransmitDistances"]:
@@ -87,8 +88,8 @@ class ReflectedWavefront:
         :class:`TransmittedWavefront`
         :func:`~vbeam.core.kernels.signal_for_point`"""
 
-    def __call__(self, point_position: np.ndarray, receiver: ElementGeometry) -> float:
-        return distance(point_position, receiver.position)
+    def __call__(self, point_position: np.ndarray, receiver: np.ndarray) -> float:
+        return distance(point_position, receiver)
 
 
 @dataclass

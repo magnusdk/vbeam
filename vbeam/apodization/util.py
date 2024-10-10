@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 
 from spekk import Spec
 
-from vbeam.core import Apodization, ElementGeometry, WaveData
+from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.util import _deprecations
 from vbeam.util.transformations import *
@@ -12,9 +12,10 @@ from vbeam.util.transformations import *
 @_deprecations.renamed_kwargs("1.0.5", average_overlap="average")
 def get_apodization_values(
     apodization: Apodization,
-    sender: ElementGeometry,
+    probe: ProbeGeometry,
+    sender: np.ndarray,
+    receiver: np.ndarray,
     point_position: np.ndarray,
-    receiver: ElementGeometry,
     wave_data: WaveData,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
@@ -23,7 +24,7 @@ def get_apodization_values(
 ):
     """
     Calculate and return the apodization values based on the provided arguments
-    (``sender``, ``point_position``, ``receiver``, and ``wave_data``).
+    (``probe``, ``sender``, ``point_position``, ``receiver``, and ``wave_data``).
 
     The ``dimensions`` argument determines what dimensions to keep; all others are
     summed over (except when ``dimesions`` is None where we keep all dimensions
@@ -33,9 +34,9 @@ def get_apodization_values(
 
     Args:
         apodization (Apodization): The apodization function to use.
-        sender (ElementGeometry): The sender argument to ``apodization``.
+        sender (np.ndarray): The sender argument to ``apodization``.
         point_position (np.ndarray): The point_position argument to ``apodization``.
-        receiver (ElementGeometry): The receiver argument to ``apodization``.
+        receiver (np.ndarray): The receiver argument to ``apodization``.
         wave_data (WaveData): The wave data argument to ``apodization``.
         spec (Spec): A spec describing the dimensions/shape of the arguments.
         dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
@@ -50,9 +51,10 @@ def get_apodization_values(
     """
     kwargs = {
         "apodization": apodization,
+        "probe": probe,
         "sender": sender,
-        "point_position": point_position,
         "receiver": receiver,
+        "point_position": point_position,
         "wave_data": wave_data,
     }
 
@@ -64,9 +66,8 @@ def get_apodization_values(
     # Define what dimensions to vmap and sum over and how
     vmap_dimensions = (
         spec["apodization"].dimensions
-        | spec["sender"].dimensions
-        | spec["point_position"].dimensions
         | spec["receiver"].dimensions
+        | spec["point_position"].dimensions
         | spec["wave_data"].dimensions
     )
     sum_dimensions = vmap_dimensions - set(dimensions)

@@ -1,4 +1,4 @@
-from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
+from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import distance
@@ -16,12 +16,13 @@ class REFoCUSWavefront(TransmittedWavefront):
     """
 
     base_wavefront: TransmittedWavefront
-    base_sender: ElementGeometry
+    base_sender: np.ndarray
     compensation_scalar: float = 1.0
 
     def __call__(
         self,
-        sender: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: np.ndarray,
         point_position: np.ndarray,
         wave_data: WaveData,
     ) -> float:
@@ -33,6 +34,6 @@ class REFoCUSWavefront(TransmittedWavefront):
         transmit sequence. This compensation is the distance that the full modeled
         wavefront passed through the sending element."""
         focusing_compensation = self.base_wavefront(
-            self.base_sender, sender.position, wave_data
+            probe, self.base_sender, sender, wave_data
         )
-        return distance(sender.position, point_position) + focusing_compensation * self.compensation_scalar
+        return distance(sender, point_position) + focusing_compensation * self.compensation_scalar

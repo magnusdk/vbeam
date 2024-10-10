@@ -3,7 +3,7 @@ from typing import Optional, Sequence, Tuple
 from spekk import Spec
 
 from vbeam.apodization.util import get_apodization_values
-from vbeam.core import Apodization, ElementGeometry, WaveData
+from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import backend_manager
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
@@ -95,6 +95,7 @@ def recombine1(
         "base_scan",
         "apodization",
         "sender",
+        "probe",
         "receiver",
         "wave_data",
         "spec",
@@ -107,8 +108,9 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         self,
         base_scan: Scan,
         apodization: Apodization,
-        sender: ElementGeometry,
-        receiver: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: np.ndarray,
+        receiver: np.ndarray,
         wave_data: WaveData,
         spec: Spec,
         dimensions: Sequence[str],
@@ -121,6 +123,7 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         # For example, if a user resizes the scan then the indices must be recomputed.
         self._base_scan = base_scan
         self.apodization = apodization
+        self.probe = probe
         self.sender = sender
         self.receiver = receiver
         self.wave_data = wave_data
@@ -179,9 +182,10 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         points = self.base_scan.get_points()
         apodization_values = get_apodization_values(
             self.apodization,
+            self.probe,
             self.sender,
-            points,
             self.receiver,
+            points,
             self.wave_data,
             self.spec,
             self.dimensions,
@@ -199,6 +203,7 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         return ApodizationFilteredScan(
             self.base_scan,
             self.apodization,
+            self.probe,
             self.sender,
             self.receiver,
             self.wave_data,
@@ -224,6 +229,7 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         return ApodizationFilteredScan(
             scan if scan is not None else setup.scan,
             setup.apodization,
+            setup.probe,
             setup.sender,
             setup.receiver,
             setup.wave_data,

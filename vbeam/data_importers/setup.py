@@ -136,9 +136,10 @@ updating the scan instead."
         dimensions are summed over."""
         return get_apodization_values(
             self.apodization,
+            self.probe,
             self.sender,
-            self.point_position,
             self.receiver,
+            self.point_position,
             self.wave_data,
             self.spec,
             dimensions,

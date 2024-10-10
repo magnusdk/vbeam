@@ -3,21 +3,19 @@ from typing import Callable, Optional
 from spekk import Spec
 
 from vbeam.apodization.util import get_apodization_values
-from vbeam.core import Apodization, ElementGeometry, WaveData
+from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.util._default_values import (
     _default_point_position,
-    _default_receiver,
-    _default_sender,
+    _default_probe,
     _default_wave_data,
 )
 
 
 def plot_apodization(
     apodization: Apodization,
-    sender: Optional[ElementGeometry] = None,
+    probe: Optional[ProbeGeometry] = None,
     point_position: Optional[np.ndarray] = None,
-    receiver: Optional[ElementGeometry] = None,
     wave_data: Optional[WaveData] = None,
     spec: Optional[Spec] = None,
     postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
@@ -32,21 +30,18 @@ def plot_apodization(
     conversion)."""
     # Try to set helpful default values
     spec = spec if spec is not None else Spec({})
-    if sender is None:
-        sender, spec = _default_sender(spec)
+    if probe is None:
+        probe, spec = _default_probe(spec)
     if point_position is None:
         point_position, spec = _default_point_position(spec)
-    if receiver is None:
-        receiver, spec = _default_receiver(spec)
     if wave_data is None:
         wave_data, spec = _default_wave_data(spec)
 
     # Calculate apodization values
     vals = get_apodization_values(
         apodization,
-        sender,
+        probe,
         point_position,
-        receiver,
         wave_data,
         spec,
         # We want to keep the dimensions of point_position

@@ -1,4 +1,4 @@
-from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
+from vbeam.core import TransmittedWavefront, WaveData, ProbeGeometry
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 
@@ -7,11 +7,12 @@ from vbeam.fastmath.traceable import traceable_dataclass
 class PlaneWavefront(TransmittedWavefront):
     def __call__(
         self,
-        sender: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: np.ndarray,
         point_position: np.ndarray,
         wave_data: WaveData,
     ) -> float:
-        diff = point_position - sender.position
+        diff = point_position - sender
         x, y, z = diff[0], diff[1], diff[2]
         return (
             x * np.sin(wave_data.azimuth) * np.cos(wave_data.elevation)
