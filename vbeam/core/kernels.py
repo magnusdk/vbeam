@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
 from vbeam.core.apodization import Apodization
-from vbeam.core.element_geometry import ElementGeometry
+from vbeam.core.probe_geometry import ProbeGeometry
 from vbeam.core.interpolation import InterpolationSpace1D
 from vbeam.core.kernel_data import KernelData
 from vbeam.core.speed_of_sound import SpeedOfSound
@@ -24,9 +24,10 @@ from vbeam.fastmath import numpy as np
 
 
 def signal_for_point(
-    sender: ElementGeometry,
+    probe: ProbeGeometry,
+    sender: np.ndarray,
+    receiver: np.ndarray,
     point_position: np.ndarray,
-    receiver: ElementGeometry,
     signal: np.ndarray,
     transmitted_wavefront: TransmittedWavefront,
     reflected_wavefront: ReflectedWavefront,
@@ -73,13 +74,13 @@ def signal_for_point(
       The delayed and interpolated signal from a single transmit, for a single
       receiver, for a single point (pixel).
     """
-    tx_distance = transmitted_wavefront(sender, point_position, wave_data)
+    tx_distance = transmitted_wavefront(probe,sender, point_position, wave_data)
     rx_distance = reflected_wavefront(point_position, receiver)
 
     # Potentially sample the speed-of-sound using a SpeedOfSound instance.
     if isinstance(speed_of_sound, SpeedOfSound):
         speed_of_sound = speed_of_sound.average(
-            sender.position, point_position, receiver.position
+            sender, point_position, receiver
         )
 
     delay = (tx_distance + rx_distance) / speed_of_sound - wave_data.t0
@@ -89,7 +90,7 @@ def signal_for_point(
         signal = phase_correction(signal, delay, modulation_frequency)
     if isinstance(tx_distance, MultipleTransmitDistances):
         signal = tx_distance.aggregate_samples(signal)
-    return signal * apodization(sender, point_position, receiver, wave_data)
+    return signal * apodization(probe, sender, receiver, point_position, wave_data)
 
 
 def phase_correction(signal: float, delay: float, modulation_frequency: float):
@@ -103,9 +104,10 @@ class SignalForPointData(KernelData):
 
     See the docstring of signal_for_point for documentation of each field."""
 
-    sender: ElementGeometry
+    probe: ProbeGeometry
+    sender: np.ndarray
+    receiver: np.ndarray
     point_position: np.ndarray
-    receiver: ElementGeometry
     signal: np.ndarray
     transmitted_wavefront: TransmittedWavefront
     reflected_wavefront: ReflectedWavefront
