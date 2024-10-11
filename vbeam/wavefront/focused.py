@@ -54,20 +54,20 @@ class FocusedBlendedWavefront(TransmittedWavefront):
 
     def __call__(
         self,
-        sender: ElementGeometry,
+        sender: np.ndarray,
         point_position: np.ndarray,
         wave_data: WaveData,
     ) -> float:
         spherical_wavefront = FocusedSphericalWavefront()
         plane_wavefront = PlaneWavefront()
         wave_data.azimuth = np.arctan2(
-            wave_data.source[0] - sender.position[0],
-            wave_data.source[2] - sender.position[2],
+            wave_data.source[0] - sender[0],
+            wave_data.source[2] - sender[2],
         )
 
         wave_data.elevation = np.arctan2(
-            wave_data.source[1] - sender.position[1],
-            wave_data.source[2] - sender.position[2],
+            wave_data.source[1] - sender[1],
+            wave_data.source[2] - sender[2],
         )
         source_point_dist = np.sqrt(np.sum((wave_data.source - point_position) ** 2))
         normalized_distance = np.clip(
