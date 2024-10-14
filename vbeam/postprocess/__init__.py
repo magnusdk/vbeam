@@ -1,23 +1,25 @@
 from typing import Tuple, Union
 
+from fastmath import ArrayOrNumber
+
 from vbeam.fastmath import numpy as np
 from vbeam.interpolation import FastInterpLinspace
 
 
-def coherence_factor(beamformed_data: np.ndarray, receivers_axis: int):
+def coherence_factor(beamformed_data: ArrayOrNumber, receivers_axis: int):
     coherent_sum = np.abs(np.sum(beamformed_data, receivers_axis)) ** 2
     incoherent_sum = np.sum(np.abs(beamformed_data) ** 2, receivers_axis)
     num_receivers = beamformed_data.shape[receivers_axis]
     return np.nan_to_num(coherent_sum / incoherent_sum / num_receivers)
 
 
-def normalized_decibels(data: np.ndarray):
+def normalized_decibels(data: ArrayOrNumber):
     "Convert the data into decibels normalized for dynamic range."
     data_db = 20 * np.nan_to_num(np.log10(np.abs(data)))
     return data_db - data_db.max()
 
 
-def _upsampling_indices(n: int, data_size: int) -> np.ndarray:
+def _upsampling_indices(n: int, data_size: int) -> ArrayOrNumber:
     """Return the sampling indices of data with size data_size after upsampling by n.
 
     The formula is a bit complicated because it is as general as possible. Check out
@@ -30,10 +32,10 @@ def _upsampling_indices(n: int, data_size: int) -> np.ndarray:
 
 
 def upsample_by_interpolation(
-    data: np.ndarray,
+    data: ArrayOrNumber,
     n: int,
     axis: Union[int, Tuple[int, ...]] = 0,
-) -> np.ndarray:
+) -> ArrayOrNumber:
     """Upsample the data along the given axes. Multiple axes may be given."""
     # No axis has been given: upsample all axes
     if axis is None:

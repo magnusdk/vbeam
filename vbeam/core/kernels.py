@@ -9,6 +9,8 @@ See also:
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
+from fastmath import ArrayOrNumber
+
 from vbeam.core.apodization import Apodization
 from vbeam.core.element_geometry import ElementGeometry
 from vbeam.core.interpolation import InterpolationSpace1D
@@ -25,9 +27,9 @@ from vbeam.fastmath import numpy as np
 
 def signal_for_point(
     sender: ElementGeometry,
-    point_position: np.ndarray,
+    point_position: ArrayOrNumber,
     receiver: ElementGeometry,
-    signal: np.ndarray,
+    signal: ArrayOrNumber,
     transmitted_wavefront: TransmittedWavefront,
     reflected_wavefront: ReflectedWavefront,
     speed_of_sound: Union[float, SpeedOfSound],
@@ -35,7 +37,7 @@ def signal_for_point(
     interpolate: InterpolationSpace1D,
     modulation_frequency: Optional[float],
     apodization: Apodization,
-) -> np.ndarray:
+) -> ArrayOrNumber:
     """The core beamforming function. Return the delayed and interpolated signal from a
     single transmit, for a single receiver, for a single point (pixel).
 
@@ -104,9 +106,9 @@ class SignalForPointData(KernelData):
     See the docstring of signal_for_point for documentation of each field."""
 
     sender: ElementGeometry
-    point_position: np.ndarray
+    point_position: ArrayOrNumber
     receiver: ElementGeometry
-    signal: np.ndarray
+    signal: ArrayOrNumber
     transmitted_wavefront: TransmittedWavefront
     reflected_wavefront: ReflectedWavefront
     speed_of_sound: Union[float, SpeedOfSound]

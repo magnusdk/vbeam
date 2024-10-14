@@ -1,20 +1,20 @@
 from dataclasses import field
 from typing import Tuple
 
+from fastmath import ArrayOrNumber
+
 from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry import Line
 from vbeam.wavefront import FocusedSphericalWavefront
 
 
-@traceable_dataclass(("array_bounds", "base_wavefront"))
 class UnifiedWavefront(TransmittedWavefront):
     """Implementation of the unified wavefront model
 
     https://doi.org/10.1109/tmi.2015.2456982"""
 
-    array_bounds: Tuple[np.ndarray, np.ndarray]
+    array_bounds: Tuple[ArrayOrNumber, ArrayOrNumber]
     base_wavefront: TransmittedWavefront = field(
         default_factory=FocusedSphericalWavefront
     )
@@ -22,7 +22,7 @@ class UnifiedWavefront(TransmittedWavefront):
     def __call__(
         self,
         sender: ElementGeometry,
-        point_position: np.ndarray,
+        point_position: ArrayOrNumber,
         wave_data: WaveData,
     ) -> float:
         # Set up the geometry

@@ -1,6 +1,7 @@
 import math
 from typing import Optional, Sequence
 
+from fastmath import ArrayOrNumber
 from spekk import Spec
 
 from vbeam.core import Apodization, ElementGeometry, WaveData
@@ -13,7 +14,7 @@ from vbeam.util.transformations import *
 def get_apodization_values(
     apodization: Apodization,
     sender: ElementGeometry,
-    point_position: np.ndarray,
+    point_position: ArrayOrNumber,
     receiver: ElementGeometry,
     wave_data: WaveData,
     spec: Spec,
@@ -34,7 +35,7 @@ def get_apodization_values(
     Args:
         apodization (Apodization): The apodization function to use.
         sender (ElementGeometry): The sender argument to ``apodization``.
-        point_position (np.ndarray): The point_position argument to ``apodization``.
+        point_position (ArrayOrNumber): The point_position argument to ``apodization``.
         receiver (ElementGeometry): The receiver argument to ``apodization``.
         wave_data (WaveData): The wave data argument to ``apodization``.
         spec (Spec): A spec describing the dimensions/shape of the arguments.
@@ -45,7 +46,7 @@ def get_apodization_values(
         jit (bool): If True, the process is JIT-compiled (if the backend supports it).
 
     Returns:
-        np.ndarray: The calculated apodization values with shape corresponding to the
+        ArrayOrNumber: The calculated apodization values with shape corresponding to the
         dimensions defined in ``dimensions``.
     """
     kwargs = {

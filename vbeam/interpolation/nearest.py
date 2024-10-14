@@ -1,9 +1,9 @@
+from fastmath import ArrayOrNumber
+
 from vbeam.core import InterpolationSpace1D
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 
 
-@traceable_dataclass(data_fields=("min", "d", "n", "left", "right"))
 class NearestInterpolation(InterpolationSpace1D):
     """Interpolate by rounding (nearest neighbour).
 
@@ -20,7 +20,7 @@ class NearestInterpolation(InterpolationSpace1D):
     left: float = 0
     right: float = 0
 
-    def __call__(self, x: np.ndarray, fp: np.ndarray) -> np.ndarray:
+    def __call__(self, x: ArrayOrNumber, fp: ArrayOrNumber) -> ArrayOrNumber:
         index = np.round((x - self.min) / self.d)
         return np.select(
             [index < 0, index >= self.n],

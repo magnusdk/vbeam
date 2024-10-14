@@ -1,19 +1,19 @@
 from typing import Callable, Literal, Optional, Tuple, Union, overload
 
+from fastmath import ArrayOrNumber
+
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.scan.base import CoordinateSystem, Scan
 from vbeam.scan.util import parse_axes
 from vbeam.util.arrays import grid
 
 
-@traceable_dataclass(("x", "y", "z"))
 class LinearScan(Scan):
-    x: np.ndarray
-    y: Optional[np.ndarray]
-    z: np.ndarray
+    x: ArrayOrNumber
+    y: Optional[ArrayOrNumber]
+    z: ArrayOrNumber
 
-    def get_points(self, flatten: bool = True) -> np.ndarray:
+    def get_points(self, flatten: bool = True) -> ArrayOrNumber:
         shape = (self.num_points, 3) if flatten else (*self.shape, 3)
         y = np.array([0.0]) if self.y is None else self.y  # If the scan is 2D
         points = grid(self.x, y, self.z, shape=shape)
@@ -21,9 +21,9 @@ class LinearScan(Scan):
 
     def replace(
         self,
-        x: Union[np.ndarray, Literal["unchanged"]] = "unchanged",
-        y: Union[np.ndarray, Literal["unchanged"]] = "unchanged",
-        z: Union[np.ndarray, Literal["unchanged"]] = "unchanged",
+        x: Union[ArrayOrNumber, Literal["unchanged"]] = "unchanged",
+        y: Union[ArrayOrNumber, Literal["unchanged"]] = "unchanged",
+        z: Union[ArrayOrNumber, Literal["unchanged"]] = "unchanged",
     ) -> "LinearScan":
         return LinearScan(
             x=x if x != "unchanged" else self.x,
@@ -33,9 +33,9 @@ class LinearScan(Scan):
 
     def update(
         self,
-        x: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-        y: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-        z: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        x: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
+        y: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
+        z: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
     ) -> "LinearScan":
         return self.replace(
             x(self.x) if x is not None else "unchanged",
@@ -58,7 +58,7 @@ class LinearScan(Scan):
         )
 
     @property
-    def axes(self) -> Tuple[np.ndarray, ...]:
+    def axes(self) -> Tuple[ArrayOrNumber, ...]:
         if self.y is not None:
             return self.x, self.y, self.z
         else:
@@ -77,16 +77,16 @@ class LinearScan(Scan):
 
 
 @overload
-def linear_scan(x: np.ndarray, z: np.ndarray) -> LinearScan:
-    ...  # 2D scan
+def linear_scan(x: ArrayOrNumber, z: ArrayOrNumber) -> LinearScan: ...  # 2D scan
 
 
 @overload
-def linear_scan(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> LinearScan:
-    ...  # 3D scan
+def linear_scan(
+    x: ArrayOrNumber, y: ArrayOrNumber, z: ArrayOrNumber
+) -> LinearScan: ...  # 3D scan
 
 
-def linear_scan(*xyz: np.ndarray) -> LinearScan:
+def linear_scan(*xyz: ArrayOrNumber) -> LinearScan:
     "Construct a linear scan. See LinearScan documentation for more details."
     x, y, z = parse_axes(xyz)
     return LinearScan(x, y, z)

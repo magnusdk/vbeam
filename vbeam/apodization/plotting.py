@@ -1,10 +1,10 @@
 from typing import Callable, Optional
 
+from fastmath import ArrayOrNumber
 from spekk import Spec
 
 from vbeam.apodization.util import get_apodization_values
 from vbeam.core import Apodization, ElementGeometry, WaveData
-from vbeam.fastmath import numpy as np
 from vbeam.util._default_values import (
     _default_point_position,
     _default_receiver,
@@ -16,11 +16,11 @@ from vbeam.util._default_values import (
 def plot_apodization(
     apodization: Apodization,
     sender: Optional[ElementGeometry] = None,
-    point_position: Optional[np.ndarray] = None,
+    point_position: Optional[ArrayOrNumber] = None,
     receiver: Optional[ElementGeometry] = None,
     wave_data: Optional[WaveData] = None,
     spec: Optional[Spec] = None,
-    postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+    postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
     average_overlap: bool = True,
     jit: bool = True,
     ax=None,  # : Optional[matplotlib.pyplot.Axes]

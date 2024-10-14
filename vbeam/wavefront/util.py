@@ -1,6 +1,7 @@
 import math
 from typing import Optional, Sequence
 
+from fastmath import ArrayOrNumber
 from spekk import Spec
 
 from vbeam.core import (
@@ -16,7 +17,7 @@ from vbeam.util.transformations import *
 def get_transmitted_wavefront_values(
     wavefront: TransmittedWavefront,
     sender: ElementGeometry,
-    point_position: np.ndarray,
+    point_position: ArrayOrNumber,
     wave_data: WaveData,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
@@ -35,7 +36,7 @@ def get_transmitted_wavefront_values(
     Args:
         wavefront (TransmittedWavefront): The wavefront function to use.
         sender (ElementGeometry): The sender argument to ``wavefront``.
-        point_position (np.ndarray): The point_position argument to ``wavefront``.
+        point_position (ArrayOrNumber): The point_position argument to ``wavefront``.
         wave_data (WaveData): The wave data argument to ``wavefront``.
         spec (Spec): A spec describing the dimensions/shape of the arguments.
         dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
@@ -44,7 +45,7 @@ def get_transmitted_wavefront_values(
         jit (bool): If True, the process is JIT-compiled (if the backend supports it).
 
     Returns:
-        np.ndarray: The calculated wavefront distance values with shape corresponding
+       ArrayOrNumber: The calculated wavefront distance values with shape corresponding
         to the dimensions defined in ``dimensions``.
     """
     kwargs = {
@@ -97,7 +98,7 @@ def get_transmitted_wavefront_values(
 
 def get_reflected_wavefront_values(
     wavefront: ReflectedWavefront,
-    point_position: np.ndarray,
+    point_position: ArrayOrNumber,
     receiver: ElementGeometry,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
@@ -115,7 +116,7 @@ def get_reflected_wavefront_values(
 
     Args:
         wavefront (ReflectedWavefront): The wavefront function to use.
-        point_position (np.ndarray): The point_position argument to ``wavefront``.
+        point_position (ArrayOrNumber): The point_position argument to ``wavefront``.
         receiver (ElementGeometry): The receiver argument to ``wavefront``.
         spec (Spec): A spec describing the dimensions/shape of the arguments.
         dimensions (Optional[Sequence[str]]): The dimensions to keep in the returned
@@ -124,7 +125,7 @@ def get_reflected_wavefront_values(
         jit (bool): If True, the process is JIT-compiled (if the backend supports it).
 
     Returns:
-        np.ndarray: The calculated wavefront distance values with shape corresponding
+       ArrayOrNumber: The calculated wavefront distance values with shape corresponding
         to the dimensions defined in ``dimensions``.
     """
     kwargs = {

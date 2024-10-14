@@ -2,6 +2,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Sequence, Union
 
+from fastmath import ArrayOrNumber
 from spekk import Spec, trees
 from spekk.util.slicing import IndicesT, slice_data, slice_spec
 
@@ -13,7 +14,6 @@ from vbeam.core import (
     SignalForPointData,
     TransmittedWavefront,
 )
-from vbeam.fastmath import numpy as np
 from vbeam.scan import Scan
 from vbeam.scan.advanced import ExtraDimsScanMixin
 from vbeam.util.transformations import *
@@ -148,7 +148,7 @@ updating the scan instead."
         self,
         apodization: Optional[Apodization] = None,
         apodization_spec: Optional[Spec] = None,
-        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
         average: bool = True,
         jit: bool = True,
         ax=None,  # : Optional[matplotlib.pyplot.Axes]
@@ -195,7 +195,7 @@ updating the scan instead."
         self,
         wavefront: Optional[TransmittedWavefront] = None,
         wavefront_spec: Optional[Spec] = None,
-        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
         ax=None,  # : Optional[matplotlib.pyplot.Axes]
     ):
         spec = self.spec.at["point_position"].set(["x", "z"])
@@ -218,7 +218,7 @@ updating the scan instead."
         self,
         wavefront: Optional[ReflectedWavefront] = None,
         wavefront_spec: Optional[Spec] = None,
-        postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
         ax=None,  # : Optional[matplotlib.pyplot.Axes]
     ):
         spec = self.spec.at["point_position"].set(["x", "z"])

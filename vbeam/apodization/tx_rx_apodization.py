@@ -1,11 +1,10 @@
 from typing import Optional
 
+from fastmath import ArrayOrNumber
+
 from vbeam.core import Apodization, ElementGeometry, WaveData
-from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 
 
-@traceable_dataclass(("transmit", "receive"))
 class TxRxApodization(Apodization):
     """Apodization for both transmit and receive (just a container of two Apodization
     functions)."""
@@ -16,7 +15,7 @@ class TxRxApodization(Apodization):
     def __call__(
         self,
         sender: ElementGeometry,
-        point_position: np.ndarray,
+        point_position: ArrayOrNumber,
         receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:

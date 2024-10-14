@@ -1,15 +1,16 @@
+from fastmath import ArrayOrNumber
+
 from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.wavefront.plane import PlaneWavefront
 
 
-@traceable_dataclass()
 class FocusedSphericalWavefront(TransmittedWavefront):
     def __call__(
         self,
         sender: ElementGeometry,
-        point_position: np.ndarray,
+        point_position: ArrayOrNumber,
         wave_data: WaveData,
     ) -> float:
         sender_source_dist = np.sqrt(np.sum((sender.position - wave_data.source) ** 2))
@@ -19,14 +20,13 @@ class FocusedSphericalWavefront(TransmittedWavefront):
         ) - source_point_dist * np.sign(wave_data.source[2] - point_position[2])
 
 
-@traceable_dataclass(("pw_margin",))
 class FocusedHybridWavefront(TransmittedWavefront):
     pw_margin: float = 0.001
 
     def __call__(
         self,
         sender: ElementGeometry,
-        point_position: np.ndarray,
+        point_position: ArrayOrNumber,
         wave_data: WaveData,
     ) -> float:
         spherical_wavefront = FocusedSphericalWavefront()
@@ -46,14 +46,13 @@ class FocusedHybridWavefront(TransmittedWavefront):
         )
 
 
-@traceable_dataclass(("blending_power",))
 class FocusedBlendedWavefront(TransmittedWavefront):
     blending_power: float = 0.5
 
     def __call__(
         self,
         sender: ElementGeometry,
-        point_position: np.ndarray,
+        point_position: ArrayOrNumber,
         wave_data: WaveData,
     ) -> float:
         spherical_wavefront = FocusedSphericalWavefront()
@@ -69,11 +68,13 @@ class FocusedBlendedWavefront(TransmittedWavefront):
         )
         source_point_dist = np.sqrt(np.sum((wave_data.source - point_position) ** 2))
         normalized_distance = np.clip(
-            source_point_dist / np.sqrt(np.sum((wave_data.source) ** 2)), a_min=0, a_max=1
+            source_point_dist / np.sqrt(np.sum((wave_data.source) ** 2)),
+            a_min=0,
+            a_max=1,
         )
         plane_distance = plane_wavefront(sender, point_position, wave_data)
         spherical_distance = spherical_wavefront(sender, point_position, wave_data)
         return (
-            spherical_distance * normalized_distance** self.blending_power
+            spherical_distance * normalized_distance**self.blending_power
             + plane_distance * (1 - normalized_distance**self.blending_power)
         )

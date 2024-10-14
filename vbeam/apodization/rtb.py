@@ -1,18 +1,19 @@
 from typing import Optional, Tuple
 
+from fastmath import ArrayOrNumber, field
+
 from vbeam.apodization.window import Window
 from vbeam.core import Apodization, ElementGeometry, WaveData
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util import ensure_2d_point
 from vbeam.util.geometry.v2 import Line, distance
 
 
 def rtb_apodization(
-    point: np.ndarray,
-    array_left: np.ndarray,
-    array_right: np.ndarray,
-    focus_point: np.ndarray,
+    point: ArrayOrNumber,
+    array_left: ArrayOrNumber,
+    array_right: ArrayOrNumber,
+    focus_point: ArrayOrNumber,
     minimum_aperture: float,
     maximum_aperture: Optional[float] = None,
     window: Optional[Window] = None,
@@ -77,17 +78,13 @@ def rtb_apodization(
     return value
 
 
-@traceable_dataclass(
-    data_fields=("array_bounds", "array_width", "minimum_aperture", "window"),
-    aux_fields=("use_parent",),
-)
 class RTBApodization(Apodization):
-    array_bounds: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    array_bounds: Optional[Tuple[ArrayOrNumber, ArrayOrNumber]] = None
     array_width: Optional[float] = None
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     maximum_aperture: Optional[float] = None
     window: Optional[Window] = None
-    use_parent: bool = False
+    use_parent: bool = field(default=False, static=True)
 
     def __post_init__(self):
         if self.array_bounds is None and self.array_width is None:
@@ -96,7 +93,7 @@ class RTBApodization(Apodization):
     def __call__(
         self,
         sender: ElementGeometry,
-        point_position: np.ndarray,
+        point_position: ArrayOrNumber,
         receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
@@ -118,7 +115,6 @@ class RTBApodization(Apodization):
         )
 
 
-@traceable_dataclass((("array_width", "minimum_aperture", "window", "use_parent")))
 class SteppingApertureRTBApodization(Apodization):
     array_width: float
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
@@ -128,7 +124,7 @@ class SteppingApertureRTBApodization(Apodization):
     def __call__(
         self,
         sender: ElementGeometry,
-        point_position: np.ndarray,
+        point_position: ArrayOrNumber,
         receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:

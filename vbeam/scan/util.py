@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 
+from fastmath import ArrayOrNumber
+
 from vbeam.fastmath import numpy as np
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.util import _deprecations
@@ -93,13 +95,13 @@ def polar_bounds_to_cartesian_bounds(
 
 @_deprecations.renamed_kwargs("1.0.5", imaged_points="image", sector_scan="bounds")
 def scan_convert(
-    image: np.ndarray,
+    image: ArrayOrNumber,
     bounds: Union[Tuple[float, float, float, float], "SectorScan"],
     azimuth_axis: int = -2,
     depth_axis: int = -1,
     *,  # Remaining args must be passed by name (to avoid confusion)
     shape: Optional[Tuple[int, int]] = None,
-    default_value: Optional[np.ndarray] = 0.0,
+    default_value: Optional[ArrayOrNumber] = 0.0,
     edge_handling: str = "Value",
 ):
     from vbeam.scan import CoordinateSystem, Scan

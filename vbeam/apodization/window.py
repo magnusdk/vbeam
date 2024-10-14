@@ -4,13 +4,14 @@ functions or tapering functions).
 See the notebook ``docs/tutorials/apodization/windows.ipynb`` for a visualization of 
 the various implemented windows."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+
+from fastmath import Module
 
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 
 
-class Window(ABC):
+class Window(Module):
     """A window (also called apodization function or tapering function) is used to get
     more desirable main-lobe/side-lobe characteristics. A Window object can be called
     as afunction. It takes a number between 0 and 0.5 and returns the weight of the
@@ -30,7 +31,6 @@ class Window(ABC):
         and it tapers off as the ratio approaches 0.5."""
 
 
-@traceable_dataclass()
 class NoWindow(Window):
     def __call__(self, ratio: float) -> float:
         return np.ones(ratio.shape)
@@ -40,13 +40,11 @@ def _within_valid(ratio: float) -> bool:
     return np.logical_and(0 <= ratio, ratio <= 0.5)
 
 
-@traceable_dataclass()
 class Rectangular(Window):
     def __call__(self, ratio: float) -> float:
         return _within_valid(ratio) * 1.0
 
 
-@traceable_dataclass(("a0", "a1"))
 class Hanning(Window):
     a0: float = 0.5
     a1: float = 0.5
@@ -55,13 +53,11 @@ class Hanning(Window):
         return _within_valid(ratio) * (self.a0 + self.a1 * np.cos(2 * np.pi * ratio))
 
 
-@traceable_dataclass()
 class Hamming(Window):
     def __call__(self, ratio: float) -> float:
         return Hanning(0.53836, 0.46164)(ratio)
 
 
-@traceable_dataclass(("roll",))
 class Tukey(Window):
     roll: float
 
@@ -89,7 +85,6 @@ def Tukey80() -> Tukey:
     return Tukey(0.8)
 
 
-@traceable_dataclass()
 class Bartlett(Window):
     def __call__(self, ratio: float) -> float:
         return _within_valid(ratio) * (0.5 - ratio) * 2
