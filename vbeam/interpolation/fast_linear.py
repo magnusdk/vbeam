@@ -76,7 +76,8 @@ class FastInterpLinspace(InterpolationSpace1D):
         v = fp[clipped_i1] * p1 + fp[clipped_i2] * p2
         v = np.where(bounds_flag == -1, left, v)
         v = np.where(bounds_flag == 1, right, v)
-        v = np.moveaxis(v, 0, axis)
+        if x.ndim >= 1:
+            v = np.moveaxis(v, 0, axis)
         return v
 
     # InterpolationSpace1D interface
