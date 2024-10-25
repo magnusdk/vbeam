@@ -1,7 +1,7 @@
 import math
 from typing import Optional, Sequence
 
-from fastmath import ArrayOrNumber, Array
+from fastmath import Array
 from spekk import Spec
 
 from vbeam.core import Apodization, ProbeGeometry, WaveData
@@ -16,7 +16,7 @@ def get_apodization_values(
     probe: ProbeGeometry,
     sender: Array,
     receiver: Array,
-    sender: Array,
+    point_position: Array,
     wave_data: WaveData,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,

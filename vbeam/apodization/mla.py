@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from fastmath import ArrayOrNumber, Array
+from fastmath import Array, ArrayOrNumber
 
 from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import numpy as np
@@ -26,7 +26,7 @@ class MLAApodization(Apodization):
         probe: ProbeGeometry,
         sender: Array,
         receiver: ArrayOrNumber,
-        sender: Array,
+        point_position: Array,
         wave_data: WaveData,
     ) -> float:
         # Geometry assumes 2D points

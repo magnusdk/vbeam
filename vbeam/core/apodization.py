@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 
-from fastmath import Array, ArrayOrNumber, Module
+from fastmath import Array, Module
 
 from vbeam.core.probe_geometry import ProbeGeometry
 from vbeam.core.wave_data import WaveData
@@ -15,7 +15,7 @@ class Apodization(Module):
         probe: ProbeGeometry,
         sender: Array,
         receiver: Array,
-        sender: Array,
+        point_position: Array,
         wave_data: WaveData,
     ) -> float:
         """

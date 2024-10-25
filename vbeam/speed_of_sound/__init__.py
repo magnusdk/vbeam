@@ -1,7 +1,7 @@
 from typing import Optional
 
 import numpy
-from fastmath import ArrayOrNumber, Array,field
+from fastmath import ArrayOrNumber, Array, field
 
 from vbeam.core import SpeedOfSound
 from vbeam.fastmath import numpy as np
@@ -29,7 +29,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
     def average(
         self,
         sender_position: Array,
-        sender: Array,
+        point_position: Array,
         receiver_position: Array,
     ) -> float:
         sender_position = ensure_2d_point(sender_position)
@@ -104,7 +104,7 @@ class DistributedGlobalSpeedOfSound(SpeedOfSound):
     def average(
         self,
         sender_position: Array,
-        sender: Array,
+        point_position: Array,
         receiver_position: Array,
     ) -> float:
         x, _, z = point_position[..., 0], point_position[..., 1], point_position[..., 2]
