@@ -1,8 +1,6 @@
 from typing import Sequence, Union
 
-from fastmath import ArrayOrNumber
-
-from vbeam.fastmath import numpy as np
+from fastmath import ArrayOrNumber, api
 
 
 def ensure_positive_index(n: int, index: Union[int, Sequence[int]]) -> int:
@@ -26,6 +24,6 @@ def ensure_2d_point(point: ArrayOrNumber) -> ArrayOrNumber:
     if point.shape[-1] == 2:
         return point
     elif point.shape[-1] == 3:
-        return point[..., np.array([0, 2])]  # Return x- and z-coordinates
+        return point[..., api.array([0, 2])]  # Return x- and z-coordinates
     else:
         raise ValueError(f"Expected 2D or 3D point, got shape={point.shape}.")

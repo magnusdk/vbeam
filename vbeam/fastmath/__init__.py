@@ -36,6 +36,9 @@ Note that setting the backend sets it globally and is not thread-safe.
 import contextlib
 from typing import Callable, Dict, Optional
 
+from fastmath import api as fastmath_api
+
+import vbeam.util._deprecations as deprecations
 from vbeam.fastmath.backend import Backend
 from vbeam.fastmath.included_backends import (
     get_best_available_backend,
@@ -115,16 +118,22 @@ def proxy_backend(backend_manager: BackendManager) -> Backend:
 
     class ProxyBackend(Backend):
         def __getattribute__(self, attr):
-            return getattr(backend_manager.active_backend, attr)
+            # Some fields are deprecated
+            if attr in {"ndarray", "as_traceable_dataclass_obj"}:
+                deprecations.warn(
+                    f"Attribute {attr} is deprecated and will not be part of future "
+                    "fastmath versions."
+                )
+                return getattr(backend_manager.active_backend, attr)
+
+            # Let's override the numpy with the new fastmath API for now.
+            # Once we see that this works for our internal projects we add a deprecation warning,
+            # urging users to use fastmath instead. At a breaking-change versions (vbeam 2.0.0) we
+            # remove vbeam.fastmath modules.
+            return getattr(fastmath_api, attr)
 
     return ProxyBackend()
 
 
 backend_manager = BackendManager()
 numpy = proxy_backend(backend_manager)
-
-# Let's override the numpy with the new fastmath API for now.
-# Once we see that this works for our internal projects we add a deprecation warning,
-# urging users to use fastmath instead. At a breaking-change versions (vbeam 2.0.0) we
-# remove vbeam.fastmath modules.
-from fastmath import api as numpy

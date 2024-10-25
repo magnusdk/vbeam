@@ -41,6 +41,7 @@ A (long, but illustrative) example:
 ...
 >>> print(res.numpy(), tape.gradient(res, container.item.a).numpy())  # 6.0 1.0
 """
+
 from vbeam.fastmath import numpy as np
 
 
@@ -78,16 +79,26 @@ def traceable_dataclass(data_fields=(), aux_fields=()):
         # Duck-type class as a spekk treedef
         setattr(
             cls,
-            "__spekk_treedef_keys__",
+            "__fastmath_keys__",
             lambda self: (
                 *get_traceable_data_fields(self),
                 *get_traceable_aux_fields(self),
             ),
         )
-        setattr(cls, "__spekk_treedef_get__", lambda self, key: getattr(self, key))
         setattr(
             cls,
-            "__spekk_treedef_create__",
+            "__fastmath_children__",
+            lambda self: [
+                getattr(self, key)
+                for key in (
+                    *get_traceable_data_fields(self),
+                    *get_traceable_aux_fields(self),
+                )
+            ],
+        )
+        setattr(
+            cls,
+            "__fastmath_create__",
             lambda self, keys, values: cls(**dict(zip(keys, values))),
         )
 
