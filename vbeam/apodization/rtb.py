@@ -1,17 +1,19 @@
-from typing import Optional, Tuple
+from typing import Optional
+
+from fastmath import Array, ArrayOrNumber
 
 from vbeam.apodization.window import Window
 from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util import ensure_2d_point
 from vbeam.util.geometry.v2 import Line, distance
 
+
 def rtb_apodization(
-    point: np.ndarray,
-    array_left: np.ndarray,
-    array_right: np.ndarray,
-    focus_point: np.ndarray,
+    point: ArrayOrNumber,
+    array_left: ArrayOrNumber,
+    array_right: ArrayOrNumber,
+    focus_point: ArrayOrNumber,
     minimum_aperture: float,
     maximum_aperture: Optional[float] = None,
     window: Optional[Window] = None,
@@ -75,26 +77,28 @@ def rtb_apodization(
         value = np.minimum(value, window(distance_mid / maximum_aperture))
     return value
 
-@traceable_dataclass(("minimum_aperture", "maximum_aperture", "window","replacement_sender") )
+
 class RTBApodization(Apodization):
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     maximum_aperture: Optional[float] = None
     window: Optional[Window] = None
-    replacement_sender: Optional[np.ndarray] = None
+    replacement_sender: Optional[ArrayOrNumber] = None
 
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: np.ndarray,
-        receiver: np.ndarray,
-        point_position: np.ndarray,
+        sender: Array,
+        receiver: Array,
+        point_position: Array,
         wave_data: WaveData,
     ) -> float:
         if self.replacement_sender is None:
-            sender_element_position =  sender
+            sender_element_position = sender
         else:
-            sender_element_position =  self.replacement_sender
-        array_left, array_right,array_up, array_down = probe.get_tx_aperture_borders(sender=sender_element_position)
+            sender_element_position = self.replacement_sender
+        array_left, array_right, array_up, array_down = probe.get_tx_aperture_borders(
+            sender=sender_element_position
+        )
         return rtb_apodization(
             point_position,
             array_left,
@@ -105,26 +109,28 @@ class RTBApodization(Apodization):
             self.window,
         )
 
-@traceable_dataclass(("minimum_aperture", "window","replacement_sender"))
+
 class SteppingApertureRTBApodization(Apodization):
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     window: Optional[Window] = None
-    replacement_sender: np.ndarray = None
+    replacement_sender: Array = None
 
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: np.ndarray,
-        receiver: np.ndarray,
-        point_position: np.ndarray,
+        sender: Array,
+        receiver: Array,
+        point_position: Array,
         wave_data: WaveData,
     ) -> float:
         if self.replacement_sender is None:
-            sender_element_position =  sender
+            sender_element_position = sender
         else:
-            sender_element_position =  self.replacement_sender
-        
-        array_left, array_right,array_up, array_down = probe.get_tx_aperture_borders(sender=sender_element_position)
+            sender_element_position = self.replacement_sender
+
+        array_left, array_right, array_up, array_down = probe.get_tx_aperture_borders(
+            sender=sender_element_position
+        )
         return rtb_apodization(
             point_position,
             array_left,
@@ -134,6 +140,7 @@ class SteppingApertureRTBApodization(Apodization):
             self.maximum_aperture,
             self.window,
         )
+
 
 def get_bounds(
     array_width,

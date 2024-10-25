@@ -1,19 +1,19 @@
 from abc import ABC, abstractmethod
 
+from fastmath import ArrayOrNumber
+
 from vbeam.fastmath import Backend, backend_manager
-from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
 
 
 class MyABC(ABC):
     @abstractmethod
-    def do_thing(self):
-        ...
+    def do_thing(self): ...
 
 
 @traceable_dataclass(data_fields=["a"])
 class Item(MyABC):
-    a: np.ndarray = 1.0
+    a: ArrayOrNumber = 1.0
 
     def do_thing(self):
         return 2.0

@@ -1,12 +1,14 @@
 from typing import Callable, Tuple
 
+from fastmath import ArrayOrNumber
+
 from vbeam.fastmath import numpy as np
 
 
 def get_window_indices(
     image_shape: Tuple[int, ...],
     window_radius: Tuple[int, ...],
-) -> np.ndarray:
+) -> ArrayOrNumber:
     indices = np.stack(
         np.meshgrid(*(np.arange(0, s) for s in image_shape), indexing="ij"), -1
     )
@@ -18,7 +20,7 @@ def get_window_indices(
     return indices + indices_window_offset
 
 
-def windowed(f: Callable, window_radius: Tuple[int, ...]) -> np.ndarray:
+def windowed(f: Callable, window_radius: Tuple[int, ...]) -> ArrayOrNumber:
     def apply_windowed(image, *args, **kwargs):
         indices = get_window_indices(image.shape, window_radius)
 

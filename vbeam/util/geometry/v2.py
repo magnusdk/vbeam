@@ -2,12 +2,12 @@
 
 It's all in this one module because it's all so closely related."""
 
-
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Optional, Tuple, Union
 
+from fastmath import ArrayOrNumber, Module
+
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 
 ####
 # Functions for calculating intersections.
@@ -16,7 +16,7 @@ from vbeam.fastmath.traceable import traceable_dataclass
 
 def intersect_line_line(
     line1: "Line", line2: "Line"
-) -> Tuple[int, Tuple[np.ndarray, np.ndarray]]:
+) -> Tuple[int, Tuple[ArrayOrNumber, ArrayOrNumber]]:
     num_intersections = np.where(np.cross(line1.direction, line2.direction) == 0, 0, 1)
     return num_intersections, (
         line1.anchor
@@ -28,7 +28,7 @@ def intersect_line_line(
 
 def intersect_circle_line(
     circle: "Circle", line: "Line"
-) -> Tuple[int, Tuple[np.ndarray, np.ndarray]]:
+) -> Tuple[int, Tuple[ArrayOrNumber, ArrayOrNumber]]:
     # http://paulbourke.net/geometry/circlesphere/
     a = np.sum(line.direction**2)
     b = 2 * np.sum((line.direction * (line.anchor - circle.center)))
@@ -53,12 +53,14 @@ def intersect_circle_line(
 # Some helper functions
 
 
-def distance(point1: np.ndarray, point2: Optional[np.ndarray] = None, axis: int = -1):
+def distance(
+    point1: ArrayOrNumber, point2: Optional[ArrayOrNumber] = None, axis: int = -1
+):
     diff = point1 if point2 is None else point2 - point1
     return np.sqrt(np.sum(diff**2, axis=axis))
 
 
-def rotate(point: np.ndarray, theta: float, phi: float) -> np.ndarray:
+def rotate(point: ArrayOrNumber, theta: float, phi: float) -> ArrayOrNumber:
     # Define the rotation matrices
     rotation_matrix_theta = np.array(
         [
@@ -77,15 +79,16 @@ def rotate(point: np.ndarray, theta: float, phi: float) -> np.ndarray:
     # Rotate the point
     return rotation_matrix_theta @ rotation_matrix_phi @ point
 
+
 ####
 # Curve classes
 
 
-class Curve(ABC):
+class Curve(Module):
     """A 2D curve. See method docstrings for details."""
 
     @abstractmethod
-    def __call__(self, t: Union[float, np.ndarray]) -> Tuple[float, float]:
+    def __call__(self, t: Union[float, ArrayOrNumber]) -> Tuple[float, float]:
         """Evaluate the curve at a given parameter value.
 
         For example, evaluating a circle at t=0 gives the point at angle 0, t=pi/2 gives
@@ -95,7 +98,7 @@ class Curve(ABC):
         given point."""
 
     @abstractmethod
-    def signed_distance(self, point: np.ndarray) -> np.ndarray:
+    def signed_distance(self, point: ArrayOrNumber) -> ArrayOrNumber:
         """Return the signed distance from a point to the nearest point on the curve.
 
         The sign of the returned value gives information about which side of the curve
@@ -104,39 +107,42 @@ class Curve(ABC):
         outside, and negative on the inside."""
 
     @abstractmethod
-    def intersect(self, other: "Curve") -> Tuple[int, Tuple[np.ndarray, np.ndarray]]:
+    def intersect(
+        self, other: "Curve"
+    ) -> Tuple[int, Tuple[ArrayOrNumber, ArrayOrNumber]]:
         """Return the number of intersections between this curve and another curve and
         the (potentially none) intersection points."""
 
 
-@traceable_dataclass(("anchor", "direction"))
 class Line(Curve):
-    anchor: np.ndarray
-    direction: np.ndarray
+    anchor: ArrayOrNumber
+    direction: ArrayOrNumber
 
     def __post_init__(self):
         # Normalize direction vector (tangent)
         self.direction = self.direction / distance(self.direction)
 
-    def __call__(self, t: Union[float, np.ndarray]) -> Tuple[float, float]:
+    def __call__(self, t: Union[float, ArrayOrNumber]) -> Tuple[float, float]:
         if np.is_ndarray(t) and t.ndim != 0:
             points = np.moveaxis(self.anchor + t[..., None] * self.direction, -1, 0)
         else:
             points = self.anchor + t * self.direction
         return points
 
-    def signed_distance(self, point: np.ndarray) -> float:
+    def signed_distance(self, point: ArrayOrNumber) -> float:
         return np.cross(point - self.anchor, self.direction)
 
     @staticmethod
-    def passing_through(point1: np.ndarray, point2: np.ndarray) -> "Line":
+    def passing_through(point1: ArrayOrNumber, point2: ArrayOrNumber) -> "Line":
         return Line(point1, point2 - point1)
 
     @staticmethod
-    def with_angle(anchor: np.ndarray, angle: float) -> "Line":
+    def with_angle(anchor: ArrayOrNumber, angle: float) -> "Line":
         return Line(anchor, np.array([np.cos(angle), np.sin(angle)]))
 
-    def intersect(self, other: Curve) -> Tuple[int, Tuple[np.ndarray, np.ndarray]]:
+    def intersect(
+        self, other: Curve
+    ) -> Tuple[int, Tuple[ArrayOrNumber, ArrayOrNumber]]:
         if isinstance(other, Line):
             return intersect_line_line(self, other)
         else:
@@ -147,13 +153,12 @@ class Line(Curve):
         return np.arctan2(self.direction[1], self.direction[0])
 
     @property
-    def normal(self) -> np.ndarray:
+    def normal(self) -> ArrayOrNumber:
         return np.array([-self.direction[1], self.direction[0]])
 
 
-@traceable_dataclass(("center", "radius"))
 class Circle(Curve):
-    center: np.ndarray
+    center: ArrayOrNumber
     radius: float
 
     def __call__(self, t: float) -> Tuple[float, float]:
@@ -162,17 +167,18 @@ class Circle(Curve):
             center = self.center[:, None]
         return np.array([np.cos(t), np.sin(t)]) * self.radius + center
 
-    def signed_distance(self, point: np.ndarray) -> np.ndarray:
+    def signed_distance(self, point: ArrayOrNumber) -> ArrayOrNumber:
         return distance(point, self.center) - self.radius
 
-    def intersect(self, other: Curve) -> Tuple[int, Tuple[np.ndarray, np.ndarray]]:
+    def intersect(
+        self, other: Curve
+    ) -> Tuple[int, Tuple[ArrayOrNumber, ArrayOrNumber]]:
         if isinstance(other, Line):
             return intersect_circle_line(self, other)
         else:
             raise NotImplementedError
 
 
-@traceable_dataclass(("f1", "f2", "d"))
 class Ellipse(Curve):
     """An ellipse defined by two focus points and the summed distance from each to
     points on the ellipse.
@@ -185,11 +191,11 @@ class Ellipse(Curve):
     should also not depend on the derivative of the __call__ method to compute a
     normalized tangent."""
 
-    f1: np.ndarray  # Focus point 1
-    f2: np.ndarray  # Focus point 2
+    f1: ArrayOrNumber  # Focus point 1
+    f2: ArrayOrNumber  # Focus point 2
     d: float  # If p is a point on the ellipse, then d = distance(p, f1) + distance(p, f2)
 
-    def __call__(self, t: np.ndarray) -> np.ndarray:
+    def __call__(self, t: ArrayOrNumber) -> ArrayOrNumber:
         # An ellipse is just a transformed circle
         circle = Circle(np.array([0, 0]), 1)
         circle_transform = self._circle_transform
@@ -197,12 +203,14 @@ class Ellipse(Curve):
             circle_transform = np.vmap(circle_transform, [1])
         return circle_transform(circle(t)).T
 
-    def signed_distance(self, point: np.ndarray) -> np.ndarray:
+    def signed_distance(self, point: ArrayOrNumber) -> ArrayOrNumber:
         # Not implemented yet. Need to think about how to normalize the distance since
         # the space is transformed.
         raise NotImplementedError
 
-    def intersect(self, other: Curve) -> Tuple[int, Tuple[np.ndarray, np.ndarray]]:
+    def intersect(
+        self, other: Curve
+    ) -> Tuple[int, Tuple[ArrayOrNumber, ArrayOrNumber]]:
         if isinstance(other, Line):
             other = Line.passing_through(
                 self._circle_undo_transform(other(0)),
@@ -221,21 +229,21 @@ class Ellipse(Curve):
     def _circle_rotation(self) -> float:
         return np.arctan2(self.f2[1] - self.f1[1], self.f2[0] - self.f1[0])
 
-    def _circle_scale(self) -> np.ndarray:
+    def _circle_scale(self) -> ArrayOrNumber:
         a = self.d / 2
         b = np.sqrt(a**2 - distance(self.f2, self.f1) ** 2 / 4)
         return np.array([a, b])
 
-    def _circle_translation(self) -> np.ndarray:
+    def _circle_translation(self) -> ArrayOrNumber:
         return (self.f1 + self.f2) / 2
 
-    def _circle_transform(self, point: np.ndarray) -> np.ndarray:
+    def _circle_transform(self, point: ArrayOrNumber) -> ArrayOrNumber:
         point *= self._circle_scale()
         point = rotate(point, self._circle_rotation())
         point += self._circle_translation()
         return point
 
-    def _circle_undo_transform(self, point: np.ndarray) -> np.ndarray:
+    def _circle_undo_transform(self, point: ArrayOrNumber) -> ArrayOrNumber:
         point -= self._circle_translation()
         point = rotate(point, -self._circle_rotation())
         point /= self._circle_scale()

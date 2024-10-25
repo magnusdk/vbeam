@@ -1,14 +1,14 @@
 from typing import Tuple
 
+from fastmath import ArrayOrNumber, Array
+
 from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import Line
 
 from .window import Window
 
 
-@traceable_dataclass(("window", "beam_width", "array_bounds_x"))
 class MLAApodization(Apodization):
     """Perform multiple line acquisition (MLA) in cartesian space.
 
@@ -24,9 +24,9 @@ class MLAApodization(Apodization):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: np.ndarray,
-        receiver: np.ndarray,
-        point_position: np.ndarray,
+        sender: Array,
+        receiver: ArrayOrNumber,
+        sender: Array,
         wave_data: WaveData,
     ) -> float:
         # Geometry assumes 2D points

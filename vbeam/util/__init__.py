@@ -1,5 +1,7 @@
 from typing import Sequence, Union
 
+from fastmath import ArrayOrNumber
+
 from vbeam.fastmath import numpy as np
 
 
@@ -13,7 +15,14 @@ def ensure_positive_index(n: int, index: Union[int, Sequence[int]]) -> int:
         return [ensure_positive_index(n, i) for i in index]
 
 
-def ensure_2d_point(point: np.ndarray) -> np.ndarray:
+def broadcast_to_axis(a: ArrayOrNumber, axis: int, ndims: int) -> ArrayOrNumber:
+    assert a.ndim <= 1
+    shape = [1] * ndims
+    shape[axis] = -1
+    return a.reshape(shape)
+
+
+def ensure_2d_point(point: ArrayOrNumber) -> ArrayOrNumber:
     if point.shape[-1] == 2:
         return point
     elif point.shape[-1] == 3:

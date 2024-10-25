@@ -5,6 +5,7 @@ Each function returns the default value and its spec."""
 
 from typing import Tuple
 
+from fastmath import ArrayOrNumber
 from spekk import Spec
 
 from vbeam.core import ProbeGeometry, WaveData
@@ -21,7 +22,7 @@ def _default_receiver(spec: Spec) -> Tuple[np.ndarray, Spec]:
 def _default_sender(spec: Spec) -> Tuple[np.ndarray, Spec]:
     return np.zeros(3), spec.at["sender"].set([])
 
-def _default_point_position(spec: Spec) -> Tuple[np.ndarray, Spec]:
+def _default_point_position(spec: Spec) -> Tuple[ArrayOrNumber, Spec]:
     nx, nz = 200, 200
     point_position = grid(
         np.linspace(-20e-3, 20e-3, nx),

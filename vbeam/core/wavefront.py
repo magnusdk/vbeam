@@ -5,19 +5,19 @@
 Wavefront models return a distance in meters. This way they are decoupled from the 
 speed of sound of the medium."""
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from abc import abstractmethod
 from typing import Callable, Union
 
+from fastmath import Array, ArrayOrNumber, Module
+
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import distance
 
 from .probe_geometry import ProbeGeometry
 from .wave_data import WaveData
 
 
-class TransmittedWavefront(ABC):
+class TransmittedWavefront(Module):
     """The base class for defining wavefront models of transmitted waves.
 
     :class:`TransmittedWavefront` models are used to calculate the *distance (in
@@ -62,8 +62,8 @@ class TransmittedWavefront(ABC):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: np.ndarray,
-        point_position: np.ndarray,
+        sender: Array,
+        point_position: Array,
         wave_data: WaveData,
     ) -> Union[float, "MultipleTransmitDistances"]:
         """Return the *distance (in meters)* from the sender element to the point for a transmit.
@@ -77,8 +77,7 @@ class TransmittedWavefront(ABC):
         """
 
 
-@traceable_dataclass()
-class ReflectedWavefront:
+class ReflectedWavefront(Module):
     """The base class for defining wavefront models of reflected/backscattered waves.
 
     This is usually just the euclidian distance as there are limits to what we can
@@ -88,12 +87,11 @@ class ReflectedWavefront:
         :class:`TransmittedWavefront`
         :func:`~vbeam.core.kernels.signal_for_point`"""
 
-    def __call__(self, point_position: np.ndarray, receiver: np.ndarray) -> float:
+    def __call__(self, point_position: Array, receiver: Array) -> float:
         return distance(point_position, receiver)
 
 
-@dataclass
-class MultipleTransmitDistances:
+class MultipleTransmitDistances(Module):
     """Multiple distance values returned from a :class:`TransmittedWavefront`.
 
     Some more advanced :class:`TransmittedWavefront` models may return multiple
@@ -109,8 +107,8 @@ class MultipleTransmitDistances:
     will apply them to the :attr:`values` attribute as if it was just a numpy array.
 
     Attributes:
-        values (np.ndarray): The distance values that will be used to delay the element signals.
-        aggregate_samples (Callable[[np.ndarray, np.ndarray], np.ndarray]): A function
+        values (ArrayOrNumber): The distance values that will be used to delay the element signals.
+        aggregate_samples (Callable[[ArrayOrNumber, ArrayOrNumber], ArrayOrNumber]): A function
             that will be used to combine the delayed samples into one value, for
             example as a weighted sum. If None, the samples will be averaged.
 
@@ -119,8 +117,8 @@ class MultipleTransmitDistances:
         :class:`TransmittedWavefront`
     """
 
-    values: np.ndarray
-    aggregate_samples: Callable[[np.ndarray, np.ndarray], np.ndarray] = None
+    values: ArrayOrNumber
+    aggregate_samples: Callable[[ArrayOrNumber, ArrayOrNumber], ArrayOrNumber] = None
 
     def __post_init__(self):
         # If no aggregate function is set, just average the samples
@@ -129,8 +127,8 @@ class MultipleTransmitDistances:
 
     # Mathematical operators applied to the :class:`MultipleTransmitDistances` object
     # will apply them to the ``values`` attribute as if it was just a numpy array.
-    def __truediv__(self, other) -> np.ndarray:
+    def __truediv__(self, other) -> ArrayOrNumber:
         return self.values / other
 
-    def __add__(self, other) -> np.ndarray:
+    def __add__(self, other) -> ArrayOrNumber:
         return self.values + other

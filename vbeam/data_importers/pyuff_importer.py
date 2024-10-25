@@ -2,6 +2,7 @@ from typing import List, Literal, Optional, Tuple, Union
 
 import numpy
 import pyuff_ustb as pyuff
+from fastmath import ArrayOrNumber
 from scipy.signal import hilbert
 from spekk import Spec
 
@@ -203,7 +204,7 @@ given {all_wavefronts})."
     )
 
 
-def parse_beamformed_data(beamformed_data: pyuff.BeamformedData) -> np.ndarray:
+def parse_beamformed_data(beamformed_data: pyuff.BeamformedData) -> ArrayOrNumber:
     "Parse the beamformed data from a PyUFF file into an array with the correct shape."
     imaged_points = np.squeeze(beamformed_data.data)
     scan = parse_pyuff_scan(beamformed_data.scan)
