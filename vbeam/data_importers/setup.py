@@ -126,7 +126,11 @@ updating the scan instead."
     def copy(self) -> "SignalForPointSetup":
         return SignalForPointSetup(**self.data, spec=self.spec, scan=self.scan)
 
-    def get_apodization_values(self, dimensions: Sequence[str]):
+    def get_apodization_values(
+        self,
+        dimensions: Sequence[str],
+        reduce_sum_dimension: Optional[Sequence[str]] = None,
+    ):
         """Return the apodization values for the dimensions. All other relevant
         dimensions are (by default) summed over.
 
@@ -142,6 +146,7 @@ updating the scan instead."
             self.wave_data,
             self.spec,
             dimensions,
+            reduce_sum_dimension,
         )
 
     def plot_apodization(
