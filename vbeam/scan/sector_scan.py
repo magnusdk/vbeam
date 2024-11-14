@@ -113,7 +113,7 @@ class SectorScan(Scan):
         azimuth_axis: int = -2,
         depth_axis: int = -1,
         *,  # Remaining args must be passed by name (to avoid confusion)
-        shape: Optional[Tuple[int, int]] = None,
+        shape: Optional[Union[Tuple[int, int], str]] = None,
         default_value: Optional[ArrayOrNumber] = 0.0,
         edge_handling: str = "Value",
     ):
