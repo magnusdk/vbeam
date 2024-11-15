@@ -104,6 +104,20 @@ class SectorScan(Scan):
                 "Please create an issue on Github if this is something you need.",
             )
         return polar_bounds_to_cartesian_bounds(self.bounds)
+    
+    def cartesian_axes(self, shape) -> Tuple[Array, Array]:
+        """Get the azimuth and depth vectos of the scan in cartesian coordinates."""
+        if self.is_3d:
+            raise NotImplementedError(
+                "Cartesian bounds are not implemented for 3D scans yet.",
+                "Please create an issue on Github if this is something you need.",
+            )
+        
+        min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(self.bounds) 
+        x_axis = ops.linspace(min_x, max_x, shape[0])
+        z_axis = ops.linspace(min_z, max_z, shape[1])
+        
+        return (x_axis, z_axis)    
 
     @_deprecations.renamed_kwargs("1.0.5", imaged_points="image")
     def scan_convert(
@@ -115,6 +129,7 @@ class SectorScan(Scan):
         shape: Optional[Union[Tuple[int, int], str]] = None,
         default_value: Optional[ArrayOrNumber] = 0.0,
         edge_handling: str = "Value",
+        cartesian_axes: Optional[Tuple[Array, Array]] = None,
     ):
         return scan_convert(
             image,
@@ -124,6 +139,7 @@ class SectorScan(Scan):
             shape=shape,
             default_value=default_value,
             edge_handling=edge_handling,
+            cartesian_axes=cartesian_axes,
         )
 
     @property

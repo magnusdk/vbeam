@@ -102,6 +102,7 @@ def scan_convert(
     shape: Optional[Union[Tuple[int, int], str]] = None,
     default_value: Optional[ArrayOrNumber] = 0.0,
     edge_handling: str = "Value",
+    cartesian_axes: Optional[Tuple[Array, Array]] = None,
 ):
     from vbeam.scan import CoordinateSystem, Scan
 
@@ -125,11 +126,18 @@ def scan_convert(
     min_az, max_az, min_depth, max_depth = bounds
 
     # Get the points in the cartesian grid
-    min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(bounds)
-    points = grid(
-        np.linspace(min_x, max_x, shape[0]),
-        np.linspace(min_z, max_z, shape[1]),
-    )
+    if cartesian_axes is None:
+        min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(bounds)
+        points = grid(
+            ops.linspace(min_x, max_x, shape[0]),
+            ops.linspace(min_z, max_z, shape[1]),
+        )
+    else:
+        points = grid(
+            cartesian_axes[0],
+            cartesian_axes[1],
+        )
+
     x, z = points[..., 0], points[..., 1]  # (Ignore y; scan_convert only supports 2D!)
     # and transform each point to polar coordinates.
     angles = ops.arctan2(x, z)
