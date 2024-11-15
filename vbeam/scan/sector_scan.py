@@ -1,8 +1,7 @@
 from typing import Callable, Literal, Optional, Tuple, Union, overload
 
-from fastmath import ArrayOrNumber
+from fastmath import ArrayOrNumber, Array, ops
 
-from vbeam.fastmath import numpy as np
 from vbeam.scan.base import CoordinateSystem, Scan
 from vbeam.scan.util import parse_axes, polar_bounds_to_cartesian_bounds, scan_convert
 from vbeam.util import _deprecations
@@ -17,12 +16,12 @@ class SectorScan(Scan):
     apex: ArrayOrNumber
 
     def get_points(self, flatten: bool = True) -> ArrayOrNumber:
-        polar_axis = self.elevations if self.is_3d else np.array([0.0])
+        polar_axis = self.elevations if self.is_3d else ops.array([0.0])
         points = grid(self.azimuths, polar_axis, self.depths, shape=(*self.shape, 3))
         points = as_cartesian(points)
         # Ensure that points and apex are broadcastable
         apex = (
-            np.expand_dims(self.apex, axis=tuple(range(1, self.ndim)))
+            ops.expand_dims(self.apex, axis=tuple(range(1, self.ndim)))
             if self.apex.ndim > 1
             else self.apex
         )
@@ -72,17 +71,17 @@ class SectorScan(Scan):
             )
         return self.replace(
             azimuths=(
-                np.linspace(self.azimuths[0], self.azimuths[-1], azimuths)
+                ops.linspace(self.azimuths[0], self.azimuths[-1], azimuths)
                 if azimuths is not None
                 else "unchanged"
             ),
             elevations=(
-                np.linspace(self.elevations[0], self.elevations[-1], elevations)
+                ops.linspace(self.elevations[0], self.elevations[-1], elevations)
                 if elevations is not None
                 else "unchanged"
             ),
             depths=(
-                np.linspace(self.depths[0], self.depths[-1], depths)
+                ops.linspace(self.depths[0], self.depths[-1], depths)
                 if depths is not None
                 else "unchanged"
             ),
@@ -157,4 +156,4 @@ def sector_scan(
 ) -> SectorScan:
     "Construct a sector scan. See SectorScan documentation for more details."
     azimuths, elevations, depths = parse_axes(axes)
-    return SectorScan(azimuths, elevations, depths, np.array(apex))
+    return SectorScan(azimuths, elevations, depths, ops.array(apex))

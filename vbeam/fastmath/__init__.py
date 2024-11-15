@@ -127,4 +127,4 @@ numpy = proxy_backend(backend_manager)
 # Once we see that this works for our internal projects we add a deprecation warning,
 # urging users to use fastmath instead. At a breaking-change versions (vbeam 2.0.0) we
 # remove vbeam.fastmath modules.
-from fastmath import api as numpy
+from fastmath import ops
