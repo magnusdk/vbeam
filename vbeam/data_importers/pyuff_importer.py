@@ -2,7 +2,7 @@ from typing import List, Literal, Optional, Tuple, Union
 
 import numpy
 import pyuff_ustb as pyuff
-from fastmath import Array, api
+from fastmath import Array, ops
 from scipy.signal import hilbert
 from spekk import Spec
 
@@ -27,7 +27,7 @@ def parse_pyuff_scan(scan: pyuff.Scan) -> Scan:
     if isinstance(scan, Scan):
         return scan
     elif isinstance(scan, pyuff.LinearScan):
-        return linear_scan(api.squeeze(scan.x_axis), api.squeeze(scan.z_axis))
+        return linear_scan(ops.squeeze(scan.x_axis), ops.squeeze(scan.z_axis))
     elif isinstance(scan, pyuff.SectorScan):
         origin = (
             scan.origin.xyz
@@ -35,9 +35,9 @@ def parse_pyuff_scan(scan: pyuff.Scan) -> Scan:
             else [p.xyz for p in scan.origin]
         )
         return sector_scan(
-            api.squeeze(scan.azimuth_axis),
-            api.squeeze(scan.depth_axis),
-            apex=api.array(origin),
+            ops.squeeze(scan.azimuth_axis),
+            ops.squeeze(scan.depth_axis),
+            apex=ops.array(origin),
         )
     else:
         raise ValueError("The scan is not an instance of pyuff.Scan")
@@ -57,7 +57,7 @@ def import_pyuff(
     if scan is not None:
         scan = parse_pyuff_scan(scan)
 
-    speed_of_sound = api.array(float(channel_data.sound_speed), dtype="float32")
+    speed_of_sound = ops.array(float(channel_data.sound_speed), dtype="float32")
     t_axis_interpolate = FastInterpLinspace(
         min=float(channel_data.initial_time),
         d=1 / float(channel_data.sampling_frequency),
@@ -77,7 +77,7 @@ def import_pyuff(
         else:
             assert frames == 0, "Only frame 0 is available."
             data = channel_data.data
-        receiver_signals = api.transpose(data, (2, 1, 0))
+        receiver_signals = ops.transpose(data, (2, 1, 0))
         has_multiple_frames = False
     # Selecting multiple frames
     elif isinstance(frames, (tuple, list, range)):
@@ -85,22 +85,22 @@ def import_pyuff(
             data = channel_data.data[:, :, :, frames]
         else:
             assert all(frame == 0 for frame in frames), "Only frame 0 is available."
-            data = api.stack([channel_data.data for _ in frames], -1)
-        receiver_signals = api.transpose(data, (3, 2, 1, 0))
+            data = ops.stack([channel_data.data for _ in frames], -1)
+        receiver_signals = ops.transpose(data, (3, 2, 1, 0))
         has_multiple_frames = True
     # Selecting all frames
     else:
         if channel_data.data.ndim == 4:
-            receiver_signals = api.transpose(channel_data.data, (3, 2, 1, 0))
+            receiver_signals = ops.transpose(channel_data.data, (3, 2, 1, 0))
             has_multiple_frames = True
         else:
-            receiver_signals = api.transpose(channel_data.data, (2, 1, 0))
+            receiver_signals = ops.transpose(channel_data.data, (2, 1, 0))
             has_multiple_frames = False
 
     # Apply hilbert transform if modulation_frequency is 0
-    modulation_frequency = api.array(channel_data.modulation_frequency)
-    if api.abs(modulation_frequency) == 0:
-        receiver_signals = api.array(hilbert(receiver_signals), dtype="complex64")
+    modulation_frequency = ops.array(channel_data.modulation_frequency)
+    if ops.abs(modulation_frequency) == 0:
+        receiver_signals = ops.array(hilbert(receiver_signals), dtype="complex64")
 
     if (
         channel_data.probe.__class__
@@ -118,15 +118,15 @@ def import_pyuff(
 
     probe = ProbeGeometry(ROC=(ROC_azimuth, ROC_elevation))
     probe.rx_aperture_length_s = (
-        api.max(channel_data.probe.x) - api.min(channel_data.probe.x),
-        api.max(channel_data.probe.y) - api.min(channel_data.probe.y),
+        ops.max(channel_data.probe.x) - ops.min(channel_data.probe.x),
+        ops.max(channel_data.probe.y) - ops.min(channel_data.probe.y),
     )
     probe.tx_aperture_length_s = (
-        api.max(channel_data.probe.x) - api.min(channel_data.probe.x),
-        api.max(channel_data.probe.y) - api.min(channel_data.probe.y),
+        ops.max(channel_data.probe.x) - ops.min(channel_data.probe.x),
+        ops.max(channel_data.probe.y) - ops.min(channel_data.probe.y),
     )
 
-    receiver = api.array(channel_data.probe.xyz)
+    receiver = ops.array(channel_data.probe.xyz)
 
     sequence: List[pyuff.Wave] = channel_data.sequence
     all_wavefronts = {wave.wavefront for wave in sequence}
@@ -152,10 +152,10 @@ given {all_wavefronts})."
         )
 
     wave_data = WaveData(
-        azimuth=api.array([wave.source.azimuth for wave in sequence]),
-        elevation=api.array([wave.source.elevation for wave in sequence]),
-        source=api.array([wave.source.xyz for wave in sequence]),
-        t0=api.array([wave.delay for wave in sequence]),
+        azimuth=ops.array([wave.source.azimuth for wave in sequence]),
+        elevation=ops.array([wave.source.elevation for wave in sequence]),
+        source=ops.array([wave.source.xyz for wave in sequence]),
+        t0=ops.array([wave.delay for wave in sequence]),
     )
 
     spec = Spec(
@@ -168,7 +168,7 @@ given {all_wavefronts})."
     )
 
     # Set sender
-    sender = api.array(
+    sender = ops.array(
         list(map(lambda x: x.origin.xyz, channel_data.sequence)), dtype="float32"
     )
     if sender.any():
@@ -181,7 +181,7 @@ given {all_wavefronts})."
         )
         spec = spec.at["sender"].set(["transmits"])
     else:
-        sender = api.array([0.0, 0.0, 0.0], dtype="float32")
+        sender = ops.array([0.0, 0.0, 0.0], dtype="float32")
 
     # Check if we are dealing with a STAI dataset: is each virtual source placed at
     # exactly at an element position?
@@ -221,6 +221,6 @@ given {all_wavefronts})."
 
 def parse_beamformed_data(beamformed_data: pyuff.BeamformedData) -> Array:
     "Parse the beamformed data from a PyUFF file into an array with the correct shape."
-    imaged_points = api.squeeze(beamformed_data.data)
+    imaged_points = ops.squeeze(beamformed_data.data)
     scan = parse_pyuff_scan(beamformed_data.scan)
     return scan.unflatten(imaged_points, points_axis=0)

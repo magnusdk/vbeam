@@ -1,6 +1,6 @@
 from typing import Sequence, Union
 
-from fastmath import Array, api
+from fastmath import Array, ops
 
 
 def ensure_positive_index(n: int, index: Union[int, Sequence[int]]) -> int:
@@ -24,6 +24,6 @@ def ensure_2d_point(point: Array) -> Array:
     if point.shape[-1] == 2:
         return point
     elif point.shape[-1] == 3:
-        return point[..., api.array([0, 2])]  # Return x- and z-coordinates
+        return point[..., ops.array([0, 2])]  # Return x- and z-coordinates
     else:
         raise ValueError(f"Expected 2D or 3D point, got shape={point.shape}.")

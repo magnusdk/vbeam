@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from fastmath import ArrayOrNumber, ops
+from fastmath import Array, ops
 
 from vbeam.core import InterpolationSpace1D
 from vbeam.util import ensure_positive_index
@@ -21,7 +21,7 @@ class FastInterpLinspace(InterpolationSpace1D):
         # Assumes that arr was created as a linspace.
         return FastInterpLinspace(arr[0], arr[1] - arr[0], len(arr))
 
-    def to_array(self) -> ArrayOrNumber:
+    def to_array(self) -> Array:
         return ops.linspace(self.min, self.min + self.d * self.n, self.n)
 
     def interp1d_indices(self, x: Array) -> Tuple[float, int, int, float, float]:
@@ -64,7 +64,7 @@ class FastInterpLinspace(InterpolationSpace1D):
         left: int = 0,
         right: int = 0,
         axis: int = 0,
-    ) -> ArrayOrNumber:
+    ) -> Array:
         fp = ops.moveaxis(fp, axis, 0)
         bounds_flag, clipped_i1, clipped_i2, p1, p2 = self.interp1d_indices(x)
         bounds_flag = ops.expand_dims(bounds_flag, tuple(range(1, fp.ndim)))
