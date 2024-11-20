@@ -17,8 +17,9 @@ class SectorScan(Scan):
     apex: np.ndarray
 
     def get_points(self, flatten: bool = True) -> np.ndarray:
+        # TODO: elevations are not the same as theta
         polar_axis = self.elevations if self.is_3d else np.array([0.0])
-        points = grid(self.azimuths, polar_axis, self.depths, shape=(*self.shape, 3))
+        points = grid(self.depths, polar_axis, self.azimuths, shape=(*self.shape, 3))
         points = as_cartesian(points)
         # Ensure that points and apex are broadcastable
         apex = (

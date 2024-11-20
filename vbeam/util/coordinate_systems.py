@@ -2,25 +2,57 @@ from vbeam.fastmath import numpy as np
 
 
 def as_polar(cartesian_point: np.ndarray):
-    """Return a point in cartesian coordinates in its polar coordinates representation.
+    """Convert cartesian coordinates (x,y,z) to spherical coordinates (r,θ,φ).
 
-    NOTE: All y-values must be 0. FIXME"""
+    Returns:
+        np.ndarray: Array with [..., (r, theta, phi)] where:
+            r = radial distance
+            theta = polar angle (inclination from z-axis) [0,π]
+            phi = azimuthal angle (from x-axis in x-y plane) [0,2π]
+
+    Follows physics convention:
+    https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
+    (ISO 80000-2:2019)
+
+    Note:
+    - theta/phi are not the same as elevation/azimuth
+    """
     x, y, z = cartesian_point[..., 0], cartesian_point[..., 1], cartesian_point[..., 2]
-    azimuth_angles = np.arctan2(x, z)
+
+    # Radial distance
     radii = np.sqrt(x**2 + y**2 + z**2)
-    return np.stack([azimuth_angles, np.zeros(radii.shape), radii], -1)
+
+    # Polar angle (inclination from z-axis)
+    theta = np.arccos(z / radii)
+
+    # Azimuthal angle (from x-axis)
+    phi = np.arctan2(y, x)
+
+    return np.stack([radii, theta, phi], axis=-1)
 
 
 def as_cartesian(polar_point: np.ndarray):
-    "Return a point in polar coordinates in its cartesian coordinates representation."
-    azimuth_angles = polar_point[..., 0]
-    polar_angles = polar_point[..., 1]
-    r = polar_point[..., 2]
+    """Convert spherical coordinates (r,θ,φ) to cartesian coordinates (x,y,z).
+
+    Args:
+        polar_point: Array with [..., (r, theta, phi)] where:
+            r = radial distance
+            theta = polar angle (inclination from z-axis)
+            phi = azimuthal angle (from x-axis in x-y plane)
+
+    Follows physics convention:
+    https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
+    (ISO 80000-2:2019)
+    """
+    r = polar_point[..., 0]
+    polar_angles = polar_point[..., 1]  # theta
+    azimuth_angles = polar_point[..., 2]  # phi
+
     return np.stack(
         [
-            r * np.sin(azimuth_angles) * np.cos(polar_angles),
-            r * np.sin(azimuth_angles) * np.sin(polar_angles),
-            r * np.cos(azimuth_angles),
+            r * np.sin(polar_angles) * np.cos(azimuth_angles),  # x
+            r * np.sin(polar_angles) * np.sin(azimuth_angles),  # y
+            r * np.cos(polar_angles),  # z
         ],
         axis=-1,
     )
