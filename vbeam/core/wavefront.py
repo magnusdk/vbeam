@@ -8,9 +8,8 @@ speed of sound of the medium."""
 from abc import abstractmethod
 from typing import Callable, Union
 
-from fastmath import Array, Module
+from fastmath import Array, Module, ops
 
-from vbeam.fastmath import numpy as api
 from vbeam.util.geometry.v2 import distance
 
 from .probe_geometry import ProbeGeometry
@@ -123,7 +122,7 @@ class MultipleTransmitDistances(Module):
     def __post_init__(self):
         # If no aggregate function is set, just average the samples
         if self.aggregate_samples is None:
-            self.aggregate_samples = api.mean
+            self.aggregate_samples = ops.mean
 
     # Mathematical operators applied to the :class:`MultipleTransmitDistances` object
     # will apply them to the ``values`` attribute as if it was just a numpy array.

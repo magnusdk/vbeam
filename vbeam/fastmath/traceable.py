@@ -42,7 +42,7 @@ A (long, but illustrative) example:
 >>> print(res.numpy(), tape.gradient(res, container.item.a).numpy())  # 6.0 1.0
 """
 
-from vbeam.fastmath import numpy as api
+from vbeam.fastmath import numpy as vbeam_fastmath_ops
 
 
 def traceable_dataclass(data_fields=(), aux_fields=()):
@@ -104,8 +104,10 @@ def traceable_dataclass(data_fields=(), aux_fields=()):
 
         # Wrap __new__ with backend-specific wrapper
         original_new = cls.__new__
-        cls.__new__ = lambda cls, *args, **kwargs: api.as_traceable_dataclass_obj(
-            original_new(cls), data_fields, aux_fields
+        cls.__new__ = (
+            lambda cls, *args, **kwargs: vbeam_fastmath_ops.as_traceable_dataclass_obj(
+                original_new(cls), data_fields, aux_fields
+            )
         )
         return cls
 

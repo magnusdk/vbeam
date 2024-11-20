@@ -1,21 +1,20 @@
 from typing import Tuple, Union
 
-from fastmath import Array
+from fastmath import Array, ops
 
-from vbeam.fastmath import numpy as api
 from vbeam.interpolation import FastInterpLinspace
 
 
 def coherence_factor(beamformed_data: Array, receivers_axis: int):
-    coherent_sum = api.abs(api.sum(beamformed_data, receivers_axis)) ** 2
-    incoherent_sum = api.sum(api.abs(beamformed_data) ** 2, receivers_axis)
+    coherent_sum = ops.abs(ops.sum(beamformed_data, receivers_axis)) ** 2
+    incoherent_sum = ops.sum(ops.abs(beamformed_data) ** 2, receivers_axis)
     num_receivers = beamformed_data.shape[receivers_axis]
-    return api.nan_to_num(coherent_sum / incoherent_sum / num_receivers)
+    return ops.nan_to_num(coherent_sum / incoherent_sum / num_receivers)
 
 
 def normalized_decibels(data: Array):
     "Convert the data into decibels normalized for dynamic range."
-    data_db = 20 * api.nan_to_num(api.log10(api.abs(data)))
+    data_db = 20 * ops.nan_to_num(ops.log10(ops.abs(data)))
     return data_db - data_db.max()
 
 
@@ -28,7 +27,7 @@ def _upsampling_indices(n: int, data_size: int) -> Array:
     is_even = n % 2 == 0
     is_odd = not is_even
     d = (n // 2 + is_odd) * 2
-    return api.arange(n * data_size - d + is_odd) / n + (is_even + d - n) / (2 * n)
+    return ops.arange(n * data_size - d + is_odd) / n + (is_even + d - n) / (2 * n)
 
 
 def upsample_by_interpolation(
@@ -52,9 +51,9 @@ def upsample_by_interpolation(
 
     # Only one axis has been given: upsample that axis
     sample_indices = _upsampling_indices(n, data.shape[axis])
-    data = api.swapaxes(data, axis, 0)
+    data = ops.swapaxes(data, axis, 0)
     interpolator = FastInterpLinspace(0, 1, data.shape[0])
     interpolated_data = interpolator.interp1d(
         sample_indices, data, left=data[0], right=data[-1]
     )
-    return api.swapaxes(interpolated_data, 0, axis)
+    return ops.swapaxes(interpolated_data, 0, axis)

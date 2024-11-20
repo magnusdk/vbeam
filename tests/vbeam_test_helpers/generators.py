@@ -1,6 +1,6 @@
+from fastmath import ops
 from hypothesis import strategies as st
 
-from vbeam.fastmath import numpy as api
 from vbeam.scan import sector_scan
 
 
@@ -9,7 +9,7 @@ def linspaces(min: float, max: float, num: int = 50, ensure_increasing: bool = F
     return (
         st.tuples(st.floats(min, max), st.floats(min, max))
         .filter(lambda args: not ensure_increasing or args[0] <= args[1])
-        .map(lambda args: api.linspace(*args, num))
+        .map(lambda args: ops.linspace(*args, num))
     )
 
 
@@ -18,10 +18,10 @@ def sector_scans(shape):
     assert len(shape) in (2, 3), "scan must be 2D or 3D"
     return st.builds(
         sector_scan,
-        *[linspaces(-api.pi, api.pi, size) for size in shape[:-1]],
+        *[linspaces(-ops.pi, ops.pi, size) for size in shape[:-1]],
         linspaces(0, 2, shape[-1]),
         apex=st.builds(
-            lambda x, z: api.array([x, 0.0, z]),
+            lambda x, z: ops.array([x, 0.0, z]),
             st.floats(-4, 4),
             st.floats(-4, 4),
         ),

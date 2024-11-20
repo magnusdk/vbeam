@@ -1,9 +1,8 @@
 from typing import Tuple
 
-from fastmath import Array, Array
+from fastmath import Array, ops
 
 from vbeam.core import Apodization, ProbeGeometry, WaveData
-from vbeam.fastmath import numpy as api
 from vbeam.util.geometry.v2 import Line
 
 from .window import Window
@@ -30,11 +29,11 @@ class MLAApodization(Apodization):
         wave_data: WaveData,
     ) -> float:
         # Geometry assumes 2D points
-        point_position = point_position[api.array([0, 2])]
-        source = wave_data.source[api.array([0, 2])]
+        point_position = point_position[ops.array([0, 2])]
+        source = wave_data.source[ops.array([0, 2])]
 
-        array_left = api.array([self.array_bounds_x[0], 0])
-        array_right = api.array([self.array_bounds_x[1], 0])
+        array_left = ops.array([self.array_bounds_x[0], 0])
+        array_right = ops.array([self.array_bounds_x[1], 0])
         mid_line_angle = (
             Line.passing_through(array_left, source).angle
             + Line.passing_through(array_right, source).angle
@@ -47,5 +46,5 @@ class MLAApodization(Apodization):
         # The distance from point_position to the nearest point on the line that
         # intersects sender_position and wave_data.source.
         scanline = Line.passing_through(sender_position, source)
-        dist = api.abs(scanline.signed_distance(point_position))
+        dist = ops.abs(scanline.signed_distance(point_position))
         return self.window(dist / (self.beam_width))

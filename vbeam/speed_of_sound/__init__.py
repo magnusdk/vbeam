@@ -1,10 +1,9 @@
 from typing import Optional
 
 import numpy
-from fastmath import Array, Array, field
+from fastmath import Array, field, ops
 
 from vbeam.core import SpeedOfSound
-from vbeam.fastmath import numpy as api
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.scan import Scan
 from vbeam.util import ensure_2d_point
@@ -55,7 +54,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
         x2, z2 = p2[0], p2[1]
         dx, dz = (x2 - x1) / self.n_samples, (z2 - z1) / self.n_samples
         # We use np.reduce instead of interp2d directly to allocate less GPU memory
-        integrated_speed_of_sound = api.reduce(
+        integrated_speed_of_sound = ops.reduce(
             lambda carry, i: carry
             + FastInterpLinspace.interp2d(
                 x1 + i * dx,
@@ -65,8 +64,8 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
                 self.values,
                 default_value=self.default_speed_of_sound,
             ),
-            api.arange(self.n_samples),
-            api.array(0.0, dtype=self.values.dtype),
+            ops.arange(self.n_samples),
+            ops.array(0.0, dtype=self.values.dtype),
         )
         return integrated_speed_of_sound / self.n_samples
 

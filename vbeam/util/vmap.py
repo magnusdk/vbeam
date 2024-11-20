@@ -1,10 +1,9 @@
 from functools import partial
 from typing import Callable, Optional, Sequence, Union
 
-from fastmath import Array
+from fastmath import Array, ops
 from spekk import Spec
 
-from vbeam.fastmath import numpy as api
 from vbeam.util.transformations import *
 
 
@@ -40,7 +39,7 @@ def vmap_all_except(f: Union[Callable, int], axis: Optional[int] = None):
         if f_ndim > 0:
             # f returned an array with at least 1 dimension. Transpose the result such
             # that those dimensions are at the given axis.
-            result = api.transpose(
+            result = ops.transpose(
                 result,
                 [
                     *range(axis),
@@ -111,7 +110,7 @@ def apply_binary_operation_across_axes(
     # transpose them later:
     ordering = sorted(enumerate(axes), key=lambda x: x[1])
     axes = [axis for _, axis in ordering]  # Re-order axis indices
-    b = api.transpose(b, [i for i, _ in ordering])  # Re-order axes of b
+    b = ops.transpose(b, [i for i, _ in ordering])  # Re-order axes of b
 
     # Create a Spec for the dimensions of the data (names of dimensions doesn't matter):
     a_dims = [f"dim{axis}" for axis in range(a.ndim)]
@@ -125,7 +124,7 @@ def apply_binary_operation_across_axes(
             lambda input_spec: input_spec["a"],
         ),
         *[ForAll(dim) for dim in a_dims if dim not in b_dims],
-        Apply(api.transpose, [Axis(dim, keep=True) for dim in a_dims]),
+        Apply(ops.transpose, [Axis(dim, keep=True) for dim in a_dims]),
     ).build(spec)
     return tf(a=a, b=b)
 

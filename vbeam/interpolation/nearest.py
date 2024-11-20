@@ -1,7 +1,6 @@
-from fastmath import Array
+from fastmath import Array, ops
 
 from vbeam.core import InterpolationSpace1D
-from vbeam.fastmath import numpy as api
 
 
 class NearestInterpolation(InterpolationSpace1D):
@@ -21,11 +20,11 @@ class NearestInterpolation(InterpolationSpace1D):
     right: float = 0
 
     def __call__(self, x: Array, fp: Array) -> Array:
-        index = api.round((x - self.min) / self.d)
-        return api.select(
+        index = ops.round((x - self.min) / self.d)
+        return ops.select(
             [index < 0, index >= self.n],
             [self.left, self.right],
-            fp[index.astype(int)],
+            fp[ops.int32(index)],
         )
 
     @property

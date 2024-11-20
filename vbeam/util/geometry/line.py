@@ -1,6 +1,4 @@
-from fastmath import Array, Module
-
-from vbeam.fastmath import numpy as api
+from fastmath import Array, Module, ops
 
 
 class Line(Module):
@@ -28,19 +26,19 @@ class Line(Module):
     def from_anchor_and_angle(anchor: Array, angle: float) -> "Line":
         "Construct a line that passes through the anchor and has the given angle."
         return Line.passing_through(
-            anchor, anchor + api.array([api.cos(angle), 0, api.sin(angle)])
+            anchor, anchor + ops.array([ops.cos(angle), 0, ops.sin(angle)])
         )
 
     def intersection(l1: "Line", l2: "Line") -> Array:
         "Return the point where the lines l1 and l2 intersect."
         x = (l1.b * l2.c - l2.b * l1.c) / (l1.a * l2.b - l2.a * l1.b)
         z = (l2.a * l1.c - l1.a * l2.c) / (l1.a * l2.b - l2.a * l1.b)
-        return api.array([x, 0, z])
+        return ops.array([x, 0, z])
 
     @property
     def angle(self):
         "The angle of the line."
-        return api.arctan2(self.b, self.a)
+        return ops.arctan2(self.b, self.a)
 
     def signed_distance(self, point: Array) -> float:
         """Return the signed distance between the point and the nearest point on the
@@ -59,5 +57,5 @@ class Line(Module):
         >>> vertical_line.signed_distance(np.array([1,0,5]))  # The right-hand side
         -1.0
         """
-        norm = api.sqrt(self.a**2 + self.b**2)
+        norm = ops.sqrt(self.a**2 + self.b**2)
         return (self.a * point[..., 0] + self.b * point[..., 2] + self.c) / norm

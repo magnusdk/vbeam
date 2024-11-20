@@ -1,9 +1,8 @@
 from dataclasses import field
 
-from fastmath import Array
+from fastmath import Array, ops
 
 from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
-from vbeam.fastmath import numpy as api
 from vbeam.util.geometry import Line
 from vbeam.wavefront import FocusedSphericalWavefront
 
@@ -33,7 +32,7 @@ class UnifiedWavefront(TransmittedWavefront):
         midline = Line.from_anchor_and_angle(
             wave_data.source,
             # We subtract pi/2 because the angle is measured in reference to the x-axis
-            (line_left.angle + line_right.angle) / 2 - api.pi / 2,
+            (line_left.angle + line_right.angle) / 2 - ops.pi / 2,
         )
         intersection_line = Line.from_anchor_and_angle(point_position, midline.angle)
 
@@ -42,8 +41,8 @@ class UnifiedWavefront(TransmittedWavefront):
         B = line_right.intersection(intersection_line)
 
         # The weighting of the two intersection point values (used for interpolating)
-        dist_A = api.sqrt(api.sum((A - point_position) ** 2))
-        dist_B = api.sqrt(api.sum((B - point_position) ** 2))
+        dist_A = ops.sqrt(ops.sum((A - point_position) ** 2))
+        dist_B = ops.sqrt(ops.sum((B - point_position) ** 2))
         total_distance = dist_A + dist_B
         weight_A = 1 - (dist_A / total_distance)
         weight_B = 1 - (dist_B / total_distance)
@@ -58,7 +57,7 @@ class UnifiedWavefront(TransmittedWavefront):
             line_right.signed_distance(point_position) > 0
         )
         # Select the correct distance based on which region the point belongs to
-        return api.where(
+        return ops.where(
             is_in_focus,
             self.base_wavefront(probe, sender, point_position, wave_data),
             interpolated_distance,

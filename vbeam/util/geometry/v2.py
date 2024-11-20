@@ -5,9 +5,7 @@ It's all in this one module because it's all so closely related."""
 from abc import abstractmethod
 from typing import Optional, Tuple, Union
 
-from fastmath import Array, Module
-
-from vbeam.fastmath import numpy as api
+from fastmath import Array, Module, ops
 
 ####
 # Functions for calculating intersections.
@@ -17,11 +15,13 @@ from vbeam.fastmath import numpy as api
 def intersect_line_line(
     line1: "Line", line2: "Line"
 ) -> Tuple[int, Tuple[Array, Array]]:
-    num_intersections = api.where(api.cross(line1.direction, line2.direction) == 0, 0, 1)
+    num_intersections = ops.where(
+        ops.cross(line1.direction, line2.direction) == 0, 0, 1
+    )
     return num_intersections, (
         line1.anchor
-        + api.cross(line2.anchor - line1.anchor, line2.direction)
-        / api.cross(line1.direction, line2.direction)[..., None]
+        + ops.cross(line2.anchor - line1.anchor, line2.direction)
+        / ops.cross(line1.direction, line2.direction)[..., None]
         * line1.direction
     )
 
@@ -30,49 +30,47 @@ def intersect_circle_line(
     circle: "Circle", line: "Line"
 ) -> Tuple[int, Tuple[Array, Array]]:
     # http://paulbourke.net/geometry/circlesphere/
-    a = api.sum(line.direction**2)
-    b = 2 * api.sum((line.direction * (line.anchor - circle.center)))
+    a = ops.sum(line.direction**2)
+    b = 2 * ops.sum((line.direction * (line.anchor - circle.center)))
     c = (
-        api.sum(circle.center**2)
-        + api.sum(line.anchor**2)
-        - 2 * api.sum(circle.center * line.anchor)
+        ops.sum(circle.center**2)
+        + ops.sum(line.anchor**2)
+        - 2 * ops.sum(circle.center * line.anchor)
         - circle.radius**2
     )
 
     discriminant = b**2 - 4 * a * c + 0j
-    u1 = (-b + api.sqrt(discriminant)) / (2 * a)
-    u2 = (-b - api.sqrt(discriminant)) / (2 * a)
+    u1 = (-b + ops.sqrt(discriminant)) / (2 * a)
+    u2 = (-b - ops.sqrt(discriminant)) / (2 * a)
 
     num_intersections = 0
-    num_intersections = api.where(discriminant == 0, 1, num_intersections)
-    num_intersections = api.where(discriminant > 0, 2, num_intersections)
-    return num_intersections, api.array([line(u1), line(u2)]).T
+    num_intersections = ops.where(discriminant == 0, 1, num_intersections)
+    num_intersections = ops.where(discriminant > 0, 2, num_intersections)
+    return num_intersections, ops.array([line(u1), line(u2)]).T
 
 
 ####
 # Some helper functions
 
 
-def distance(
-    point1: Array, point2: Optional[Array] = None, axis: int = -1
-):
+def distance(point1: Array, point2: Optional[Array] = None, axis: int = -1):
     diff = point1 if point2 is None else point2 - point1
-    return api.sqrt(api.sum(diff**2, axis=axis))
+    return ops.sqrt(ops.sum(diff**2, axis=axis))
 
 
 def rotate(point: Array, theta: float, phi: float) -> Array:
     # Define the rotation matrices
-    rotation_matrix_theta = api.array(
+    rotation_matrix_theta = ops.array(
         [
-            [api.cos(theta), 0, api.sin(theta)],
+            [ops.cos(theta), 0, ops.sin(theta)],
             [0, 1, 0],
-            [-api.sin(theta), 0, api.cos(theta)],
+            [-ops.sin(theta), 0, ops.cos(theta)],
         ]
     )
-    rotation_matrix_phi = api.array(
+    rotation_matrix_phi = ops.array(
         [
-            [api.cos(phi), -api.sin(phi), 0],
-            [api.sin(phi), api.cos(phi), 0],
+            [ops.cos(phi), -ops.sin(phi), 0],
+            [ops.sin(phi), ops.cos(phi), 0],
             [0, 0, 1],
         ]
     )
@@ -107,9 +105,7 @@ class Curve(Module):
         outside, and negative on the inside."""
 
     @abstractmethod
-    def intersect(
-        self, other: "Curve"
-    ) -> Tuple[int, Tuple[Array, Array]]:
+    def intersect(self, other: "Curve") -> Tuple[int, Tuple[Array, Array]]:
         """Return the number of intersections between this curve and another curve and
         the (potentially none) intersection points."""
 
@@ -123,14 +119,14 @@ class Line(Curve):
         self.direction = self.direction / distance(self.direction)
 
     def __call__(self, t: Union[float, Array]) -> Tuple[float, float]:
-        if api.is_ndarray(t) and t.ndim != 0:
-            points = api.moveaxis(self.anchor + t[..., None] * self.direction, -1, 0)
+        if ops.is_ndarray(t) and t.ndim != 0:
+            points = ops.moveaxis(self.anchor + t[..., None] * self.direction, -1, 0)
         else:
             points = self.anchor + t * self.direction
         return points
 
     def signed_distance(self, point: Array) -> float:
-        return api.cross(point - self.anchor, self.direction)
+        return ops.cross(point - self.anchor, self.direction)
 
     @staticmethod
     def passing_through(point1: Array, point2: Array) -> "Line":
@@ -138,11 +134,9 @@ class Line(Curve):
 
     @staticmethod
     def with_angle(anchor: Array, angle: float) -> "Line":
-        return Line(anchor, api.array([api.cos(angle), api.sin(angle)]))
+        return Line(anchor, ops.array([ops.cos(angle), ops.sin(angle)]))
 
-    def intersect(
-        self, other: Curve
-    ) -> Tuple[int, Tuple[Array, Array]]:
+    def intersect(self, other: Curve) -> Tuple[int, Tuple[Array, Array]]:
         if isinstance(other, Line):
             return intersect_line_line(self, other)
         else:
@@ -150,11 +144,11 @@ class Line(Curve):
 
     @property
     def angle(self) -> float:
-        return api.arctan2(self.direction[1], self.direction[0])
+        return ops.arctan2(self.direction[1], self.direction[0])
 
     @property
     def normal(self) -> Array:
-        return api.array([-self.direction[1], self.direction[0]])
+        return ops.array([-self.direction[1], self.direction[0]])
 
 
 class Circle(Curve):
@@ -163,16 +157,14 @@ class Circle(Curve):
 
     def __call__(self, t: float) -> Tuple[float, float]:
         center = self.center
-        if api.is_ndarray(t) and t.ndim != 0:
+        if ops.is_ndarray(t) and t.ndim != 0:
             center = self.center[:, None]
-        return api.array([api.cos(t), api.sin(t)]) * self.radius + center
+        return ops.array([ops.cos(t), ops.sin(t)]) * self.radius + center
 
     def signed_distance(self, point: Array) -> Array:
         return distance(point, self.center) - self.radius
 
-    def intersect(
-        self, other: Curve
-    ) -> Tuple[int, Tuple[Array, Array]]:
+    def intersect(self, other: Curve) -> Tuple[int, Tuple[Array, Array]]:
         if isinstance(other, Line):
             return intersect_circle_line(self, other)
         else:
@@ -197,10 +189,10 @@ class Ellipse(Curve):
 
     def __call__(self, t: Array) -> Array:
         # An ellipse is just a transformed circle
-        circle = Circle(api.array([0, 0]), 1)
+        circle = Circle(ops.array([0, 0]), 1)
         circle_transform = self._circle_transform
-        if api.is_ndarray(t) and t.ndim != 0:
-            circle_transform = api.vmap(circle_transform, [1])
+        if ops.is_ndarray(t) and t.ndim != 0:
+            circle_transform = ops.vmap(circle_transform, [1])
         return circle_transform(circle(t)).T
 
     def signed_distance(self, point: Array) -> Array:
@@ -208,31 +200,29 @@ class Ellipse(Curve):
         # the space is transformed.
         raise NotImplementedError
 
-    def intersect(
-        self, other: Curve
-    ) -> Tuple[int, Tuple[Array, Array]]:
+    def intersect(self, other: Curve) -> Tuple[int, Tuple[Array, Array]]:
         if isinstance(other, Line):
             other = Line.passing_through(
                 self._circle_undo_transform(other(0)),
                 self._circle_undo_transform(other(1)),
             )
-            circle = Circle(api.array([0, 0]), 1)
+            circle = Circle(ops.array([0, 0]), 1)
             num_intersections, intersections = intersect_circle_line(circle, other)
             i1, i2 = intersections.real.T
             return (
                 num_intersections,
-                api.array([self._circle_transform(i1), self._circle_transform(i2)]).T,
+                ops.array([self._circle_transform(i1), self._circle_transform(i2)]).T,
             )
         else:
             raise NotImplementedError
 
     def _circle_rotation(self) -> float:
-        return api.arctan2(self.f2[1] - self.f1[1], self.f2[0] - self.f1[0])
+        return ops.arctan2(self.f2[1] - self.f1[1], self.f2[0] - self.f1[0])
 
     def _circle_scale(self) -> Array:
         a = self.d / 2
-        b = api.sqrt(a**2 - distance(self.f2, self.f1) ** 2 / 4)
-        return api.array([a, b])
+        b = ops.sqrt(a**2 - distance(self.f2, self.f1) ** 2 / 4)
+        return ops.array([a, b])
 
     def _circle_translation(self) -> Array:
         return (self.f1 + self.f2) / 2

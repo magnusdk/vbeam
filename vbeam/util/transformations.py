@@ -1,7 +1,6 @@
 import spekk.transformations
+from fastmath import ops
 from spekk.transformations import *
-
-from vbeam.fastmath import numpy as api
 
 
 def do_nothing(f):
@@ -10,13 +9,13 @@ def do_nothing(f):
 
 class ForAll(spekk.transformations.ForAll):
     def __post_init__(self):
-        self.vmap_impl = api.vmap
+        self.vmap_impl = ops.vmap
         super().__post_init__()
 
 
 class Reduce(spekk.transformations.Reduce):
     def __post_init__(self):
-        self.reduce_impl = api.reduce
+        self.reduce_impl = ops.reduce
         super().__post_init__()
 
 

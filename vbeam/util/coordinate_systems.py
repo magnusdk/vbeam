@@ -1,6 +1,4 @@
-from fastmath import Array
-
-from vbeam.fastmath import numpy as api
+from fastmath import Array, ops
 
 
 def as_polar(cartesian_point: Array):
@@ -8,9 +6,9 @@ def as_polar(cartesian_point: Array):
 
     NOTE: All y-values must be 0. FIXME"""
     x, y, z = cartesian_point[..., 0], cartesian_point[..., 1], cartesian_point[..., 2]
-    azimuth_angles = api.arctan2(x, z)
-    radii = api.sqrt(x**2 + y**2 + z**2)
-    return api.stack([azimuth_angles, api.zeros(radii.shape), radii], -1)
+    azimuth_angles = ops.arctan2(x, z)
+    radii = ops.sqrt(x**2 + y**2 + z**2)
+    return ops.stack([azimuth_angles, ops.zeros(radii.shape), radii], -1)
 
 
 def as_cartesian(polar_point: Array):
@@ -18,11 +16,11 @@ def as_cartesian(polar_point: Array):
     azimuth_angles = polar_point[..., 0]
     polar_angles = polar_point[..., 1]
     r = polar_point[..., 2]
-    return api.stack(
+    return ops.stack(
         [
-            r * api.sin(azimuth_angles) * api.cos(polar_angles),
-            r * api.sin(azimuth_angles) * api.sin(polar_angles),
-            r * api.cos(azimuth_angles),
+            r * ops.sin(azimuth_angles) * ops.cos(polar_angles),
+            r * ops.sin(azimuth_angles) * ops.sin(polar_angles),
+            r * ops.cos(azimuth_angles),
         ],
         axis=-1,
     )

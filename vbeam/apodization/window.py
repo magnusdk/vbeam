@@ -6,9 +6,7 @@ the various implemented windows."""
 
 from abc import abstractmethod
 
-from fastmath import Module
-
-from vbeam.fastmath import numpy as api
+from fastmath import Module, ops
 
 
 class Window(Module):
@@ -33,11 +31,11 @@ class Window(Module):
 
 class NoWindow(Window):
     def __call__(self, ratio: float) -> float:
-        return api.ones(ratio.shape)
+        return ops.ones(ratio.shape)
 
 
 def _within_valid(ratio: float) -> bool:
-    return api.logical_and(0 <= ratio, ratio <= 0.5)
+    return ops.logical_and(0 <= ratio, ratio <= 0.5)
 
 
 class Rectangular(Window):
@@ -50,7 +48,7 @@ class Hanning(Window):
     a1: float = 0.5
 
     def __call__(self, ratio: float) -> float:
-        return _within_valid(ratio) * (self.a0 + self.a1 * api.cos(2 * api.pi * ratio))
+        return _within_valid(ratio) * (self.a0 + self.a1 * ops.cos(2 * ops.pi * ratio))
 
 
 class Hamming(Window):
@@ -65,7 +63,7 @@ class Tukey(Window):
         p1 = ratio <= (1 / 2 * (1 - self.roll))
         p2 = ratio > (1 / 2 * (1 - self.roll))
         p3 = (ratio < (1 / 2)) * 0.5
-        p4 = 1 + api.cos(2 * api.pi / self.roll * (ratio - self.roll / 2 - 1 / 2))
+        p4 = 1 + ops.cos(2 * ops.pi / self.roll * (ratio - self.roll / 2 - 1 / 2))
         return _within_valid(ratio) * (p1 + p2 * p3 * p4)
 
 

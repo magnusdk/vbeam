@@ -9,7 +9,7 @@ See also:
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
-from fastmath import Array
+from fastmath import Array, ops
 
 from vbeam.core.apodization import Apodization
 from vbeam.core.interpolation import InterpolationSpace1D
@@ -22,7 +22,6 @@ from vbeam.core.wavefront import (
     ReflectedWavefront,
     TransmittedWavefront,
 )
-from vbeam.fastmath import numpy as api
 
 
 def signal_for_point(
@@ -94,8 +93,8 @@ def signal_for_point(
 
 
 def phase_correction(signal: float, delay: float, modulation_frequency: float):
-    w0 = api.pi * 2 * modulation_frequency
-    return signal * api.exp(1j * w0 * delay)
+    w0 = ops.pi * 2 * modulation_frequency
+    return signal * ops.exp(1j * w0 * delay)
 
 
 @dataclass

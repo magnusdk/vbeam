@@ -1,10 +1,8 @@
 from typing import Optional, Tuple, Union
 
-from vbeam.core import Apodization, ProbeGeometry, WaveData
-from fastmath import Array, Array
+from fastmath import Array, ops
 
-from vbeam.core import Apodization, ElementGeometry, WaveData
-from vbeam.fastmath import numpy as api
+from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.util import ensure_2d_point
 from vbeam.util.geometry.v2 import Line, distance
 
@@ -36,7 +34,7 @@ class PlaneWaveTransmitApodization(Apodization):
 
         # FIXME: There's something funky going on with the geometry code here 🤔 Angles
         # need to be inverted to make it work.
-        azimuth = api.pi / 2 - wave_data.azimuth  # This is a hack to make it work.
+        azimuth = ops.pi / 2 - wave_data.azimuth  # This is a hack to make it work.
         # Construct the lines going from either side of the array
         line_left = Line.with_angle(array_left, azimuth)
         line_right = Line.with_angle(array_right, azimuth)
@@ -53,7 +51,7 @@ class PlaneWaveTransmitApodization(Apodization):
         if self.window is not None:
             # Apply the window function. It gradually goes to 0 as the point gets
             # closer to the edges of the apodization values.
-            point_perp = Line.with_angle(point_position, azimuth + api.pi / 2)
+            point_perp = Line.with_angle(point_position, azimuth + ops.pi / 2)
             _, A = line_left.intersect(point_perp)
             _, B = line_right.intersect(point_perp)
             dist_A = distance(A, point_position)
@@ -61,7 +59,7 @@ class PlaneWaveTransmitApodization(Apodization):
             total_distance = dist_A + dist_B
             # p is 0 when the point is exactly between the two lines, and 0.5 when it is
             # on top of one of the lines.
-            p = 0.5 - api.min(api.array([dist_A, dist_B])) / total_distance
+            p = 0.5 - ops.min(ops.array([dist_A, dist_B])) / total_distance
             apodization_value *= self.window(p)
 
         # Ensure that it the returned value is a float.
@@ -89,9 +87,9 @@ class PlaneWaveReceiveApodization(Apodization):
         x_dist, y_dist, z_dist = dist[0], dist[1], dist[2]
         tan_theta = x_dist / z_dist
         tan_phi = y_dist / z_dist
-        ratio_theta = api.abs(f_number[0] * tan_theta)
-        ratio_phi = api.abs(f_number[1] * tan_phi)
-        return api.array(
+        ratio_theta = ops.abs(f_number[0] * tan_theta)
+        ratio_phi = ops.abs(f_number[1] * tan_phi)
+        return ops.array(
             self.window(ratio_theta) * self.window(ratio_phi),
             dtype="float32",
         )

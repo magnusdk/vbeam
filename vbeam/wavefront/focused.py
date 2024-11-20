@@ -1,7 +1,6 @@
-from fastmath import Array
+from fastmath import Array, ops
 
 from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
-from vbeam.fastmath import numpy as api
 from vbeam.wavefront.plane import PlaneWavefront
 
 
@@ -13,11 +12,11 @@ class FocusedSphericalWavefront(TransmittedWavefront):
         point_position: Array,
         wave_data: WaveData,
     ) -> float:
-        sender_source_dist = api.sqrt(api.sum((sender - wave_data.source) ** 2))
-        source_point_dist = api.sqrt(api.sum((wave_data.source - point_position) ** 2))
-        return sender_source_dist * api.sign(
+        sender_source_dist = ops.sqrt(ops.sum((sender - wave_data.source) ** 2))
+        source_point_dist = ops.sqrt(ops.sum((wave_data.source - point_position) ** 2))
+        return sender_source_dist * ops.sign(
             wave_data.source[2] - sender[2]
-        ) - source_point_dist * api.sign(wave_data.source[2] - point_position[2])
+        ) - source_point_dist * ops.sign(wave_data.source[2] - point_position[2])
 
 
 class FocusedHybridWavefront(TransmittedWavefront):
@@ -32,16 +31,16 @@ class FocusedHybridWavefront(TransmittedWavefront):
     ) -> float:
         spherical_wavefront = FocusedSphericalWavefront()
         plane_wavefront = PlaneWavefront()
-        wave_data.azimuth = api.arctan2(
+        wave_data.azimuth = ops.arctan2(
             wave_data.source[0] - sender[0],
             wave_data.source[2] - sender[2],
         )
-        wave_data.elevation = api.arctan2(
+        wave_data.elevation = ops.arctan2(
             wave_data.source[1] - sender.position[1],
             wave_data.source[2] - sender.position[2],
         )
-        return api.where(
-            api.abs(point_position[2] - wave_data.source[2]) > self.pw_margin,
+        return ops.where(
+            ops.abs(point_position[2] - wave_data.source[2]) > self.pw_margin,
             spherical_wavefront(probe, sender, point_position, wave_data),
             plane_wavefront(probe, sender, point_position, wave_data),
         )
@@ -58,18 +57,18 @@ class FocusedBlendedWavefront(TransmittedWavefront):
     ) -> float:
         spherical_wavefront = FocusedSphericalWavefront()
         plane_wavefront = PlaneWavefront()
-        wave_data.azimuth = api.arctan2(
+        wave_data.azimuth = ops.arctan2(
             wave_data.source[0] - sender[0],
             wave_data.source[2] - sender[2],
         )
 
-        wave_data.elevation = api.arctan2(
+        wave_data.elevation = ops.arctan2(
             wave_data.source[1] - sender[1],
             wave_data.source[2] - sender[2],
         )
-        source_point_dist = api.sqrt(api.sum((wave_data.source - point_position) ** 2))
-        normalized_distance = api.clip(
-            source_point_dist / api.sqrt(api.sum((wave_data.source) ** 2)),
+        source_point_dist = ops.sqrt(ops.sum((wave_data.source - point_position) ** 2))
+        normalized_distance = ops.clip(
+            source_point_dist / ops.sqrt(ops.sum((wave_data.source) ** 2)),
             a_min=0,
             a_max=1,
         )

@@ -1,9 +1,8 @@
 from typing import Optional, Tuple
 
-from fastmath import Array, field
+from fastmath import Array, field, ops
 
 from vbeam.fastmath import backend_manager
-from vbeam.fastmath import numpy as api
 from vbeam.scan.advanced.base import WrappedScan
 from vbeam.scan.base import CoordinateSystem
 from vbeam.scan.sector_scan import SectorScan
@@ -16,8 +15,8 @@ def _get_scan_converted_points_and_indices(
 ) -> Tuple[Array, Array]:
     # Scan convert a grid of ones to get a mask of the points that are mapped to the
     # cartesian grid.
-    mask = scan_convert(api.ones(base_scan.shape), base_scan)
-    mask = (mask == 1).reshape((base_scan.num_points,))
+    mask = scan_convert(ops.ones(base_scan.shape), base_scan) == 1
+    mask = ops.reshape(mask, (base_scan.num_points,))
 
     # Calculate the scan converted points.
     points = base_scan.get_points(flatten=False)
@@ -27,12 +26,12 @@ def _get_scan_converted_points_and_indices(
     # We must use Numpy for this because masking out values is hard on GPUs.
     with backend_manager.using_backend("numpy"):
         # Mask out the points and indices
-        mask = api.array(mask)
-        points = api.array(scan_converted_points)[mask]
-        indices = api.arange(base_scan.num_points)[mask]
+        mask = ops.array(mask)
+        points = ops.array(scan_converted_points)[mask]
+        indices = ops.arange(base_scan.num_points)[mask]
 
     # Wrap in array to ensure that they use the active backend.
-    return api.array(points), api.array(indices)
+    return ops.array(points), ops.array(indices)
 
 
 class ScanConvertedSectorScan(WrappedScan):
@@ -53,13 +52,11 @@ class ScanConvertedSectorScan(WrappedScan):
             )
         return self._points
 
-    def unflatten(
-        self, imaged_points: Array, points_axis: int = -1
-    ) -> Array:
-        image = api.zeros((self.base_scan.num_points,), dtype=imaged_points.dtype)
+    def unflatten(self, imaged_points: Array, points_axis: int = -1) -> Array:
+        image = ops.zeros((self.base_scan.num_points,), dtype=imaged_points.dtype)
 
         def unflatten_1(imaged_points_1: Array):
-            return api.add.at(image, self._indices, imaged_points_1)
+            return ops.add.at(image, self._indices, imaged_points_1)
 
         unflatten_all = vmap_all_except(unflatten_1, axis=points_axis)
         return self.base_scan.unflatten(unflatten_all(imaged_points), points_axis)
