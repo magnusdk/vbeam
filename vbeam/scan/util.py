@@ -109,18 +109,7 @@ def scan_convert(
     if isinstance(bounds, Scan):
         if not bounds.coordinate_system == CoordinateSystem.POLAR:
             raise ValueError("You may only scan convert from polar coordinates.")
-        min_x, max_x, min_z, max_z = bounds.cartesian_bounds
         bounds = bounds.bounds
-
-    if shape is None:
-        shape = image.shape[azimuth_axis], image.shape[depth_axis]
-    elif isinstance(shape, str): 
-        if shape=='keep_aspect_ratio':
-            out_height = image.shape[depth_axis]
-            azimuth_scale = ops.abs((max_x - min_x) / (max_z - min_z))
-            shape = int(ops.round(out_height * azimuth_scale)), out_height
-        else:
-            raise ValueError(f'Unsupported shape {shape}')        
 
     width, height = image.shape[azimuth_axis], image.shape[depth_axis]
     min_az, max_az, min_depth, max_depth = bounds
@@ -128,6 +117,15 @@ def scan_convert(
     # Get the points in the cartesian grid
     if cartesian_axes is None:
         min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(bounds)
+        if shape is None:
+            shape = image.shape[azimuth_axis], image.shape[depth_axis]
+        elif isinstance(shape, str): 
+            if shape=='keep_aspect_ratio':
+                out_height = image.shape[depth_axis]
+                azimuth_scale = ops.abs((max_x - min_x) / (max_z - min_z))
+                shape = int(ops.round(out_height * azimuth_scale)), out_height
+            else:
+                raise ValueError(f'Unsupported shape {shape}')   
         points = grid(
             ops.linspace(min_x, max_x, shape[0]),
             ops.linspace(min_z, max_z, shape[1]),
