@@ -137,3 +137,9 @@ def proxy_backend(backend_manager: BackendManager) -> Backend:
 
 backend_manager = BackendManager()
 numpy = proxy_backend(backend_manager)
+
+# Let's override the numpy with the new fastmath API for now.
+# Once we see that this works for our internal projects we add a deprecation warning,
+# urging users to use fastmath instead. At a breaking-change versions (vbeam 2.0.0) we
+# remove vbeam.fastmath modules.
+from fastmath import ops

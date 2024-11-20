@@ -1,9 +1,8 @@
 from typing import Tuple
 
-from fastmath import Array
+from fastmath import ArrayOrNumber, ops
 
 from vbeam.core import InterpolationSpace1D
-from vbeam.fastmath import numpy as api
 from vbeam.util import ensure_positive_index
 
 
@@ -22,12 +21,10 @@ class FastInterpLinspace(InterpolationSpace1D):
         # Assumes that arr was created as a linspace.
         return FastInterpLinspace(arr[0], arr[1] - arr[0], len(arr))
 
-    def to_array(self) -> Array:
-        return api.linspace(self.min, self.min + self.d * self.n, self.n)
+    def to_array(self) -> ArrayOrNumber:
+        return ops.linspace(self.min, self.min + self.d * self.n, self.n)
 
-    def interp1d_indices(
-        self, x: Array
-    ) -> Tuple[float, int, int, float, float]:
+    def interp1d_indices(self, x: Array) -> Tuple[float, int, int, float, float]:
         """Return a tuple of 5 elements with information about how to interpolate the
         array.
 
@@ -49,14 +46,14 @@ class FastInterpLinspace(InterpolationSpace1D):
         1.5
         """
         pseudo_index = (x - self.min) / self.d
-        i_floor = api.floor(pseudo_index)
+        i_floor = ops.floor(pseudo_index)
         di = pseudo_index - i_floor
 
         bounds_flag = 0
-        bounds_flag = api.where(pseudo_index < 0, -1, bounds_flag)
-        bounds_flag = api.where(pseudo_index > (self.n - 1), 1, bounds_flag)
-        clipped_i1 = api.clip(i_floor, 0, self.n - 1).astype("int32")
-        clipped_i2 = api.clip(i_floor + 1, 0, self.n - 1).astype("int32")
+        bounds_flag = ops.where(pseudo_index < 0, -1, bounds_flag)
+        bounds_flag = ops.where(pseudo_index > (self.n - 1), 1, bounds_flag)
+        clipped_i1 = ops.int32(ops.clip(i_floor, 0, self.n - 1))
+        clipped_i2 = ops.int32(ops.clip(i_floor + 1, 0, self.n - 1))
         p1, p2 = (1 - di), di
         return bounds_flag, clipped_i1, clipped_i2, p1, p2
 
@@ -67,17 +64,17 @@ class FastInterpLinspace(InterpolationSpace1D):
         left: int = 0,
         right: int = 0,
         axis: int = 0,
-    ) -> Array:
-        fp = api.moveaxis(fp, axis, 0)
+    ) -> ArrayOrNumber:
+        fp = ops.moveaxis(fp, axis, 0)
         bounds_flag, clipped_i1, clipped_i2, p1, p2 = self.interp1d_indices(x)
-        bounds_flag = api.expand_dims(bounds_flag, tuple(range(1, fp.ndim)))
-        p1 = api.expand_dims(p1, tuple(range(1, fp.ndim)))
-        p2 = api.expand_dims(p2, tuple(range(1, fp.ndim)))
+        bounds_flag = ops.expand_dims(bounds_flag, tuple(range(1, fp.ndim)))
+        p1 = ops.expand_dims(p1, tuple(range(1, fp.ndim)))
+        p2 = ops.expand_dims(p2, tuple(range(1, fp.ndim)))
         v = fp[clipped_i1] * p1 + fp[clipped_i2] * p2
-        v = api.where(bounds_flag == -1, left, v)
-        v = api.where(bounds_flag == 1, right, v)
+        v = ops.where(bounds_flag == -1, left, v)
+        v = ops.where(bounds_flag == 1, right, v)
         if x.ndim >= 1:
-            v = api.moveaxis(v, 0, axis)
+            v = ops.moveaxis(v, 0, axis)
         return v
 
     # InterpolationSpace1D interface
@@ -111,10 +108,10 @@ class FastInterpLinspace(InterpolationSpace1D):
 
         # Ensure that the azimuth and depth axes are the first two axes
         if depth_axis == 0 and azimuth_axis == 1:
-            z = api.swapaxes(z, azimuth_axis, depth_axis)
+            z = ops.swapaxes(z, azimuth_axis, depth_axis)
         else:
-            z = api.moveaxis(z, azimuth_axis, 0)
-            z = api.moveaxis(z, depth_axis, 1)
+            z = ops.moveaxis(z, azimuth_axis, 0)
+            z = ops.moveaxis(z, depth_axis, 1)
 
         # Interpolate along the axes
         bounds_flag_x, clipped_xi1, clipped_xi2, px1, px2 = xp.interp1d_indices(x)
@@ -124,7 +121,7 @@ class FastInterpLinspace(InterpolationSpace1D):
         # elements in z. This makes is it so that we can interpolate grids of vectors;
         # not just grids of scalars.
         num_value_dims = len(z.shape[2:])
-        broadcastable = lambda a: api.expand_dims(
+        broadcastable = lambda a: ops.expand_dims(
             a, tuple(range(a.ndim, a.ndim + num_value_dims))
         )
         px1, px2, py1, py2 = [broadcastable(p) for p in [px1, px2, py1, py2]]
@@ -135,8 +132,8 @@ class FastInterpLinspace(InterpolationSpace1D):
         v1 = z[clipped_xi1, clipped_yi2] * px1 + z[clipped_xi2, clipped_yi2] * px2
         v = v0 * py1 + v1 * py2
         if edge_handling == "Value":
-            v = api.where(
-                api.logical_or(bounds_flag_x != 0, bounds_flag_y != 0), default_value, v
+            v = ops.where(
+                ops.logical_or(bounds_flag_x != 0, bounds_flag_y != 0), default_value, v
             )
         elif edge_handling == "Nearest":
             pass  # No need to do anything, as the interpolation will choose the nearest value
@@ -145,10 +142,10 @@ class FastInterpLinspace(InterpolationSpace1D):
 
         # Swap axes back to their original positions
         if depth_axis == 0 and azimuth_axis == 1:
-            v = api.swapaxes(v, azimuth_axis, depth_axis)
+            v = ops.swapaxes(v, azimuth_axis, depth_axis)
         elif v.ndim >= 2:
-            v = api.moveaxis(v, 1, depth_axis)
-            v = api.moveaxis(v, 0, azimuth_axis)
+            v = ops.moveaxis(v, 1, depth_axis)
+            v = ops.moveaxis(v, 0, azimuth_axis)
         return v
 
     @property

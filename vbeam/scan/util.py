@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 
-from fastmath import Array
+from fastmath import ArrayOrNumber, Array, ops
 
-from vbeam.fastmath import numpy as api
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.util import _deprecations
 from vbeam.util.arrays import grid
@@ -14,10 +13,10 @@ if TYPE_CHECKING:
 def _ensure_min_and_max(min_x: float, max_x: float) -> Tuple[float, float]:
     "Swap ``min_x`` and ``max_x`` if ``min_x`` > ``max_x``."
     return tuple(
-        api.where(
+        ops.where(
             min_x > max_x,
-            api.array([max_x, min_x]),
-            api.array([min_x, max_x]),
+            ops.array([max_x, min_x]),
+            ops.array([min_x, max_x]),
         )
     )
 
@@ -37,12 +36,12 @@ def _right_bound(
 
     See ``docs/tutorials/scan/sector_scan_bounds.ipynb`` for a visualization of the
     bounding box of the arcs."""
-    cos_min, cos_max = api.cos(min_azimuth), api.cos(max_azimuth)
-    sin_min, sin_max = api.sin(min_azimuth), api.sin(max_azimuth)
+    cos_min, cos_max = ops.cos(min_azimuth), ops.cos(max_azimuth)
+    sin_min, sin_max = ops.sin(min_azimuth), ops.sin(max_azimuth)
 
     # Get the maximum x coordinate of the corners of both the inner and outer arc.
-    max_corner_x = api.max(
-        api.array(
+    max_corner_x = ops.max(
+        ops.array(
             [
                 cos_min * min_depth,  # Inner arc
                 cos_max * min_depth,  # Inner arc
@@ -56,10 +55,10 @@ def _right_bound(
     # the right-most *tangent* of the outer arc. We have to make some additional checks
     # to make this work. The code for this is a bit terse, so just trust the generative
     # unit tests for :attr:`SectorScan.cartesian_bounds` :)
-    return api.where(
-        (max_azimuth - min_azimuth) < api.pi,
-        api.where(api.logical_and(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
-        api.where(api.logical_or(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
+    return ops.where(
+        (max_azimuth - min_azimuth) < ops.pi,
+        ops.where(ops.logical_and(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
+        ops.where(ops.logical_or(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
     )
 
 
@@ -82,8 +81,8 @@ def polar_bounds_to_cartesian_bounds(
     # box and we can get the other sides by rotating the azimuth bounds by 90, 180,
     # and 270 degrees. Because in ultrasound, "straight down" is at 0 degrees, we
     # have to rotate everything by an additional 90 degrees.
-    quarter_turn = api.pi / 2
-    half_turn = api.pi
+    quarter_turn = ops.pi / 2
+    half_turn = ops.pi
     # Return (left, right, top, bottom)
     return (
         -_right_bound(min_az + quarter_turn, max_az + quarter_turn, min_d, max_d),
@@ -100,32 +99,47 @@ def scan_convert(
     azimuth_axis: int = -2,
     depth_axis: int = -1,
     *,  # Remaining args must be passed by name (to avoid confusion)
-    shape: Optional[Tuple[int, int]] = None,
-    default_value: Optional[Array] = 0.0,
+    shape: Optional[Union[Tuple[int, int], str]] = None,
+    default_value: Optional[ArrayOrNumber] = 0.0,
     edge_handling: str = "Value",
+    cartesian_axes: Optional[Tuple[Array, Array]] = None,
 ):
     from vbeam.scan import CoordinateSystem, Scan
 
     if isinstance(bounds, Scan):
         if not bounds.coordinate_system == CoordinateSystem.POLAR:
             raise ValueError("You may only scan convert from polar coordinates.")
-        bounds = bounds.bounds_beamspace
-    if shape is None:
-        shape = image.shape[azimuth_axis], image.shape[depth_axis]
+        bounds = bounds.bounds
 
     width, height = image.shape[azimuth_axis], image.shape[depth_axis]
     min_az, max_az, min_depth, max_depth = bounds
 
     # Get the points in the cartesian grid
-    min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(bounds)
-    points = grid(
-        api.linspace(min_x, max_x, shape[0]),
-        api.linspace(min_z, max_z, shape[1]),
-    )
+    if cartesian_axes is None:
+        min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(bounds)
+        if shape is None:
+            shape = image.shape[azimuth_axis], image.shape[depth_axis]
+        elif isinstance(shape, str): 
+            if shape=='keep_aspect_ratio':
+                out_height = image.shape[depth_axis]
+                azimuth_scale = ops.abs((max_x - min_x) / (max_z - min_z))
+                shape = int(ops.round(out_height * azimuth_scale)), out_height
+            else:
+                raise ValueError(f'Unsupported shape {shape}')   
+        points = grid(
+            ops.linspace(min_x, max_x, shape[0]),
+            ops.linspace(min_z, max_z, shape[1]),
+        )
+    else:
+        points = grid(
+            cartesian_axes[0],
+            cartesian_axes[1],
+        )
+
     x, z = points[..., 0], points[..., 1]  # (Ignore y; scan_convert only supports 2D!)
     # and transform each point to polar coordinates.
-    angles = api.arctan2(x, z)
-    radii = api.sqrt(x**2 + z**2)
+    angles = ops.arctan2(x, z)
+    radii = ops.sqrt(x**2 + z**2)
 
     # Interpolate the imaged points, sampled at the transformed points.
     return FastInterpLinspace.interp2d(

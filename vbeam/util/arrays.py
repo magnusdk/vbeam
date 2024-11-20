@@ -1,9 +1,6 @@
 from typing import Optional, Sequence
 
-from fastmath import ArrayOrNumber
-
-from vbeam.fastmath import numpy as np
-
+from fastmath import ArrayOrNumber, ops
 
 def grid(*axes: ArrayOrNumber, shape: Optional[Sequence[int]] = None) -> ArrayOrNumber:
     """Return an array of each point position, organized in a grid.
@@ -24,7 +21,7 @@ def grid(*axes: ArrayOrNumber, shape: Optional[Sequence[int]] = None) -> ArrayOr
     >>> (points_3d[:, :, [0, 2]] == points).all()
     True
     """
-    points = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1)
+    points = ops.stack(ops.meshgrid(*axes, indexing="ij"), axis=-1)
     if shape:
         points = points.reshape(shape)
     return points
