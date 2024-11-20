@@ -1,28 +1,28 @@
 from typing import Callable, Iterable, Optional
 
-from fastmath import ArrayOrNumber, field
+from fastmath import Array, field
 
 from vbeam.core import Apodization
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 
 
 class CombinedApodization(Apodization):
     apodizations: Iterable[Apodization]
-    combiner: Optional[Callable[[ArrayOrNumber], float]] = field(
+    combiner: Optional[Callable[[Array], float]] = field(
         default=None, static=True
     )
 
     def __call__(self, *args, **kwargs) -> float:
         """Multiply the result of calling the Apodization objects."""
-        values = np.array([apod(*args, **kwargs) for apod in self.apodizations])
+        values = api.array([apod(*args, **kwargs) for apod in self.apodizations])
         if self.combiner is not None:
             return self.combiner(values)
-        return np.prod(values)
+        return api.prod(values)
 
 
 def combine_apodizations(
     *apodizations: Iterable[Apodization],
-    combiner: Optional[Callable[[ArrayOrNumber], float]] = None,
+    combiner: Optional[Callable[[Array], float]] = None,
 ) -> CombinedApodization:
     """Return a new Apodization object that combines all the given apodizations.
 

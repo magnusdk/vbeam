@@ -4,7 +4,7 @@ from typing import Sequence, Set, Union
 from spekk.transformations import Transformation
 
 from vbeam.data_importers.setup import SignalForPointSetup
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.scan import CoordinateSystem
 from vbeam.scan import util as scan_util
 from vbeam.scan.advanced import ExtraDimsScanMixin
@@ -55,7 +55,7 @@ def sum_over_dimensions(
     if isinstance(setup.scan, ExtraDimsScanMixin):
         keep |= set(setup.scan.required_dimensions_for_unflatten)
     return Apply(
-        np.sum,
+        api.sum,
         [
             Axis(dim)
             for dim in ["receivers", "senders", "transmits"]

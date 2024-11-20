@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 
-from fastmath import Array, ArrayOrNumber, Module
+from fastmath import Array, Module
 
 
 class SpeedOfSound(Module):

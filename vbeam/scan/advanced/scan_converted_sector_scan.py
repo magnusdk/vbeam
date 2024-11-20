@@ -1,9 +1,9 @@
 from typing import Optional, Tuple
 
-from fastmath import ArrayOrNumber, field
+from fastmath import Array, field
 
 from vbeam.fastmath import backend_manager
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.scan.advanced.base import WrappedScan
 from vbeam.scan.base import CoordinateSystem
 from vbeam.scan.sector_scan import SectorScan
@@ -13,10 +13,10 @@ from vbeam.util.vmap import vmap_all_except
 
 def _get_scan_converted_points_and_indices(
     base_scan: SectorScan,
-) -> Tuple[ArrayOrNumber, ArrayOrNumber]:
+) -> Tuple[Array, Array]:
     # Scan convert a grid of ones to get a mask of the points that are mapped to the
     # cartesian grid.
-    mask = scan_convert(np.ones(base_scan.shape), base_scan)
+    mask = scan_convert(api.ones(base_scan.shape), base_scan)
     mask = (mask == 1).reshape((base_scan.num_points,))
 
     # Calculate the scan converted points.
@@ -27,18 +27,18 @@ def _get_scan_converted_points_and_indices(
     # We must use Numpy for this because masking out values is hard on GPUs.
     with backend_manager.using_backend("numpy"):
         # Mask out the points and indices
-        mask = np.array(mask)
-        points = np.array(scan_converted_points)[mask]
-        indices = np.arange(base_scan.num_points)[mask]
+        mask = api.array(mask)
+        points = api.array(scan_converted_points)[mask]
+        indices = api.arange(base_scan.num_points)[mask]
 
     # Wrap in array to ensure that they use the active backend.
-    return np.array(points), np.array(indices)
+    return api.array(points), api.array(indices)
 
 
 class ScanConvertedSectorScan(WrappedScan):
     _base_scan: SectorScan = field(static=True)
-    _points: Optional[ArrayOrNumber] = None
-    _indices: Optional[ArrayOrNumber] = None
+    _points: Optional[Array] = None
+    _indices: Optional[Array] = None
 
     def __post_init__(self):
         if self._points is None or self._indices is None:
@@ -46,7 +46,7 @@ class ScanConvertedSectorScan(WrappedScan):
                 self._base_scan
             )
 
-    def get_points(self, flatten: bool = True) -> ArrayOrNumber:
+    def get_points(self, flatten: bool = True) -> Array:
         if not flatten:
             raise ValueError(
                 f"{self.__class__.__name__} only supports getting flattened points."
@@ -54,12 +54,12 @@ class ScanConvertedSectorScan(WrappedScan):
         return self._points
 
     def unflatten(
-        self, imaged_points: ArrayOrNumber, points_axis: int = -1
-    ) -> ArrayOrNumber:
-        image = np.zeros((self.base_scan.num_points,), dtype=imaged_points.dtype)
+        self, imaged_points: Array, points_axis: int = -1
+    ) -> Array:
+        image = api.zeros((self.base_scan.num_points,), dtype=imaged_points.dtype)
 
-        def unflatten_1(imaged_points_1: ArrayOrNumber):
-            return np.add.at(image, self._indices, imaged_points_1)
+        def unflatten_1(imaged_points_1: Array):
+            return api.add.at(image, self._indices, imaged_points_1)
 
         unflatten_all = vmap_all_except(unflatten_1, axis=points_axis)
         return self.base_scan.unflatten(unflatten_all(imaged_points), points_axis)

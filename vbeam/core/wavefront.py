@@ -8,9 +8,9 @@ speed of sound of the medium."""
 from abc import abstractmethod
 from typing import Callable, Union
 
-from fastmath import Array, ArrayOrNumber, Module
+from fastmath import Array, Module
 
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.util.geometry.v2 import distance
 
 from .probe_geometry import ProbeGeometry
@@ -117,18 +117,18 @@ class MultipleTransmitDistances(Module):
         :class:`TransmittedWavefront`
     """
 
-    values: ArrayOrNumber
-    aggregate_samples: Callable[[ArrayOrNumber, ArrayOrNumber], ArrayOrNumber] = None
+    values: Array
+    aggregate_samples: Callable[[Array, Array], Array] = None
 
     def __post_init__(self):
         # If no aggregate function is set, just average the samples
         if self.aggregate_samples is None:
-            self.aggregate_samples = np.mean
+            self.aggregate_samples = api.mean
 
     # Mathematical operators applied to the :class:`MultipleTransmitDistances` object
     # will apply them to the ``values`` attribute as if it was just a numpy array.
-    def __truediv__(self, other) -> ArrayOrNumber:
+    def __truediv__(self, other) -> Array:
         return self.values / other
 
-    def __add__(self, other) -> ArrayOrNumber:
+    def __add__(self, other) -> Array:
         return self.values + other

@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from fastmath import ArrayOrNumber
+from fastmath import Array
 from spekk import Spec
 
 from vbeam.apodization.util import get_apodization_values
@@ -15,10 +15,10 @@ from vbeam.util._default_values import (
 def plot_apodization(
     apodization: Apodization,
     probe: Optional[ProbeGeometry] = None,
-    point_position: Optional[ArrayOrNumber] = None,
+    point_position: Optional[Array] = None,
     wave_data: Optional[WaveData] = None,
     spec: Optional[Spec] = None,
-    postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
+    postprocess: Optional[Callable[[Array], Array]] = None,
     average_overlap: bool = True,
     jit: bool = True,
     ax=None,  # : Optional[matplotlib.pyplot.Axes]

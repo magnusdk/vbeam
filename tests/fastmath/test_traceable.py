@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from fastmath import ArrayOrNumber
+from fastmath import Array
 
 from vbeam.fastmath import Backend, backend_manager
 from vbeam.fastmath.traceable import traceable_dataclass
@@ -13,7 +13,7 @@ class MyABC(ABC):
 
 @traceable_dataclass(data_fields=["a"])
 class Item(MyABC):
-    a: ArrayOrNumber = 1.0
+    a: Array = 1.0
 
     def do_thing(self):
         return 2.0

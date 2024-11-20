@@ -1,25 +1,25 @@
 from typing import Tuple, Union
 
-from fastmath import ArrayOrNumber
+from fastmath import Array
 
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.interpolation import FastInterpLinspace
 
 
-def coherence_factor(beamformed_data: ArrayOrNumber, receivers_axis: int):
-    coherent_sum = np.abs(np.sum(beamformed_data, receivers_axis)) ** 2
-    incoherent_sum = np.sum(np.abs(beamformed_data) ** 2, receivers_axis)
+def coherence_factor(beamformed_data: Array, receivers_axis: int):
+    coherent_sum = api.abs(api.sum(beamformed_data, receivers_axis)) ** 2
+    incoherent_sum = api.sum(api.abs(beamformed_data) ** 2, receivers_axis)
     num_receivers = beamformed_data.shape[receivers_axis]
-    return np.nan_to_num(coherent_sum / incoherent_sum / num_receivers)
+    return api.nan_to_num(coherent_sum / incoherent_sum / num_receivers)
 
 
-def normalized_decibels(data: ArrayOrNumber):
+def normalized_decibels(data: Array):
     "Convert the data into decibels normalized for dynamic range."
-    data_db = 20 * np.nan_to_num(np.log10(np.abs(data)))
+    data_db = 20 * api.nan_to_num(api.log10(api.abs(data)))
     return data_db - data_db.max()
 
 
-def _upsampling_indices(n: int, data_size: int) -> ArrayOrNumber:
+def _upsampling_indices(n: int, data_size: int) -> Array:
     """Return the sampling indices of data with size data_size after upsampling by n.
 
     The formula is a bit complicated because it is as general as possible. Check out
@@ -28,14 +28,14 @@ def _upsampling_indices(n: int, data_size: int) -> ArrayOrNumber:
     is_even = n % 2 == 0
     is_odd = not is_even
     d = (n // 2 + is_odd) * 2
-    return np.arange(n * data_size - d + is_odd) / n + (is_even + d - n) / (2 * n)
+    return api.arange(n * data_size - d + is_odd) / n + (is_even + d - n) / (2 * n)
 
 
 def upsample_by_interpolation(
-    data: ArrayOrNumber,
+    data: Array,
     n: int,
     axis: Union[int, Tuple[int, ...]] = 0,
-) -> ArrayOrNumber:
+) -> Array:
     """Upsample the data along the given axes. Multiple axes may be given."""
     # No axis has been given: upsample all axes
     if axis is None:
@@ -52,9 +52,9 @@ def upsample_by_interpolation(
 
     # Only one axis has been given: upsample that axis
     sample_indices = _upsampling_indices(n, data.shape[axis])
-    data = np.swapaxes(data, axis, 0)
+    data = api.swapaxes(data, axis, 0)
     interpolator = FastInterpLinspace(0, 1, data.shape[0])
     interpolated_data = interpolator.interp1d(
         sample_indices, data, left=data[0], right=data[-1]
     )
-    return np.swapaxes(interpolated_data, 0, axis)
+    return api.swapaxes(interpolated_data, 0, axis)

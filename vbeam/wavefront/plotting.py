@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from fastmath import Array, ArrayOrNumber
+from fastmath import Array, Array
 from spekk import Spec
 
 from vbeam.core import (
@@ -29,7 +29,7 @@ def plot_transmitted_wavefront(
     point_position: Optional[Array] = None,
     wave_data: Optional[WaveData] = None,
     spec: Optional[Spec] = None,
-    postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
+    postprocess: Optional[Callable[[Array], Array]] = None,
     ax=None,  # : Optional[matplotlib.pyplot.Axes]
 ):
     """Plot the (transmit) wavefront distance values using ``matplotlib``.
@@ -83,7 +83,7 @@ def plot_reflected_wavefront(
     point_position: Optional[Array] = None,
     receiver: Optional[Array] = None,
     spec: Optional[Spec] = None,
-    postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
+    postprocess: Optional[Callable[[Array], Array]] = None,
     ax=None,  # : Optional[matplotlib.pyplot.Axes]
 ):
     """Plot the (receive) wavefront distance values using ``matplotlib``.

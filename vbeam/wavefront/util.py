@@ -10,7 +10,7 @@ from vbeam.core import (
     TransmittedWavefront,
     WaveData,
 )
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.util.transformations import *
 
 
@@ -84,13 +84,13 @@ def get_transmitted_wavefront_values(
             *args, **kwargs
         ),
         *[ForAll(dim) for dim in vmap_dimensions],
-        Apply(np.sum, [Axis(dim) for dim in sum_dimensions - reduce_sum_dimension]),
+        Apply(api.sum, [Axis(dim) for dim in sum_dimensions - reduce_sum_dimension]),
         # [*reduce_sum_dimension][0] gets the "first element" of the set
         Reduce.Sum([*reduce_sum_dimension][0]) if reduce_sum_dimension else do_nothing,
         # Put the dimensions in the order defined by keep
-        Apply(np.transpose, [Axis(dim, keep=True) for dim in dimensions]),
+        Apply(api.transpose, [Axis(dim, keep=True) for dim in dimensions]),
         # Make it run faster if `jit` is True and if the backend supports it.
-        Wrap(np.jit) if jit else do_nothing,
+        Wrap(api.jit) if jit else do_nothing,
     ).build(spec)
 
     # Calculate the wavefront values
@@ -162,13 +162,13 @@ def get_reflected_wavefront_values(
             *args, **kwargs
         ),
         *[ForAll(dim) for dim in vmap_dimensions],
-        Apply(np.sum, [Axis(dim) for dim in sum_dimensions - reduce_sum_dimension]),
+        Apply(api.sum, [Axis(dim) for dim in sum_dimensions - reduce_sum_dimension]),
         # [*reduce_sum_dimension][0] gets the "first element" of the set
         Reduce.Sum([*reduce_sum_dimension][0]) if reduce_sum_dimension else do_nothing,
         # Put the dimensions in the order defined by keep
-        Apply(np.transpose, [Axis(dim, keep=True) for dim in dimensions]),
+        Apply(api.transpose, [Axis(dim, keep=True) for dim in dimensions]),
         # Make it run faster if `jit` is True and if the backend supports it.
-        Wrap(np.jit) if jit else do_nothing,
+        Wrap(api.jit) if jit else do_nothing,
     ).build(spec)
 
     # Calculate the wavefront values

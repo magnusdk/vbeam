@@ -3,7 +3,7 @@ the position, orientation, etc.
 """
 
 from typing import Callable, Optional
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import distance
 
@@ -31,7 +31,7 @@ class ProbeGeometry:
 
     @property
     def curvature_center(self):
-        return (np.array([0.0,0.0,-self.ROC[0]]), np.array([0.0,0.0,-self.ROC[1]]) ) 
+        return (api.array([0.0,0.0,-self.ROC[0]]), api.array([0.0,0.0,-self.ROC[1]]) ) 
     
     def get_sender_normal(self):
         vector = self.sender_position - self.curvature_center
@@ -42,10 +42,10 @@ class ProbeGeometry:
         return vector / distance(vector)
     
     def get_theta(self,position):
-        return np.arctan2(position[0],self.ROC[0]+position[2])
+        return api.arctan2(position[0],self.ROC[0]+position[2])
     
     def get_phi(self,position):
-        return np.arctan2(position[1],self.ROC[1]+position[2])
+        return api.arctan2(position[1],self.ROC[1]+position[2])
     
 
     def aperture_distance(self,position1, position2):
@@ -54,18 +54,18 @@ class ProbeGeometry:
             pos2_s = (0.0, 0.0)
         else:
             pos2_s = self.cart2surface(position=position2)
-        return (np.sqrt( (pos1_s[0]-pos2_s[0])**2 + (pos1_s[1]-pos2_s[1])**2 ))
+        return (api.sqrt( (pos1_s[0]-pos2_s[0])**2 + (pos1_s[1]-pos2_s[1])**2 ))
 
     def cart2surface(self, position):
         return (self.ROC[0]*self.get_theta(position=position), self.ROC[1]*self.get_phi(position=position))
     
     def surface2cart(self,position_s):
-        return np.array((
-            self.ROC[0]*np.sin(position_s[0]/self.ROC[0]),
-            self.ROC[1]*np.sin(position_s[1]/self.ROC[1]),
-            np.where(self.ROC[0]-self.ROC[0]*np.cos(position_s[0]/self.ROC[0])>self.ROC[1]-self.ROC[1]*np.cos(position_s[1]/self.ROC[1]),
-                        self.ROC[0]*np.cos(position_s[0]/self.ROC[0])-self.ROC[0],
-                        self.ROC[1]*np.cos(position_s[1]/self.ROC[1])-self.ROC[1]
+        return api.array((
+            self.ROC[0]*api.sin(position_s[0]/self.ROC[0]),
+            self.ROC[1]*api.sin(position_s[1]/self.ROC[1]),
+            api.where(self.ROC[0]-self.ROC[0]*api.cos(position_s[0]/self.ROC[0])>self.ROC[1]-self.ROC[1]*api.cos(position_s[1]/self.ROC[1]),
+                        self.ROC[0]*api.cos(position_s[0]/self.ROC[0])-self.ROC[0],
+                        self.ROC[1]*api.cos(position_s[1]/self.ROC[1])-self.ROC[1]
                         )
         ))
     
@@ -84,13 +84,13 @@ class ProbeGeometry:
         return (left, right, up, down)
     
     def set_rx_aperture_length(self,min_x,max_x, min_y, max_y):
-        width_s = np.arcsin(max_x/self.ROC[0])*self.ROC[0]-np.arcsin(min_x/self.ROC[0])*self.ROC[0]
-        height_s = np.arcsin(max_y/self.ROC[1])*self.ROC[1]-np.arcsin(min_y/self.ROC[1])*self.ROC[1]
+        width_s = api.arcsin(max_x/self.ROC[0])*self.ROC[0]-api.arcsin(min_x/self.ROC[0])*self.ROC[0]
+        height_s = api.arcsin(max_y/self.ROC[1])*self.ROC[1]-api.arcsin(min_y/self.ROC[1])*self.ROC[1]
         self.rx_aperture_length_s = (width_s, height_s)
 
     def set_tx_aperture_length(self,min_x,max_x, min_y, max_y):
-        width_s = np.arcsin(max_x/self.ROC[0])*self.ROC[0]-np.arcsin(min_x/self.ROC[0])*self.ROC[0]
-        height_s = np.arcsin(max_y/self.ROC[1])*self.ROC[1]-np.arcsin(min_y/self.ROC[1])*self.ROC[1]
+        width_s = api.arcsin(max_x/self.ROC[0])*self.ROC[0]-api.arcsin(min_x/self.ROC[0])*self.ROC[0]
+        height_s = api.arcsin(max_y/self.ROC[1])*self.ROC[1]-api.arcsin(min_y/self.ROC[1])*self.ROC[1]
         self.tx_aperture_length_s = (width_s, height_s)
 
     def with_updates_to(

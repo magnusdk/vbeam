@@ -1,28 +1,28 @@
-from fastmath import ArrayOrNumber
+from fastmath import Array
 
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 
 
-def as_polar(cartesian_point: ArrayOrNumber):
+def as_polar(cartesian_point: Array):
     """Return a point in cartesian coordinates in its polar coordinates representation.
 
     NOTE: All y-values must be 0. FIXME"""
     x, y, z = cartesian_point[..., 0], cartesian_point[..., 1], cartesian_point[..., 2]
-    azimuth_angles = np.arctan2(x, z)
-    radii = np.sqrt(x**2 + y**2 + z**2)
-    return np.stack([azimuth_angles, np.zeros(radii.shape), radii], -1)
+    azimuth_angles = api.arctan2(x, z)
+    radii = api.sqrt(x**2 + y**2 + z**2)
+    return api.stack([azimuth_angles, api.zeros(radii.shape), radii], -1)
 
 
-def as_cartesian(polar_point: ArrayOrNumber):
+def as_cartesian(polar_point: Array):
     "Return a point in polar coordinates in its cartesian coordinates representation."
     azimuth_angles = polar_point[..., 0]
     polar_angles = polar_point[..., 1]
     r = polar_point[..., 2]
-    return np.stack(
+    return api.stack(
         [
-            r * np.sin(azimuth_angles) * np.cos(polar_angles),
-            r * np.sin(azimuth_angles) * np.sin(polar_angles),
-            r * np.cos(azimuth_angles),
+            r * api.sin(azimuth_angles) * api.cos(polar_angles),
+            r * api.sin(azimuth_angles) * api.sin(polar_angles),
+            r * api.cos(azimuth_angles),
         ],
         axis=-1,
     )

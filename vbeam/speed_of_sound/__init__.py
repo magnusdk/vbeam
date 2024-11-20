@@ -1,10 +1,10 @@
 from typing import Optional
 
 import numpy
-from fastmath import ArrayOrNumber, Array, field
+from fastmath import Array, Array, field
 
 from vbeam.core import SpeedOfSound
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.scan import Scan
 from vbeam.util import ensure_2d_point
@@ -20,7 +20,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
     wave imaging, this class is not appropriate. How should speed of sound be sampled
     for these setups? That's a difficult question :)"""
 
-    values: ArrayOrNumber
+    values: Array
     x_axis: FastInterpLinspace
     z_axis: FastInterpLinspace
     n_samples: int = field(static=True)
@@ -48,14 +48,14 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
         # Return the weighted average of the total distance
         return (average1 * distance1 + average2 * distance2) / total_distance
 
-    def average_between_two_points(self, p1: ArrayOrNumber, p2: ArrayOrNumber) -> float:
+    def average_between_two_points(self, p1: Array, p2: Array) -> float:
         "Return the averaged sampled speed of sound between point ``p1`` and ``p2``."
         assert p1.shape == p2.shape == (2,), "Expected p1 and p2 to be 2D points."
         x1, z1 = p1[0], p1[1]
         x2, z2 = p2[0], p2[1]
         dx, dz = (x2 - x1) / self.n_samples, (z2 - z1) / self.n_samples
         # We use np.reduce instead of interp2d directly to allocate less GPU memory
-        integrated_speed_of_sound = np.reduce(
+        integrated_speed_of_sound = api.reduce(
             lambda carry, i: carry
             + FastInterpLinspace.interp2d(
                 x1 + i * dx,
@@ -65,15 +65,15 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
                 self.values,
                 default_value=self.default_speed_of_sound,
             ),
-            np.arange(self.n_samples),
-            np.array(0.0, dtype=self.values.dtype),
+            api.arange(self.n_samples),
+            api.array(0.0, dtype=self.values.dtype),
         )
         return integrated_speed_of_sound / self.n_samples
 
     @staticmethod
     def from_scan(
         scan: Scan,
-        values: ArrayOrNumber,
+        values: Array,
         n_samples: Optional[int] = None,
         default_speed_of_sound: float = 1540.0,
     ) -> "HeterogeneousSpeedOfSound":
@@ -82,7 +82,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
                 "Only 2D scans are supported for HeterogeneousSpeedOfSound"
             )
 
-        from_x, to_x, from_z, to_z = scan.cartesian_bounds
+        from_x, to_x, from_z, to_z = scan.bounds_cartesian
         n_x, n_z = scan.shape
         if n_samples is None:
             n_samples = int(numpy.ceil(numpy.sqrt(n_x**2 + n_z**2)))
@@ -96,7 +96,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
 
 
 class DistributedGlobalSpeedOfSound(SpeedOfSound):
-    speed_of_sound_map: ArrayOrNumber
+    speed_of_sound_map: Array
     x_axis: FastInterpLinspace
     z_axis: FastInterpLinspace
     default_speed_of_sound: float = 1540.0

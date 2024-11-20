@@ -3,12 +3,12 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
-from fastmath import ArrayOrNumber, Module
+from fastmath import Array, Module
 
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.util.geometry import Line
 
-np.backend = "jax"
+api.backend = "jax"
 
 
 # TODO: Make vbeam.util.geometry.Line work with 2D points
@@ -18,7 +18,7 @@ class LineNB(Module):
     c: float
 
     @staticmethod
-    def passing_through(point1: ArrayOrNumber, point2: ArrayOrNumber) -> "Line":
+    def passing_through(point1: Array, point2: Array) -> "Line":
         "Construct a line that passes through both point1 and point2."
         x1, z1 = point1
         x2, z2 = point2
@@ -28,24 +28,24 @@ class LineNB(Module):
         return Line(a, b, c)
 
     @staticmethod
-    def from_anchor_and_angle(anchor: ArrayOrNumber, angle: float) -> "Line":
+    def from_anchor_and_angle(anchor: Array, angle: float) -> "Line":
         "Construct a line that passes through the anchor and has the given angle."
         return Line.passing_through(
-            anchor, anchor + np.array([np.cos(angle), np.sin(angle)])
+            anchor, anchor + api.array([api.cos(angle), api.sin(angle)])
         )
 
-    def intersection(l1: "Line", l2: "Line") -> ArrayOrNumber:
+    def intersection(l1: "Line", l2: "Line") -> Array:
         "Return the point where the lines l1 and l2 intersect."
         x = (l1.b * l2.c - l2.b * l1.c) / (l1.a * l2.b - l2.a * l1.b)
         z = (l2.a * l1.c - l1.a * l2.c) / (l1.a * l2.b - l2.a * l1.b)
-        return np.array([x, z])
+        return api.array([x, z])
 
     @property
     def angle(self):
         "The angle of the line."
-        return np.arctan2(self.b, self.a)
+        return api.arctan2(self.b, self.a)
 
-    def signed_distance(self, point: ArrayOrNumber) -> float:
+    def signed_distance(self, point: Array) -> float:
         """Return the signed distance between the point and the nearest point on the
         line.
 
@@ -62,7 +62,7 @@ class LineNB(Module):
         >>> vertical_line.signed_distance(np.array([1,0,5]))  # The right-hand side
         -1.0
         """
-        norm = np.sqrt(self.a**2 + self.b**2)
+        norm = api.sqrt(self.a**2 + self.b**2)
         return (self.a * point[..., 0] + self.b * point[..., 1] + self.c) / norm
 
 
@@ -86,7 +86,7 @@ def image2polygons(coords, image) -> Polygon:
     return polygon_from_coord(jnp.ravel(X), jnp.ravel(Z))
 
 
-def contains(polygon: Polygon, point: ArrayOrNumber):
+def contains(polygon: Polygon, point: Array):
     "Return True if the point is within the polygon."
     l1 = Line.passing_through(polygon.v1.xyz, polygon.v2.xyz)
     l2 = Line.passing_through(polygon.v2.xyz, polygon.v3.xyz)
@@ -118,7 +118,7 @@ def lerp_triangle(point, v1: Vertex, v2: Vertex, v3: Vertex):
     return jnp.where((w1 >= 0) & (w2 >= 0) & (w3 >= 0), value, 0)
 
 
-def lerp(poly: Polygon, point: ArrayOrNumber):
+def lerp(poly: Polygon, point: Array):
     return lerp_triangle(point, poly.v1, poly.v2, poly.v3) + lerp_triangle(
         point, poly.v1, poly.v3, poly.v4
     )
@@ -126,6 +126,6 @@ def lerp(poly: Polygon, point: ArrayOrNumber):
 
 @jax.jit
 @partial(jax.vmap, in_axes=(None, 0))
-def lerp_all(polygons: Polygon, points: ArrayOrNumber):
+def lerp_all(polygons: Polygon, points: Array):
     vmapped_lerp = jax.vmap(lerp, (0, None))
     return jnp.sum(vmapped_lerp(polygons, points))

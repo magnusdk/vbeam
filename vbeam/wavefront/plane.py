@@ -1,7 +1,7 @@
 from fastmath import Array
 
 from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 
 
 class PlaneWavefront(TransmittedWavefront):
@@ -15,7 +15,7 @@ class PlaneWavefront(TransmittedWavefront):
         diff = point_position - sender
         x, y, z = diff[0], diff[1], diff[2]
         return (
-            x * np.sin(wave_data.azimuth) * np.cos(wave_data.elevation)
-            + y * np.sin(wave_data.elevation)
-            + z * np.cos(wave_data.azimuth) * np.cos(wave_data.elevation)
+            x * api.sin(wave_data.azimuth) * api.cos(wave_data.elevation)
+            + y * api.sin(wave_data.elevation)
+            + z * api.cos(wave_data.azimuth) * api.cos(wave_data.elevation)
         )

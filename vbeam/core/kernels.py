@@ -9,7 +9,7 @@ See also:
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
-from fastmath import Array, ArrayOrNumber
+from fastmath import Array
 
 from vbeam.core.apodization import Apodization
 from vbeam.core.interpolation import InterpolationSpace1D
@@ -22,7 +22,7 @@ from vbeam.core.wavefront import (
     ReflectedWavefront,
     TransmittedWavefront,
 )
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 
 
 def signal_for_point(
@@ -30,7 +30,7 @@ def signal_for_point(
     sender: Array,
     receiver: Array,
     point_position: Array,
-    signal: ArrayOrNumber,
+    signal: Array,
     transmitted_wavefront: TransmittedWavefront,
     reflected_wavefront: ReflectedWavefront,
     speed_of_sound: Union[float, SpeedOfSound],
@@ -38,7 +38,7 @@ def signal_for_point(
     interpolate: InterpolationSpace1D,
     modulation_frequency: Optional[float],
     apodization: Apodization,
-) -> ArrayOrNumber:
+) -> Array:
     """The core beamforming function. Return the delayed and interpolated signal from a
     single transmit, for a single receiver, for a single point (pixel).
 
@@ -94,8 +94,8 @@ def signal_for_point(
 
 
 def phase_correction(signal: float, delay: float, modulation_frequency: float):
-    w0 = np.pi * 2 * modulation_frequency
-    return signal * np.exp(1j * w0 * delay)
+    w0 = api.pi * 2 * modulation_frequency
+    return signal * api.exp(1j * w0 * delay)
 
 
 @dataclass
@@ -108,7 +108,7 @@ class SignalForPointData(KernelData):
     sender: Array
     receiver: Array
     point_position: Array
-    signal: ArrayOrNumber
+    signal: Array
     transmitted_wavefront: TransmittedWavefront
     reflected_wavefront: ReflectedWavefront
     speed_of_sound: Union[float, SpeedOfSound]

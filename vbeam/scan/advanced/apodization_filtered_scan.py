@@ -1,12 +1,11 @@
 from typing import Optional, Sequence, Tuple
 
-from fastmath import ArrayOrNumber, field
+from fastmath import Array, Array, field
 from spekk import Spec
-
 from vbeam.apodization.util import get_apodization_values
 from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import backend_manager
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.scan.advanced.base import ExtraDimsScanMixin, WrappedScan
 from vbeam.scan.base import Scan
 from vbeam.util.transformations import *
@@ -14,9 +13,9 @@ from vbeam.util.vmap import vmap_all_except
 
 
 def get_point_indices_for_transmits(
-    apodization_values: ArrayOrNumber,
+    apodization_values: Array,
     threshold: float,
-) -> Tuple[ArrayOrNumber, ArrayOrNumber]:
+) -> Tuple[Array, Array]:
     """Return the indices (and indices mask which is explained further
     down) for the points in an image that are to be imaged for a given transmit. Which
     points that are selected to be imaged are determined by the given apodization object
@@ -48,18 +47,18 @@ def get_point_indices_for_transmits(
     masks = apodization_values >= threshold
 
     # Get the maximum number of points to image.
-    num_focused_points = np.sum(masks, -1)
-    max_num_focused_points = np.max(num_focused_points)
+    num_focused_points = api.sum(masks, -1)
+    max_num_focused_points = api.max(num_focused_points)
 
     # We use Numpy for performing the actual masking because that is hard to do on GPUs
     with backend_manager.using_backend("numpy"):
 
         def mask1(mask):
-            masked_indices = np.arange(mask.size)[mask]
-            num_masked_indices = np.sum(mask)
+            masked_indices = api.arange(mask.size)[mask]
+            num_masked_indices = api.sum(mask)
             # We set padding-indices to -1 (these will be ignored because of indices_mask)
-            padding = np.ones((max_num_focused_points - num_masked_indices,)) * -1
-            return np.concatenate([masked_indices, padding])
+            padding = api.ones((max_num_focused_points - num_masked_indices,)) * -1
+            return api.concatenate([masked_indices, padding])
 
         m_dimensions = [f"dim{i}" for i in range(masks.ndim)]
         get_indices = compose(
@@ -72,19 +71,19 @@ def get_point_indices_for_transmits(
 
     indices = indices.astype("int32")
     indices_mask = indices != -1
-    return np.array(indices), np.array(indices_mask)
+    return api.array(indices), api.array(indices_mask)
 
 
 def recombine1(
-    image: ArrayOrNumber,
-    imaged_points: ArrayOrNumber,
-    indices: ArrayOrNumber,
-    indices_mask: ArrayOrNumber,
+    image: Array,
+    imaged_points: Array,
+    indices: Array,
+    indices_mask: Array,
     points_axis: int,
 ):
     @vmap_all_except(points_axis)
-    def recombine(imaged_points: ArrayOrNumber) -> ArrayOrNumber:
-        return np.add.at(image, indices, imaged_points * indices_mask)
+    def recombine(imaged_points: Array) -> Array:
+        return api.add.at(image, indices, imaged_points * indices_mask)
 
     return recombine(imaged_points)
 
@@ -92,15 +91,15 @@ def recombine1(
 class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
     apodization: Apodization = field(static=True)
     probe: ProbeGeometry = field(static=True)
-    sender: np.ndarray = field(static=True)
-    receiver: np.ndarray = field(static=True)
+    sender: Array = field(static=True)
+    receiver: Array = field(static=True)
     wave_data: WaveData = field(static=True)
     spec: Spec = field(static=True)
     dimensions: Sequence[str] = field(static=True)
     threshold: float = field(static=True)
-    _points: Optional[np.ndarray] = None
-    _indices: Optional[np.ndarray] = None
-    _indices_mask: Optional[np.ndarray] = None
+    _points: Optional[Array] = None
+    _indices: Optional[Array] = None
+    _indices_mask: Optional[Array] = None
 
     def __post_init__(self):
         # If any of these values are None it means we are constructing a new instance
@@ -108,7 +107,7 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         if self._points is None or self._indices is None or self._indices_mask is None:
             self._recompute_indices()
 
-    def get_points(self, flatten: bool = True) -> ArrayOrNumber:
+    def get_points(self, flatten: bool = True) -> Array:
         if not flatten:
             raise ValueError(
                 f"{self.__class__.__name__} only supports getting flattened points."
@@ -117,15 +116,15 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
 
     def unflatten(
         self,
-        imaged_points: ArrayOrNumber,
+        imaged_points: Array,
         transmits_axis: int,
         points_axis: int,
-    ) -> ArrayOrNumber:
-        recombine = np.vmap(
+    ) -> Array:
+        recombine = api.vmap(
             recombine1,
             [None, transmits_axis, 0, 0, None],
         )
-        image = np.zeros((self.base_scan.num_points,), dtype=imaged_points.dtype)
+        image = api.zeros((self.base_scan.num_points,), dtype=imaged_points.dtype)
         recombined_points = recombine(
             image,
             imaged_points,
@@ -133,7 +132,7 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
             self._indices_mask,
             points_axis - 1 if points_axis > transmits_axis else points_axis,
         )
-        recombined_points = np.sum(recombined_points, 0)
+        recombined_points = api.sum(recombined_points, 0)
         if points_axis > transmits_axis:
             points_axis -= 1
         return self.base_scan.unflatten(recombined_points, points_axis)

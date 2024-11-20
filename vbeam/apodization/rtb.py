@@ -1,19 +1,19 @@
 from typing import Optional
 
-from fastmath import Array, ArrayOrNumber
+from fastmath import Array, Array
 
 from vbeam.apodization.window import Window
 from vbeam.core import Apodization, ProbeGeometry, WaveData
-from vbeam.fastmath import numpy as np
+from vbeam.fastmath import numpy as api
 from vbeam.util import ensure_2d_point
 from vbeam.util.geometry.v2 import Line, distance
 
 
 def rtb_apodization(
-    point: ArrayOrNumber,
-    array_left: ArrayOrNumber,
-    array_right: ArrayOrNumber,
-    focus_point: ArrayOrNumber,
+    point: Array,
+    array_left: Array,
+    array_right: Array,
+    focus_point: Array,
     minimum_aperture: float,
     maximum_aperture: Optional[float] = None,
     window: Optional[Window] = None,
@@ -47,14 +47,14 @@ def rtb_apodization(
             line_left.signed_distance(point) * line_right.signed_distance(point) <= 0
         )
         is_within_min_aperture = (
-            np.abs(line_mid.signed_distance(point)) < minimum_aperture
+            api.abs(line_mid.signed_distance(point)) < minimum_aperture
         )
         is_within_max_aperture = (
             maximum_aperture is None
-            or np.abs(line_mid.signed_distance(point)) < maximum_aperture
+            or api.abs(line_mid.signed_distance(point)) < maximum_aperture
         )
-        return np.logical_and(
-            np.logical_or(is_within_hourglass, is_within_min_aperture),
+        return api.logical_and(
+            api.logical_or(is_within_hourglass, is_within_min_aperture),
             is_within_max_aperture,
         )
 
@@ -63,18 +63,18 @@ def rtb_apodization(
     _, intersection_right = line_right.intersect(line_mid_perpendicular)
     distance_left = distance(intersection_left, point)
     total_distance = distance(intersection_left, intersection_right)
-    distance_mid = np.abs(line_mid.signed_distance(point))
+    distance_mid = api.abs(line_mid.signed_distance(point))
 
     # Calculate apodizations
     valid = line_left.signed_distance(point) * line_right.signed_distance(point) <= 0
-    hourglass_apodization = window(np.abs(distance_left / total_distance - 0.5)) * valid
+    hourglass_apodization = window(api.abs(distance_left / total_distance - 0.5)) * valid
     minimum_aperture_apodization = window(distance_mid / minimum_aperture)
 
     # Combine hourglass, minimum aperture, and maximum aperture (assumes window is
     # monotonically decreasing from 0 to 0.5).
-    value = np.maximum(hourglass_apodization, minimum_aperture_apodization)
+    value = api.maximum(hourglass_apodization, minimum_aperture_apodization)
     if maximum_aperture is not None:
-        value = np.minimum(value, window(distance_mid / maximum_aperture))
+        value = api.minimum(value, window(distance_mid / maximum_aperture))
     return value
 
 
@@ -82,7 +82,7 @@ class RTBApodization(Apodization):
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     maximum_aperture: Optional[float] = None
     window: Optional[Window] = None
-    replacement_sender: Optional[ArrayOrNumber] = None
+    replacement_sender: Optional[Array] = None
 
     def __call__(
         self,
@@ -147,21 +147,21 @@ def get_bounds(
     sender,
     use_parent,
 ):
-    sender_element_position = np.where(
+    sender_element_position = api.where(
         use_parent, sender.parent_element.position, sender.position
     )
-    sender_element_theta = np.where(
+    sender_element_theta = api.where(
         use_parent, sender.parent_element.theta, sender.theta
     )
-    sender_normal = np.array(
-        [np.sin(sender_element_theta), 0.0, np.cos(sender_element_theta)]
+    sender_normal = api.array(
+        [api.sin(sender_element_theta), 0.0, api.cos(sender_element_theta)]
     )
     array_left = (
         sender_element_position
-        + np.cross(np.array([0, -1, 0]), sender_normal) * array_width / 2
+        + api.cross(api.array([0, -1, 0]), sender_normal) * array_width / 2
     )
     array_right = (
         sender_element_position
-        + np.cross(np.array([0, 1, 0]), sender_normal) * array_width / 2
+        + api.cross(api.array([0, 1, 0]), sender_normal) * array_width / 2
     )
     return [array_left, array_right]
