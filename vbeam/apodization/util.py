@@ -19,6 +19,7 @@ def get_apodization_values(
     wave_data: WaveData,
     spec: Spec,
     dimensions: Optional[Sequence[str]] = None,
+    reduce_sum_dimension: Optional[Sequence[str]] = None,
     average: bool = False,
     jit: bool = True,
 ):
@@ -72,19 +73,27 @@ def get_apodization_values(
         | spec["wave_data"].dimensions
     )
     sum_dimensions = vmap_dimensions - set(dimensions)
-    reduce_sum_dimension = spec["wave_data"].dimensions & sum_dimensions
-    if reduce_sum_dimension:
-        # Make it only one of the dimensions (doesn't matter which one)
-        reduce_sum_dimension = {reduce_sum_dimension.pop()}
-        vmap_dimensions -= reduce_sum_dimension
+    if reduce_sum_dimension is None:
+        reduce_sum_dimension = spec["wave_data"].dimensions & sum_dimensions
+        if reduce_sum_dimension:
+            # Default to iterative summation over one of the dimensions (doesn't matter which one)
+            reduce_sum_dimension = {reduce_sum_dimension.pop()}
+    reduce_sum_dimension = set(reduce_sum_dimension)
+    # Some dimensions will be iterated over instead of vmap
+    vmap_dimensions: str = vmap_dimensions - reduce_sum_dimension
+    vmap_sum_dimensions: set[str] = sum_dimensions - reduce_sum_dimension
 
     # Define how to calculate the apodization values
     calculate_apodization = compose(
         lambda apodization, *args, **kwargs: apodization(*args, **kwargs),
         *[ForAll(dim) for dim in vmap_dimensions],
-        Apply(ops.sum, [Axis(dim) for dim in sum_dimensions - reduce_sum_dimension]),
+        (
+            Apply(ops.sum, [Axis(dim) for dim in vmap_sum_dimensions])
+            if vmap_sum_dimensions
+            else do_nothing
+        ),
         # [*reduce_sum_dimension][0] gets the "first element" of the set
-        Reduce.Sum([*reduce_sum_dimension][0]) if reduce_sum_dimension else do_nothing,
+        *[Reduce.Sum(dim) for dim in reduce_sum_dimension],
         # Put the dimensions in the order defined by keep
         Apply(ops.transpose, [Axis(dim, keep=True) for dim in dimensions]),
         # Make it run faster if `jit` is True and if the backend supports it.

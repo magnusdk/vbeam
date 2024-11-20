@@ -23,7 +23,7 @@ name = "vbeam"
 readme = "README.md"
 
 requires-python = ">=3.8"
-version = "1.0.6"
+version = "1.0.8"
 
 [project.urls]
 "Homepage" = "https://github.com/magnusdk/vbeam/"
