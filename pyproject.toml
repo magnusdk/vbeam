@@ -16,7 +16,6 @@ dependencies = [
   "pyuff_ustb>=2.0.7", 
   "scipy", 
   "spekk>=1.0.6",
-  "fastmath @ git+ssh://git@bitbucket.org/ntnuultrasoundgroup/fastmath.git",
   ]
 description = "vbeam: a fast and differentiable beamformer"
 name = "vbeam"
