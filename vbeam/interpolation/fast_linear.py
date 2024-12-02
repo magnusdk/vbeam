@@ -5,7 +5,7 @@ from fastmath import Array, ops
 from vbeam.core import InterpolationSpace1D
 from vbeam.util import ensure_positive_index
 
-
+from fastmath import utils
 class FastInterpLinspace(InterpolationSpace1D):
     """Interpolation for linspace.
 
@@ -65,16 +65,15 @@ class FastInterpLinspace(InterpolationSpace1D):
         right: int = 0,
         axis: int = 0,
     ) -> Array:
-        fp = ops.moveaxis(fp, axis, 0)
+
         bounds_flag, clipped_i1, clipped_i2, p1, p2 = self.interp1d_indices(x)
         bounds_flag = ops.expand_dims(bounds_flag, tuple(range(1, fp.ndim)))
         p1 = ops.expand_dims(p1, tuple(range(1, fp.ndim)))
         p2 = ops.expand_dims(p2, tuple(range(1, fp.ndim)))
-        v = fp[clipped_i1] * p1 + fp[clipped_i2] * p2
+        #v = fp[clipped_i1] * p1 + fp[clipped_i2] * p2
+        v = utils.getitem_along_axis(fp, axis, clipped_i1) * p1+utils.getitem_along_axis(fp, axis, clipped_i2) * p2
         v = ops.where(bounds_flag == -1, left, v)
         v = ops.where(bounds_flag == 1, right, v)
-        if x.ndim >= 1:
-            v = ops.moveaxis(v, 0, axis)
         return v
 
     # InterpolationSpace1D interface

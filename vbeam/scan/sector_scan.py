@@ -16,7 +16,7 @@ class SectorScan(Scan):
     apex: ArrayOrNumber
 
     def get_points(self, flatten: bool = True) -> ArrayOrNumber:
-        polar_axis = self.elevations if self.is_3d else ops.array([0.0])
+        polar_axis = self.elevations if self.is_3d else ops.array([0.0], dtype=self.azimuths.dtype)
         points = grid(self.azimuths, polar_axis, self.depths, shape=(*self.shape, 3))
         points = as_cartesian(points)
         # Ensure that points and apex are broadcastable

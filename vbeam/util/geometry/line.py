@@ -26,14 +26,15 @@ class Line(Module):
     def from_anchor_and_angle(anchor: Array, angle: float) -> "Line":
         "Construct a line that passes through the anchor and has the given angle."
         return Line.passing_through(
-            anchor, anchor + ops.array([ops.cos(angle), 0, ops.sin(angle)])
+            anchor, anchor + ops.stack([ops.cos(angle), ops.zeros(shape=angle.shape, dtype=angle.dtype), ops.sin(angle)])
         )
 
     def intersection(l1: "Line", l2: "Line") -> Array:
         "Return the point where the lines l1 and l2 intersect."
         x = (l1.b * l2.c - l2.b * l1.c) / (l1.a * l2.b - l2.a * l1.b)
+        y = ops.zeros(shape=x.shape, dtype=x.dtype)
         z = (l2.a * l1.c - l1.a * l2.c) / (l1.a * l2.b - l2.a * l1.b)
-        return ops.array([x, 0, z])
+        return ops.stack([x, y, z], axis=-1) 
 
     @property
     def angle(self):
