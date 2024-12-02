@@ -14,7 +14,7 @@ class CombinedApodization(Apodization):
 
     def __call__(self, *args, **kwargs) -> float:
         """Multiply the result of calling the Apodization objects."""
-        values = np.array([apod(*args, **kwargs) for apod in self.apodizations])
+        values = np.stack([apod(*args, **kwargs) for apod in self.apodizations])
         if self.combiner is not None:
             return self.combiner(values)
         return np.prod(values)
