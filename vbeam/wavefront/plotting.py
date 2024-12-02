@@ -1,16 +1,17 @@
 from typing import Callable, Optional
 
+from fastmath import Array, ArrayOrNumber
 from spekk import Spec
 
 from vbeam.core import (
-    ElementGeometry,
+    ProbeGeometry,
     ReflectedWavefront,
     TransmittedWavefront,
     WaveData,
 )
-from vbeam.fastmath import numpy as np
 from vbeam.util._default_values import (
     _default_point_position,
+    _default_probe,
     _default_receiver,
     _default_sender,
     _default_wave_data,
@@ -23,11 +24,12 @@ from vbeam.wavefront.util import (
 
 def plot_transmitted_wavefront(
     wavefront: TransmittedWavefront,
-    sender: Optional[ElementGeometry] = None,
-    point_position: Optional[np.ndarray] = None,
+    probe: ProbeGeometry = None,
+    sender: Array = None,
+    point_position: Optional[Array] = None,
     wave_data: Optional[WaveData] = None,
     spec: Optional[Spec] = None,
-    postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+    postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
     ax=None,  # : Optional[matplotlib.pyplot.Axes]
 ):
     """Plot the (transmit) wavefront distance values using ``matplotlib``.
@@ -36,6 +38,8 @@ def plot_transmitted_wavefront(
     to process the values further before plotting (for example scan conversion)."""
     # Try to set helpful default values
     spec = spec if spec is not None else Spec({})
+    if probe is None:
+        probe, spec = _default_probe(spec)
     if sender is None:
         sender, spec = _default_sender(spec)
     if point_position is None:
@@ -46,6 +50,7 @@ def plot_transmitted_wavefront(
     # Calculate wavefront values
     vals = get_transmitted_wavefront_values(
         wavefront,
+        probe,
         sender,
         point_position,
         wave_data,
@@ -75,10 +80,10 @@ def plot_transmitted_wavefront(
 
 def plot_reflected_wavefront(
     wavefront: ReflectedWavefront,
-    point_position: Optional[np.ndarray] = None,
-    receiver: Optional[ElementGeometry] = None,
+    point_position: Optional[Array] = None,
+    receiver: Optional[Array] = None,
     spec: Optional[Spec] = None,
-    postprocess: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+    postprocess: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
     ax=None,  # : Optional[matplotlib.pyplot.Axes]
 ):
     """Plot the (receive) wavefront distance values using ``matplotlib``.
@@ -90,7 +95,7 @@ def plot_reflected_wavefront(
     if point_position is None:
         point_position, spec = _default_point_position(spec)
     if receiver is None:
-        receiver, spec = _default_receiver(spec)
+        reveiver, spec = _default_receiver(spec)
 
     # Calculate wavefront values
     vals = get_reflected_wavefront_values(

@@ -1,19 +1,19 @@
 """Numpy-like API for multiple backends.
 
-This module contains an abstraction over the operations needed by the vbeam project, 
-that can be implemented by multiple backends. Current included implementations are 
+This module contains an abstraction over the operations needed by the vbeam project,
+that can be implemented by multiple backends. Current included implementations are
 Tensorflow, JAX, and Numpy. You may register custom backends using the register_backend
 function.
 
 fastmath uses a "BYOD" principle: "Bring Your Own Dependency". If you only want
-to use Tensorflow, then you only need to install Tensorflow in your project (and not 
+to use Tensorflow, then you only need to install Tensorflow in your project (and not
 JAX, for example, or any other potential backend). Setting the active_backend to your
 preferred backend should (hopefully) let you use vbeam as if it is written in that
 backend.
 
-fastmath is considered a separate, but internal project, meaning that you should not 
-depend on fastmath in your own projects (besides setting the active backend). This is to 
-ease the maintenance of the fastmath module, and only implement the operations needed 
+fastmath is considered a separate, but internal project, meaning that you should not
+depend on fastmath in your own projects (besides setting the active backend). This is to
+ease the maintenance of the fastmath module, and only implement the operations needed
 internally by vbeam.
 
 fastmath is inspired by Google's deep learning library TRAX:
@@ -36,6 +36,9 @@ Note that setting the backend sets it globally and is not thread-safe.
 import contextlib
 from typing import Callable, Dict, Optional
 
+from fastmath import ops
+
+import vbeam.util._deprecations as deprecations
 from vbeam.fastmath.backend import Backend
 from vbeam.fastmath.included_backends import (
     get_best_available_backend,
@@ -115,7 +118,19 @@ def proxy_backend(backend_manager: BackendManager) -> Backend:
 
     class ProxyBackend(Backend):
         def __getattribute__(self, attr):
-            return getattr(backend_manager.active_backend, attr)
+            # Some fields are deprecated
+            if attr in {"ndarray", "as_traceable_dataclass_obj"}:
+                deprecations.warn(
+                    f"Attribute {attr} is deprecated and will not be part of future "
+                    "fastmath versions."
+                )
+                return getattr(backend_manager.active_backend, attr)
+
+            # Let's override the numpy with the new fastmath API for now.
+            # Once we see that this works for our internal projects we add a deprecation warning,
+            # urging users to use fastmath instead. At a breaking-change versions (vbeam 2.0.0) we
+            # remove vbeam.fastmath modules.
+            return getattr(ops, attr)
 
     return ProxyBackend()
 

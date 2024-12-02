@@ -9,10 +9,12 @@ See also:
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
+from fastmath import Array, ArrayOrNumber
+
 from vbeam.core.apodization import Apodization
-from vbeam.core.element_geometry import ElementGeometry
 from vbeam.core.interpolation import InterpolationSpace1D
 from vbeam.core.kernel_data import KernelData
+from vbeam.core.probe_geometry import ProbeGeometry
 from vbeam.core.speed_of_sound import SpeedOfSound
 from vbeam.core.wave_data import WaveData
 from vbeam.core.wavefront import (
@@ -24,10 +26,11 @@ from vbeam.fastmath import numpy as np
 
 
 def signal_for_point(
-    sender: ElementGeometry,
-    point_position: np.ndarray,
-    receiver: ElementGeometry,
-    signal: np.ndarray,
+    probe: ProbeGeometry,
+    sender: Array,
+    receiver: Array,
+    point_position: Array,
+    signal: ArrayOrNumber,
     transmitted_wavefront: TransmittedWavefront,
     reflected_wavefront: ReflectedWavefront,
     speed_of_sound: Union[float, SpeedOfSound],
@@ -35,7 +38,7 @@ def signal_for_point(
     interpolate: InterpolationSpace1D,
     modulation_frequency: Optional[float],
     apodization: Apodization,
-) -> np.ndarray:
+) -> ArrayOrNumber:
     """The core beamforming function. Return the delayed and interpolated signal from a
     single transmit, for a single receiver, for a single point (pixel).
 
@@ -73,14 +76,12 @@ def signal_for_point(
       The delayed and interpolated signal from a single transmit, for a single
       receiver, for a single point (pixel).
     """
-    tx_distance = transmitted_wavefront(sender, point_position, wave_data)
+    tx_distance = transmitted_wavefront(probe, sender, point_position, wave_data)
     rx_distance = reflected_wavefront(point_position, receiver)
 
     # Potentially sample the speed-of-sound using a SpeedOfSound instance.
     if isinstance(speed_of_sound, SpeedOfSound):
-        speed_of_sound = speed_of_sound.average(
-            sender.position, point_position, receiver.position
-        )
+        speed_of_sound = speed_of_sound.average(sender, point_position, receiver)
 
     delay = (tx_distance + rx_distance) / speed_of_sound - wave_data.t0
     signal = interpolate(delay, signal)
@@ -89,7 +90,7 @@ def signal_for_point(
         signal = phase_correction(signal, delay, modulation_frequency)
     if isinstance(tx_distance, MultipleTransmitDistances):
         signal = tx_distance.aggregate_samples(signal)
-    return signal * apodization(sender, point_position, receiver, wave_data)
+    return signal * apodization(probe, sender, receiver, point_position, wave_data)
 
 
 def phase_correction(signal: float, delay: float, modulation_frequency: float):
@@ -103,10 +104,11 @@ class SignalForPointData(KernelData):
 
     See the docstring of signal_for_point for documentation of each field."""
 
-    sender: ElementGeometry
-    point_position: np.ndarray
-    receiver: ElementGeometry
-    signal: np.ndarray
+    probe: ProbeGeometry
+    sender: Array
+    receiver: Array
+    point_position: Array
+    signal: ArrayOrNumber
     transmitted_wavefront: TransmittedWavefront
     reflected_wavefront: ReflectedWavefront
     speed_of_sound: Union[float, SpeedOfSound]

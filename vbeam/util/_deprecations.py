@@ -1,4 +1,8 @@
-from typing import TypeVar
+import warnings
+
+
+def warn(msg, stacklevel=3):
+    warnings.warn(msg, DeprecationWarning, stacklevel=stacklevel)
 
 
 def _get_function_name(f: callable):
@@ -28,7 +32,7 @@ def renamed_kwargs(version: str, **renamed_kwargs: str):
             new_kwargs = {}
             for k, v in kwargs.items():
                 if k in renamed_kwargs:
-                    print(
+                    warn(
                         f"Deprecation warning: argument '{k}' of "
                         f"{_get_function_name(f)} was renamed to '{renamed_kwargs[k]}' "
                         f"in version {version}."

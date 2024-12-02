@@ -1,7 +1,9 @@
+from fastmath import ArrayOrNumber
+
 from vbeam.fastmath import numpy as np
 
 
-def as_polar(cartesian_point: np.ndarray):
+def as_polar(cartesian_point: ArrayOrNumber):
     """Return a point in cartesian coordinates in its polar coordinates representation.
 
     NOTE: All y-values must be 0. FIXME"""
@@ -11,7 +13,7 @@ def as_polar(cartesian_point: np.ndarray):
     return np.stack([azimuth_angles, np.zeros(radii.shape), radii], -1)
 
 
-def as_cartesian(polar_point: np.ndarray):
+def as_cartesian(polar_point: ArrayOrNumber):
     "Return a point in polar coordinates in its cartesian coordinates representation."
     azimuth_angles = polar_point[..., 0]
     polar_angles = polar_point[..., 1]
@@ -29,7 +31,7 @@ def as_cartesian(polar_point: np.ndarray):
 def applied_in_polar_coordinates(f):
     """Wrap a function that takes and returns a point in polar coordinates such that it
     takes and returns a point in cartesian coordinates instead.
-    
+
     Usage:
     >>> import numpy as np
     >>> @applied_in_polar_coordinates
@@ -39,6 +41,7 @@ def applied_in_polar_coordinates(f):
     >>> add_radius(cartesian_point, 1)
     array([3.6, 0. , 4.8])
     """
+
     def inner(p, *args, **kwargs):
         return as_cartesian(f(as_polar(p), *args, **kwargs))
 
@@ -48,7 +51,7 @@ def applied_in_polar_coordinates(f):
 def applied_in_cartesian_coordinates(f):
     """Wrap a function that takes and returns a point in cartesian coordinates such that
     it takes and returns a point in polar coordinates instead.
-    
+
     Usage:
     >>> import numpy as np
     >>> @applied_in_cartesian_coordinates
@@ -58,6 +61,7 @@ def applied_in_cartesian_coordinates(f):
     >>> move_x(polar_point, 1)
     array([1.57079633, 0.        , 2.        ])
     """
+
     def inner(p, *args, **kwargs):
         return as_polar(f(as_cartesian(p), *args, **kwargs))
 

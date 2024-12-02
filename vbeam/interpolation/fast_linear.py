@@ -1,12 +1,12 @@
 from typing import Tuple
 
+from fastmath import ArrayOrNumber
+
 from vbeam.core import InterpolationSpace1D
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util import ensure_positive_index
 
-
-@traceable_dataclass(data_fields=("min", "d", "n"))
+from fastmath import utils
 class FastInterpLinspace(InterpolationSpace1D):
     """Interpolation for linspace.
 
@@ -18,14 +18,16 @@ class FastInterpLinspace(InterpolationSpace1D):
     n: int
 
     @staticmethod
-    def from_array(arr: np.ndarray) -> "FastInterpLinspace":
+    def from_array(arr: ArrayOrNumber) -> "FastInterpLinspace":
         # Assumes that arr was created as a linspace.
         return FastInterpLinspace(arr[0], arr[1] - arr[0], len(arr))
 
-    def to_array(self) -> np.ndarray:
+    def to_array(self) -> ArrayOrNumber:
         return np.linspace(self.min, self.min + self.d * self.n, self.n)
 
-    def interp1d_indices(self, x: np.ndarray) -> Tuple[float, int, int, float, float]:
+    def interp1d_indices(
+        self, x: ArrayOrNumber
+    ) -> Tuple[float, int, int, float, float]:
         """Return a tuple of 5 elements with information about how to interpolate the
         array.
 
@@ -53,23 +55,25 @@ class FastInterpLinspace(InterpolationSpace1D):
         bounds_flag = 0
         bounds_flag = np.where(pseudo_index < 0, -1, bounds_flag)
         bounds_flag = np.where(pseudo_index > (self.n - 1), 1, bounds_flag)
-        clipped_i1 = np.clip(i_floor, 0, self.n - 1).astype("int32")
-        clipped_i2 = np.clip(i_floor + 1, 0, self.n - 1).astype("int32")
+        clipped_i1 = np.int32(np.clip(i_floor, 0, self.n - 1))
+        clipped_i2 = np.int32(np.clip(i_floor + 1, 0, self.n - 1))
         p1, p2 = (1 - di), di
         return bounds_flag, clipped_i1, clipped_i2, p1, p2
 
     def interp1d(
         self,
-        x: np.ndarray,
-        fp: np.ndarray,
+        x: ArrayOrNumber,
+        fp: ArrayOrNumber,
         left: int = 0,
         right: int = 0,
-    ) -> np.ndarray:
+        axis: int = 0,
+    ) -> ArrayOrNumber:
         bounds_flag, clipped_i1, clipped_i2, p1, p2 = self.interp1d_indices(x)
         bounds_flag = np.expand_dims(bounds_flag, tuple(range(1, fp.ndim)))
         p1 = np.expand_dims(p1, tuple(range(1, fp.ndim)))
         p2 = np.expand_dims(p2, tuple(range(1, fp.ndim)))
-        v = fp[clipped_i1] * p1 + fp[clipped_i2] * p2
+        #v = fp[clipped_i1] * p1 + fp[clipped_i2] * p2
+        v = utils.getitem_along_axis(fp, axis, clipped_i1) * p1+utils.getitem_along_axis(fp, axis, clipped_i2) * p2
         v = np.where(bounds_flag == -1, left, v)
         v = np.where(bounds_flag == 1, right, v)
         return v
@@ -88,17 +92,17 @@ class FastInterpLinspace(InterpolationSpace1D):
 
     @staticmethod
     def interp2d(
-        x: np.ndarray,
-        y: np.ndarray,
+        x: ArrayOrNumber,
+        y: ArrayOrNumber,
         xp: "FastInterpLinspace",
         yp: "FastInterpLinspace",
-        z: np.ndarray,
+        z: ArrayOrNumber,
         azimuth_axis: int = 0,
         depth_axis: int = 1,
         *,  # Remaining args must be passed by name (to avoid confusion)
         edge_handling: str = "Value",
         default_value: float = 0.0,
-    ) -> np.ndarray:
+    ) -> ArrayOrNumber:
         # Ensure that the axes are positive numbers
         azimuth_axis = ensure_positive_index(z.ndim, azimuth_axis)
         depth_axis = ensure_positive_index(z.ndim, depth_axis)
@@ -124,14 +128,16 @@ class FastInterpLinspace(InterpolationSpace1D):
         px1, px2, py1, py2 = [broadcastable(p) for p in [px1, px2, py1, py2]]
         bounds_flag_x = broadcastable(bounds_flag_x)
         bounds_flag_y = broadcastable(bounds_flag_y)
-        
+
         v0 = z[clipped_xi1, clipped_yi1] * px1 + z[clipped_xi2, clipped_yi1] * px2
         v1 = z[clipped_xi1, clipped_yi2] * px1 + z[clipped_xi2, clipped_yi2] * px2
         v = v0 * py1 + v1 * py2
-        if edge_handling=="Value":
-            v = np.where(np.logical_or(bounds_flag_x != 0, bounds_flag_y != 0), default_value, v)
-        elif edge_handling=="Nearest":
-            pass # No need to do anything, as the interpolation will choose the nearest value
+        if edge_handling == "Value":
+            v = np.where(
+                np.logical_or(bounds_flag_x != 0, bounds_flag_y != 0), default_value, v
+            )
+        elif edge_handling == "Nearest":
+            pass  # No need to do anything, as the interpolation will choose the nearest value
         else:
             raise ValueError("Only Value and Nearest edge handling is implemented")
 

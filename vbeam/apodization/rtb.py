@@ -1,18 +1,19 @@
-from typing import Optional, Tuple
+from typing import Optional
+
+from fastmath import Array, ArrayOrNumber
 
 from vbeam.apodization.window import Window
-from vbeam.core import Apodization, ElementGeometry, WaveData
+from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util import ensure_2d_point
 from vbeam.util.geometry.v2 import Line, distance
 
 
 def rtb_apodization(
-    point: np.ndarray,
-    array_left: np.ndarray,
-    array_right: np.ndarray,
-    focus_point: np.ndarray,
+    point: ArrayOrNumber,
+    array_left: ArrayOrNumber,
+    array_right: ArrayOrNumber,
+    focus_point: ArrayOrNumber,
     minimum_aperture: float,
     maximum_aperture: Optional[float] = None,
     window: Optional[Window] = None,
@@ -77,77 +78,26 @@ def rtb_apodization(
     return value
 
 
-@traceable_dataclass(
-    data_fields=("array_bounds", "array_width", "minimum_aperture", "window"),
-    aux_fields=("use_parent",),
-)
 class RTBApodization(Apodization):
-    array_bounds: Optional[Tuple[np.ndarray, np.ndarray]] = None
-    array_width: Optional[float] = None
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     maximum_aperture: Optional[float] = None
     window: Optional[Window] = None
-    use_parent: bool = False
-
-    def __post_init__(self):
-        if self.array_bounds is None and self.array_width is None:
-            raise ValueError("Either array bounds or array width must be set")
+    replacement_sender: Optional[ArrayOrNumber] = None
 
     def __call__(
         self,
-        sender: ElementGeometry,
-        point_position: np.ndarray,
-        receiver: ElementGeometry,
+        probe: ProbeGeometry,
+        sender: Array,
+        receiver: Array,
+        point_position: Array,
         wave_data: WaveData,
     ) -> float:
-        array_bounds = (
-            self.array_bounds
-            if self.array_bounds is not None
-            else get_bounds(
-                array_width=self.array_width, sender=sender, use_parent=self.use_parent
-            )
-        )
-        return rtb_apodization(
-            point_position,
-            array_bounds[0],
-            array_bounds[1],
-            wave_data.source,
-            self.minimum_aperture,
-            self.maximum_aperture,
-            self.window,
-        )
-
-
-@traceable_dataclass((("array_width", "minimum_aperture", "window", "use_parent")))
-class SteppingApertureRTBApodization(Apodization):
-    array_width: float
-    minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
-    window: Optional[Window] = None
-    use_parent: bool = False
-
-    def __call__(
-        self,
-        sender: ElementGeometry,
-        point_position: np.ndarray,
-        receiver: ElementGeometry,
-        wave_data: WaveData,
-    ) -> float:
-        sender_element_position = np.where(
-            self.use_parent, sender.parent_element.position, sender.position
-        )
-        sender_element_theta = np.where(
-            self.use_parent, sender.parent_element.theta, sender.theta
-        )
-        sender_normal = np.array(
-            [np.sin(sender_element_theta), 0.0, np.cos(sender_element_theta)]
-        )
-        array_left = (
-            sender_element_position
-            + np.cross(np.array([0, -1, 0]), sender_normal) * self.array_width / 2
-        )
-        array_right = (
-            sender_element_position
-            + np.cross(np.array([0, 1, 0]), sender_normal) * self.array_width / 2
+        if self.replacement_sender is None:
+            sender_element_position = sender
+        else:
+            sender_element_position = self.replacement_sender
+        array_left, array_right, array_up, array_down = probe.get_tx_aperture_borders(
+            sender=sender_element_position
         )
         return rtb_apodization(
             point_position,
@@ -155,6 +105,39 @@ class SteppingApertureRTBApodization(Apodization):
             array_right,
             wave_data.source,
             self.minimum_aperture,
+            self.maximum_aperture,
+            self.window,
+        )
+
+
+class SteppingApertureRTBApodization(Apodization):
+    minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
+    window: Optional[Window] = None
+    replacement_sender: Array = None
+
+    def __call__(
+        self,
+        probe: ProbeGeometry,
+        sender: Array,
+        receiver: Array,
+        point_position: Array,
+        wave_data: WaveData,
+    ) -> float:
+        if self.replacement_sender is None:
+            sender_element_position = sender
+        else:
+            sender_element_position = self.replacement_sender
+
+        array_left, array_right, array_up, array_down = probe.get_tx_aperture_borders(
+            sender=sender_element_position
+        )
+        return rtb_apodization(
+            point_position,
+            array_left,
+            array_right,
+            wave_data.source,
+            self.minimum_aperture,
+            self.maximum_aperture,
             self.window,
         )
 

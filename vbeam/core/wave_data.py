@@ -11,14 +11,12 @@ focal point of the transmitted wave. A transmitted wave is usually one of three 
 
 from typing import Callable, Optional
 
-from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
+from fastmath import ArrayOrNumber, Module
 
 identity_fn = lambda x: x  # Just return value as-is
 
 
-@traceable_dataclass(("source", "azimuth", "elevation", "t0"))
-class WaveData:
+class WaveData(Module):
     """A vectorizable container of wave data: anything that is specific to a single
     transmitted wave. See this class' fields for what that could be.
 
@@ -30,7 +28,7 @@ class WaveData:
     64 transmitted waves in the dataset (each with x, y, and z source coordinates)."""
 
     # The location (x, y, z) of the virtual source for the transmitted wave
-    source: Optional[np.ndarray] = None
+    source: Optional[ArrayOrNumber] = None
     azimuth: Optional[float] = None
     elevation: Optional[float] = None
     # The time at which the transmitted wave passed through the "sender" element
@@ -46,8 +44,8 @@ class WaveData:
         >>> wave_data[1]
         WaveData(source=array([1, 1, 1]), azimuth=1, elevation=None, t0=None)
         """
-        _maybe_getitem = (
-            lambda attr: attr.__getitem__(*args) if attr is not None else None
+        _maybe_getitem = lambda attr: (
+            attr.__getitem__(*args) if attr is not None else None
         )
         return WaveData(
             _maybe_getitem(self.source),
@@ -74,7 +72,7 @@ class WaveData:
     def with_updates_to(
         self,
         *,
-        source: Callable[[np.ndarray], np.ndarray] = identity_fn,
+        source: Callable[[ArrayOrNumber], ArrayOrNumber] = identity_fn,
         azimuth: Callable[[float], float] = identity_fn,
         elevation: Callable[[float], float] = identity_fn,
         t0: Callable[[float], float] = identity_fn,

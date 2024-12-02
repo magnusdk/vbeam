@@ -16,5 +16,6 @@ setup(
         "pyuff_ustb>=2.0.7",
         "scipy",
         "spekk",
+        "fastmath @ git+ssh://git@bitbucket.org/ntnuultrasoundgroup/fastmath.git",
     ],
 )

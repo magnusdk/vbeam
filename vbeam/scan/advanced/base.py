@@ -1,7 +1,8 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Callable, Literal, Optional, Sequence, Tuple, TypeVar, Union
 
-from vbeam.fastmath import numpy as np
+from fastmath import ArrayOrNumber, Module
+
 from vbeam.scan.base import CoordinateSystem, Scan
 
 TSelf = TypeVar("TSelf", bound="WrappedScan")
@@ -13,7 +14,7 @@ def _wrap_with_new_base_scan(wrapped_scan: TSelf, new_base_scan: Scan) -> TSelf:
     return new_copy
 
 
-class WrappedScan(Scan, ABC):
+class WrappedScan(Scan):
     """A scan that wraps another scan (the base_scan).
 
     This is useful for composing scans to make more advanced scans."""
@@ -24,12 +25,12 @@ class WrappedScan(Scan, ABC):
     def replace(
         self: TSelf,
         # "unchanged" means that the axis will not be changed.
-        **kwargs: Union[np.ndarray, None, Literal["unchanged"]],
+        **kwargs: Union[ArrayOrNumber, None, Literal["unchanged"]],
     ) -> TSelf:
         return _wrap_with_new_base_scan(self.base_scan.replace(**kwargs))
 
     def update(
-        self: TSelf, **kwargs: Optional[Callable[[np.ndarray], np.ndarray]]
+        self: TSelf, **kwargs: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]]
     ) -> TSelf:
         return _wrap_with_new_base_scan(self.base_scan.update(**kwargs))
 
@@ -37,7 +38,7 @@ class WrappedScan(Scan, ABC):
         return _wrap_with_new_base_scan(self.base_scan.resize(**kwargs))
 
     @property
-    def axes(self) -> Tuple[np.ndarray, ...]:
+    def axes(self) -> Tuple[ArrayOrNumber, ...]:
         return self.base_scan.axes
 
     @property
@@ -45,11 +46,11 @@ class WrappedScan(Scan, ABC):
         return self.base_scan.shape
 
     @property
-    def bounds(self) -> np.ndarray:
+    def bounds(self) -> ArrayOrNumber:
         return self.base_scan.bounds
 
     @property
-    def cartesian_bounds(self) -> np.ndarray:
+    def cartesian_bounds(self) -> ArrayOrNumber:
         return self.base_scan.cartesian_bounds
 
     @property
@@ -89,7 +90,7 @@ class WrappedScan(Scan, ABC):
             ) from e
 
 
-class ExtraDimsScanMixin(ABC):
+class ExtraDimsScanMixin(Module):
     """A mixin for scans that work with more than just the "points" dimension. For
     example, the
     :class:`~vbeam.scan.optimized.apodization_filtered_scan.ApodizationFilteredScan`

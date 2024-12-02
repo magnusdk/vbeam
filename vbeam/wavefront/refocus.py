@@ -1,28 +1,28 @@
-from vbeam.core import ElementGeometry, TransmittedWavefront, WaveData
-from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
+from fastmath import Array
+
+from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
 from vbeam.util.geometry.v2 import distance
 
 
-@traceable_dataclass(("base_wavefront", "base_sender", "compensation_scalar"))
 class REFoCUSWavefront(TransmittedWavefront):
     """A time-domain REFoCUS wavefront model.
 
-    This class models the diverging spherical wave from a single transmitting /element/ 
-    that was fired as part of an arbitrary focused transmit. It needs to know about the 
-    original transmitted wave and the original sender (the point that the wave passed 
-    through at time 0) in order to compensate for arbitrary transmit sequences. See 
+    This class models the diverging spherical wave from a single transmitting /element/
+    that was fired as part of an arbitrary focused transmit. It needs to know about the
+    original transmitted wave and the original sender (the point that the wave passed
+    through at time 0) in order to compensate for arbitrary transmit sequences. See
     :meth:`__call__` for more details.
     """
 
     base_wavefront: TransmittedWavefront
-    base_sender: ElementGeometry
+    base_sender: Array
     compensation_scalar: float = 1.0
 
     def __call__(
         self,
-        sender: ElementGeometry,
-        point_position: np.ndarray,
+        probe: ProbeGeometry,
+        sender: Array,
+        point_position: Array,
         wave_data: WaveData,
     ) -> float:
         """Return the distance that the wave travels, starting from time 0, to when it
@@ -33,6 +33,9 @@ class REFoCUSWavefront(TransmittedWavefront):
         transmit sequence. This compensation is the distance that the full modeled
         wavefront passed through the sending element."""
         focusing_compensation = self.base_wavefront(
-            self.base_sender, sender.position, wave_data
+            probe, self.base_sender, sender, wave_data
         )
-        return distance(sender.position, point_position) + focusing_compensation * self.compensation_scalar
+        return (
+            distance(sender, point_position)
+            + focusing_compensation * self.compensation_scalar
+        )

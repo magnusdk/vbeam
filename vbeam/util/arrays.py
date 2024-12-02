@@ -1,9 +1,11 @@
 from typing import Optional, Sequence
 
+from fastmath import ArrayOrNumber
+
 from vbeam.fastmath import numpy as np
 
 
-def grid(*axes: np.ndarray, shape: Optional[Sequence[int]] = None) -> np.ndarray:
+def grid(*axes: ArrayOrNumber, shape: Optional[Sequence[int]] = None) -> ArrayOrNumber:
     """Return an array of each point position, organized in a grid.
 
     >>> x, z = np.array([1,2,3]), np.array([1,2,3,4])

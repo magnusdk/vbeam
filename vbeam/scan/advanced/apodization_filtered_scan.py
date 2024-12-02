@@ -1,12 +1,12 @@
 from typing import Optional, Sequence, Tuple
 
+from fastmath import ArrayOrNumber, field
 from spekk import Spec
 
 from vbeam.apodization.util import get_apodization_values
-from vbeam.core import Apodization, ElementGeometry, WaveData
+from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.fastmath import backend_manager
 from vbeam.fastmath import numpy as np
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.scan.advanced.base import ExtraDimsScanMixin, WrappedScan
 from vbeam.scan.base import Scan
 from vbeam.util.transformations import *
@@ -14,9 +14,9 @@ from vbeam.util.vmap import vmap_all_except
 
 
 def get_point_indices_for_transmits(
-    apodization_values: np.ndarray,
+    apodization_values: ArrayOrNumber,
     threshold: float,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[ArrayOrNumber, ArrayOrNumber]:
     """Return the indices (and indices mask which is explained further
     down) for the points in an image that are to be imaged for a given transmit. Which
     points that are selected to be imaged are determined by the given apodization object
@@ -76,67 +76,39 @@ def get_point_indices_for_transmits(
 
 
 def recombine1(
-    image: np.ndarray,
-    imaged_points: np.ndarray,
-    indices: np.ndarray,
-    indices_mask: np.ndarray,
+    image: ArrayOrNumber,
+    imaged_points: ArrayOrNumber,
+    indices: ArrayOrNumber,
+    indices_mask: ArrayOrNumber,
     points_axis: int,
 ):
     @vmap_all_except(points_axis)
-    def recombine(imaged_points: np.ndarray) -> np.ndarray:
+    def recombine(imaged_points: ArrayOrNumber) -> ArrayOrNumber:
         return np.add.at(image, indices, imaged_points * indices_mask)
 
     return recombine(imaged_points)
 
 
-@traceable_dataclass(
-    ("_points", "_indices", "_indices_mask"),
-    (
-        "base_scan",
-        "apodization",
-        "sender",
-        "receiver",
-        "wave_data",
-        "spec",
-        "dimensions",
-        "threshold",
-    ),
-)
 class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
-    def __init__(
-        self,
-        base_scan: Scan,
-        apodization: Apodization,
-        sender: ElementGeometry,
-        receiver: ElementGeometry,
-        wave_data: WaveData,
-        spec: Spec,
-        dimensions: Sequence[str],
-        threshold: float,
-        _points: Optional[np.ndarray] = None,
-        _indices: Optional[np.ndarray] = None,
-        _indices_mask: Optional[np.ndarray] = None,
-    ):
-        # We need to store these values in case we need to recompute the indices.
-        # For example, if a user resizes the scan then the indices must be recomputed.
-        self._base_scan = base_scan
-        self.apodization = apodization
-        self.sender = sender
-        self.receiver = receiver
-        self.wave_data = wave_data
-        self.spec = spec
-        self.dimensions = dimensions
-        self.threshold = threshold
+    apodization: Apodization = field(static=True)
+    probe: ProbeGeometry = field(static=True)
+    sender: np.ndarray = field(static=True)
+    receiver: np.ndarray = field(static=True)
+    wave_data: WaveData = field(static=True)
+    spec: Spec = field(static=True)
+    dimensions: Sequence[str] = field(static=True)
+    threshold: float = field(static=True)
+    _points: Optional[np.ndarray] = None
+    _indices: Optional[np.ndarray] = None
+    _indices_mask: Optional[np.ndarray] = None
 
+    def __post_init__(self):
         # If any of these values are None it means we are constructing a new instance
         # (contra just copying an existing one) and we need to compute the indices.
-        self._points = _points
-        self._indices = _indices
-        self._indices_mask = _indices_mask
-        if _points is None or _indices is None or _indices_mask is None:
+        if self._points is None or self._indices is None or self._indices_mask is None:
             self._recompute_indices()
 
-    def get_points(self, flatten: bool = True) -> np.ndarray:
+    def get_points(self, flatten: bool = True) -> ArrayOrNumber:
         if not flatten:
             raise ValueError(
                 f"{self.__class__.__name__} only supports getting flattened points."
@@ -145,10 +117,10 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
 
     def unflatten(
         self,
-        imaged_points: np.ndarray,
+        imaged_points: ArrayOrNumber,
         transmits_axis: int,
         points_axis: int,
-    ) -> np.ndarray:
+    ) -> ArrayOrNumber:
         recombine = np.vmap(
             recombine1,
             [None, transmits_axis, 0, 0, None],
@@ -179,9 +151,10 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         points = self.base_scan.get_points()
         apodization_values = get_apodization_values(
             self.apodization,
+            self.probe,
             self.sender,
-            points,
             self.receiver,
+            points,
             self.wave_data,
             self.spec,
             self.dimensions,
@@ -199,6 +172,7 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         return ApodizationFilteredScan(
             self.base_scan,
             self.apodization,
+            self.probe,
             self.sender,
             self.receiver,
             self.wave_data,
@@ -224,6 +198,7 @@ class ApodizationFilteredScan(WrappedScan, ExtraDimsScanMixin):
         return ApodizationFilteredScan(
             scan if scan is not None else setup.scan,
             setup.apodization,
+            setup.probe,
             setup.sender,
             setup.receiver,
             setup.wave_data,

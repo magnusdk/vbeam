@@ -66,6 +66,7 @@ single :term:`receiving element<Receiver>`, a single
 
 from vbeam.core.apodization import Apodization
 from vbeam.core.element_geometry import ElementGeometry
+from vbeam.core.probe_geometry import ProbeGeometry
 from vbeam.core.interpolation import InterpolationSpace1D
 from vbeam.core.kernels import KernelData, SignalForPointData, signal_for_point
 from vbeam.core.speed_of_sound import SpeedOfSound
@@ -79,6 +80,7 @@ from vbeam.core.wavefront import (
 __all__ = [
     "Apodization",
     "ElementGeometry",
+    "ProbeGeometry",
     "InterpolationSpace1D",
     "KernelData",
     "SignalForPointData",
