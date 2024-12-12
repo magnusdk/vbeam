@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastmath import Array
+from spekk import ops
 
 from vbeam.core import Apodization, ProbeGeometry, WaveData
 
@@ -15,9 +15,9 @@ class TxRxApodization(Apodization):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        receiver: Array,
-        point_position: Array,
+        sender: ops.array,
+        receiver: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         weight = 1.0

@@ -1,4 +1,4 @@
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.core import InterpolationSpace1D
 
@@ -19,7 +19,7 @@ class NearestInterpolation(InterpolationSpace1D):
     left: float = 0
     right: float = 0
 
-    def __call__(self, x: Array, fp: Array) -> Array:
+    def __call__(self, x: ops.array, fp: ops.array) -> ops.array:
         index = ops.round((x - self.min) / self.d)
         return ops.select(
             [index < 0, index >= self.n],

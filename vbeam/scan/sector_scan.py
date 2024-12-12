@@ -1,6 +1,6 @@
 from typing import Callable, Literal, Optional, Tuple, Union, overload
 
-from fastmath import ArrayOrNumber, Array, ops
+from spekk import ops
 
 from vbeam.scan.base import CoordinateSystem, Scan
 from vbeam.scan.util import parse_axes, polar_bounds_to_cartesian_bounds, scan_convert
@@ -10,13 +10,17 @@ from vbeam.util.coordinate_systems import as_cartesian
 
 
 class SectorScan(Scan):
-    azimuths: ArrayOrNumber
-    elevations: Optional[ArrayOrNumber]  # May be None for 2D scans
-    depths: ArrayOrNumber
-    apex: ArrayOrNumber
+    azimuths: ops.array
+    elevations: Optional[ops.array]  # May be None for 2D scans
+    depths: ops.array
+    apex: ops.array
 
-    def get_points(self, flatten: bool = True) -> ArrayOrNumber:
-        polar_axis = self.elevations if self.is_3d else ops.array([0.0], dtype=self.azimuths.dtype)
+    def get_points(self, flatten: bool = True) -> ops.array:
+        polar_axis = (
+            self.elevations
+            if self.is_3d
+            else ops.array([0.0], dtype=self.azimuths.dtype)
+        )
         points = grid(self.azimuths, polar_axis, self.depths, shape=(*self.shape, 3))
         points = as_cartesian(points)
         # Ensure that points and apex are broadcastable
@@ -33,10 +37,10 @@ class SectorScan(Scan):
     def replace(
         self,
         # "unchanged" means that the axis will not be changed.
-        azimuths: Union[ArrayOrNumber, None, Literal["unchanged"]] = "unchanged",
-        elevations: Union[ArrayOrNumber, None, Literal["unchanged"]] = "unchanged",
-        depths: Union[ArrayOrNumber, None, Literal["unchanged"]] = "unchanged",
-        apex: Union[ArrayOrNumber, None, Literal["unchanged"]] = "unchanged",
+        azimuths: Union[ops.array, None, Literal["unchanged"]] = "unchanged",
+        elevations: Union[ops.array, None, Literal["unchanged"]] = "unchanged",
+        depths: Union[ops.array, None, Literal["unchanged"]] = "unchanged",
+        apex: Union[ops.array, None, Literal["unchanged"]] = "unchanged",
     ) -> "SectorScan":
         return SectorScan(
             azimuths=azimuths if azimuths != "unchanged" else self.azimuths,
@@ -47,10 +51,10 @@ class SectorScan(Scan):
 
     def update(
         self,
-        azimuths: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
-        elevations: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
-        depths: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
-        apex: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]] = None,
+        azimuths: Optional[Callable[[ops.array], ops.array]] = None,
+        elevations: Optional[Callable[[ops.array], ops.array]] = None,
+        depths: Optional[Callable[[ops.array], ops.array]] = None,
+        apex: Optional[Callable[[ops.array], ops.array]] = None,
     ) -> "SectorScan":
         return self.replace(
             azimuths(self.azimuths) if azimuths is not None else "unchanged",
@@ -88,7 +92,7 @@ class SectorScan(Scan):
         )
 
     @property
-    def axes(self) -> Tuple[ArrayOrNumber, ...]:
+    def axes(self) -> Tuple[ops.array, ...]:
         if self.elevations is not None:
             return self.azimuths, self.elevations, self.depths
         else:
@@ -104,32 +108,32 @@ class SectorScan(Scan):
                 "Please create an issue on Github if this is something you need.",
             )
         return polar_bounds_to_cartesian_bounds(self.bounds)
-    
-    def cartesian_axes(self, shape) -> Tuple[Array, Array]:
+
+    def cartesian_axes(self, shape) -> Tuple[ops.array, ops.array]:
         """Get the azimuth and depth vectos of the scan in cartesian coordinates."""
         if self.is_3d:
             raise NotImplementedError(
                 "Cartesian bounds are not implemented for 3D scans yet.",
                 "Please create an issue on Github if this is something you need.",
             )
-        
-        min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(self.bounds) 
+
+        min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(self.bounds)
         x_axis = ops.linspace(min_x, max_x, shape[0])
         z_axis = ops.linspace(min_z, max_z, shape[1])
-        
-        return (x_axis, z_axis)    
+
+        return (x_axis, z_axis)
 
     @_deprecations.renamed_kwargs("1.0.5", imaged_points="image")
     def scan_convert(
         self,
-        image: ArrayOrNumber,
+        image: ops.array,
         azimuth_axis: int = -2,
         depth_axis: int = -1,
         *,  # Remaining args must be passed by name (to avoid confusion)
         shape: Optional[Union[Tuple[int, int], str]] = None,
-        default_value: Optional[ArrayOrNumber] = 0.0,
+        default_value: Optional[ops.array] = 0.0,
         edge_handling: str = "Value",
-        cartesian_axes: Optional[Tuple[Array, Array]] = None,
+        cartesian_axes: Optional[Tuple[ops.array, ops.array]] = None,
     ):
         return scan_convert(
             image,
@@ -152,24 +156,22 @@ class SectorScan(Scan):
 
 @overload
 def sector_scan(
-    azimuths: ArrayOrNumber,
-    depths: ArrayOrNumber,
-    apex: Union[ArrayOrNumber, float] = 0.0,
+    azimuths: ops.array,
+    depths: ops.array,
+    apex: Union[ops.array, float] = 0.0,
 ) -> SectorScan: ...  # 2D scan
 
 
 @overload
 def sector_scan(
-    azimuths: ArrayOrNumber,
-    elevations: ArrayOrNumber,
-    depths: ArrayOrNumber,
-    apex: Union[ArrayOrNumber, float] = 0.0,
+    azimuths: ops.array,
+    elevations: ops.array,
+    depths: ops.array,
+    apex: Union[ops.array, float] = 0.0,
 ) -> SectorScan: ...  # 3D scan
 
 
-def sector_scan(
-    *axes: ArrayOrNumber, apex: Union[ArrayOrNumber, float] = 0.0
-) -> SectorScan:
+def sector_scan(*axes: ops.array, apex: Union[ops.array, float] = 0.0) -> SectorScan:
     "Construct a sector scan. See SectorScan documentation for more details."
     azimuths, elevations, depths = parse_axes(axes)
     return SectorScan(azimuths, elevations, depths, ops.array(apex))

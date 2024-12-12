@@ -1,12 +1,12 @@
 from typing import Callable, Tuple
 
-from fastmath import Array, ops
+from spekk import ops
 
 
 def get_window_indices(
     image_shape: Tuple[int, ...],
     window_radius: Tuple[int, ...],
-) -> Array:
+) -> ops.array:
     indices = ops.stack(
         ops.meshgrid(*(ops.arange(0, s) for s in image_shape), indexing="ij"), -1
     )
@@ -18,7 +18,7 @@ def get_window_indices(
     return indices + indices_window_offset
 
 
-def windowed(f: Callable, window_radius: Tuple[int, ...]) -> Array:
+def windowed(f: Callable, window_radius: Tuple[int, ...]) -> ops.array:
     def apply_windowed(image, *args, **kwargs):
         indices = get_window_indices(image.shape, window_radius)
 

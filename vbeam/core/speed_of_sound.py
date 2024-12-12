@@ -3,16 +3,16 @@
 
 from abc import abstractmethod
 
-from fastmath import Array, Module
+from spekk import Module, ops
 
 
 class SpeedOfSound(Module):
     @abstractmethod
     def average(
         self,
-        sender_position: Array,
-        sender: Array,
-        receiver_position: Array,
+        sender_position: ops.array,
+        sender: ops.array,
+        receiver_position: ops.array,
     ) -> float:
         """Sample the speed of sound between the sender, the point position, and the
         receiver, and return the average.

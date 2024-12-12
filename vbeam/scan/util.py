@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 
-from fastmath import ArrayOrNumber, Array, ops
+from spekk import ops
 
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.util import _deprecations
@@ -94,15 +94,15 @@ def polar_bounds_to_cartesian_bounds(
 
 @_deprecations.renamed_kwargs("1.0.5", imaged_points="image", sector_scan="bounds")
 def scan_convert(
-    image: Array,
+    image: ops.array,
     bounds: Union[Tuple[float, float, float, float], "SectorScan"],
     azimuth_axis: int = -2,
     depth_axis: int = -1,
     *,  # Remaining args must be passed by name (to avoid confusion)
     shape: Optional[Union[Tuple[int, int], str]] = None,
-    default_value: Optional[ArrayOrNumber] = 0.0,
+    default_value: Optional[ops.array] = 0.0,
     edge_handling: str = "Value",
-    cartesian_axes: Optional[Tuple[Array, Array]] = None,
+    cartesian_axes: Optional[Tuple[ops.array, ops.array]] = None,
 ):
     from vbeam.scan import CoordinateSystem, Scan
 
@@ -119,13 +119,13 @@ def scan_convert(
         min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(bounds)
         if shape is None:
             shape = image.shape[azimuth_axis], image.shape[depth_axis]
-        elif isinstance(shape, str): 
-            if shape=='keep_aspect_ratio':
+        elif isinstance(shape, str):
+            if shape == "keep_aspect_ratio":
                 out_height = image.shape[depth_axis]
                 azimuth_scale = ops.abs((max_x - min_x) / (max_z - min_z))
                 shape = int(ops.round(out_height * azimuth_scale)), out_height
             else:
-                raise ValueError(f'Unsupported shape {shape}')   
+                raise ValueError(f"Unsupported shape {shape}")
         points = grid(
             ops.linspace(min_x, max_x, shape[0]),
             ops.linspace(min_z, max_z, shape[1]),

@@ -1,6 +1,9 @@
+# TODO: This should be must simpler now that we have named dimensions
+
+
 from typing import Callable, Optional
 
-from fastmath import Array
+from spekk import Array
 from spekk import Spec
 
 from vbeam.apodization.util import get_apodization_values

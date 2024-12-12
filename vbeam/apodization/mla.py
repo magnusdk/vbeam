@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.util.geometry.v2 import Line
@@ -23,17 +23,17 @@ class MLAApodization(Apodization):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        receiver: Array,
-        point_position: Array,
+        sender: ops.array,
+        receiver: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         # Geometry assumes 2D points
         point_position = point_position[ops.array([0, 2])]
         source = wave_data.source[ops.array([0, 2])]
 
-        array_left = ops.array([self.array_bounds_x[0], 0])
-        array_right = ops.array([self.array_bounds_x[1], 0])
+        array_left = ops.stack([self.array_bounds_x[0], 0], axis="xyz")
+        array_right = ops.stack([self.array_bounds_x[1], 0], axis="xyz")
         mid_line_angle = (
             Line.passing_through(array_left, source).angle
             + Line.passing_through(array_right, source).angle

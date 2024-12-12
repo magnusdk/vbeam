@@ -2,14 +2,14 @@
 
 from abc import abstractmethod
 
-from fastmath import Array, Module
+from spekk import Module, ops
 
 
 class InterpolationSpace1D(Module):
     """An interface for interpolating data in 1D."""
 
     @abstractmethod
-    def __call__(self, x: Array, fp: Array) -> Array:
+    def __call__(self, x: ops.array, fp: ops.array) -> ops.array:
         """Evaluate the points x on the discrete array fp.
 
         Any point in x that is outside of the range of fp is evaluated as zero."""

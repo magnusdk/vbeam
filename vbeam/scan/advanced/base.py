@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Callable, Literal, Optional, Sequence, Tuple, TypeVar, Union
 
-from fastmath import Array, Module
+from spekk import Module, ops
 
 from vbeam.scan.base import CoordinateSystem, Scan
 
@@ -25,12 +25,12 @@ class WrappedScan(Scan):
     def replace(
         self: TSelf,
         # "unchanged" means that the axis will not be changed.
-        **kwargs: Union[Array, None, Literal["unchanged"]],
+        **kwargs: Union[ops.array, None, Literal["unchanged"]],
     ) -> TSelf:
         return _wrap_with_new_base_scan(self.base_scan.replace(**kwargs))
 
     def update(
-        self: TSelf, **kwargs: Optional[Callable[[Array], Array]]
+        self: TSelf, **kwargs: Optional[Callable[[ops.array], ops.array]]
     ) -> TSelf:
         return _wrap_with_new_base_scan(self.base_scan.update(**kwargs))
 
@@ -38,7 +38,7 @@ class WrappedScan(Scan):
         return _wrap_with_new_base_scan(self.base_scan.resize(**kwargs))
 
     @property
-    def axes(self) -> Tuple[Array, ...]:
+    def axes(self) -> Tuple[ops.array, ...]:
         return self.base_scan.axes
 
     @property
@@ -46,11 +46,11 @@ class WrappedScan(Scan):
         return self.base_scan.shape
 
     @property
-    def bounds_beamspace(self) -> Array:
+    def bounds_beamspace(self) -> ops.array:
         return self.base_scan.bounds_beamspace
 
     @property
-    def bounds_cartesian(self) -> Array:
+    def bounds_cartesian(self) -> ops.array:
         return self.base_scan.bounds_cartesian
 
     @property

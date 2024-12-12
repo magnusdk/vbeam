@@ -11,7 +11,7 @@ focal point of the transmitted wave. A transmitted wave is usually one of three 
 
 from typing import Callable, Optional
 
-from fastmath import Array, Module
+from spekk import Module, ops
 
 identity_fn = lambda x: x  # Just return value as-is
 
@@ -28,7 +28,7 @@ class WaveData(Module):
     64 transmitted waves in the dataset (each with x, y, and z source coordinates)."""
 
     # The location (x, y, z) of the virtual source for the transmitted wave
-    source: Optional[Array] = None
+    source: Optional[ops.array] = None
     azimuth: Optional[float] = None
     elevation: Optional[float] = None
     # The time at which the transmitted wave passed through the "sender" element
@@ -72,7 +72,7 @@ class WaveData(Module):
     def with_updates_to(
         self,
         *,
-        source: Callable[[Array], Array] = identity_fn,
+        source: Callable[[ops.array], ops.array] = identity_fn,
         azimuth: Callable[[float], float] = identity_fn,
         elevation: Callable[[float], float] = identity_fn,
         t0: Callable[[float], float] = identity_fn,

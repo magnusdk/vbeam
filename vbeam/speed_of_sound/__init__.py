@@ -1,7 +1,7 @@
 from typing import Optional
 
 import numpy
-from fastmath import Array, field, ops
+from spekk import field, ops
 
 from vbeam.core import SpeedOfSound
 from vbeam.interpolation import FastInterpLinspace
@@ -19,7 +19,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
     wave imaging, this class is not appropriate. How should speed of sound be sampled
     for these setups? That's a difficult question :)"""
 
-    values: Array
+    values: ops.array
     x_axis: FastInterpLinspace
     z_axis: FastInterpLinspace
     n_samples: int = field(static=True)
@@ -27,9 +27,9 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
 
     def average(
         self,
-        sender_position: Array,
-        point_position: Array,
-        receiver_position: Array,
+        sender_position: ops.array,
+        point_position: ops.array,
+        receiver_position: ops.array,
     ) -> float:
         sender_position = ensure_2d_point(sender_position)
         point_position = ensure_2d_point(point_position)
@@ -47,7 +47,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
         # Return the weighted average of the total distance
         return (average1 * distance1 + average2 * distance2) / total_distance
 
-    def average_between_two_points(self, p1: Array, p2: Array) -> float:
+    def average_between_two_points(self, p1: ops.array, p2: ops.array) -> float:
         "Return the averaged sampled speed of sound between point ``p1`` and ``p2``."
         assert p1.shape == p2.shape == (2,), "Expected p1 and p2 to be 2D points."
         x1, z1 = p1[0], p1[1]
@@ -72,7 +72,7 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
     @staticmethod
     def from_scan(
         scan: Scan,
-        values: Array,
+        values: ops.array,
         n_samples: Optional[int] = None,
         default_speed_of_sound: float = 1540.0,
     ) -> "HeterogeneousSpeedOfSound":
@@ -95,16 +95,16 @@ class HeterogeneousSpeedOfSound(SpeedOfSound):
 
 
 class DistributedGlobalSpeedOfSound(SpeedOfSound):
-    speed_of_sound_map: Array
+    speed_of_sound_map: ops.array
     x_axis: FastInterpLinspace
     z_axis: FastInterpLinspace
     default_speed_of_sound: float = 1540.0
 
     def average(
         self,
-        sender_position: Array,
-        point_position: Array,
-        receiver_position: Array,
+        sender_position: ops.array,
+        point_position: ops.array,
+        receiver_position: ops.array,
     ) -> float:
         x, _, z = point_position[..., 0], point_position[..., 1], point_position[..., 2]
         interpolated_speed_of_sound_samples = FastInterpLinspace.interp2d(

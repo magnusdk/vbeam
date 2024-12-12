@@ -1,3 +1,5 @@
+# TODO: Redo with spekk 2.0.0
+
 """Module for creating reasonable default values for some arguments to 
 :func:`vbeam.core.signal_for_point`. Intended for internal use only.
 
@@ -5,8 +7,7 @@ Each function returns the default value and its spec."""
 
 from typing import Tuple
 
-from fastmath import Array, ops
-from spekk import Spec
+from spekk import ops
 
 from vbeam.core import ProbeGeometry, WaveData
 from vbeam.util.arrays import grid

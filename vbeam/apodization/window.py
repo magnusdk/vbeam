@@ -6,7 +6,7 @@ the various implemented windows."""
 
 from abc import abstractmethod
 
-from fastmath import Module, ops
+from spekk import Module, ops
 
 
 class Window(Module):

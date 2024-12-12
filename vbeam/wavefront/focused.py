@@ -1,4 +1,4 @@
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
 from vbeam.wavefront.plane import PlaneWavefront
@@ -8,8 +8,8 @@ class FocusedSphericalWavefront(TransmittedWavefront):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        point_position: Array,
+        sender: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         sender_source_dist = ops.sqrt(ops.sum((sender - wave_data.source) ** 2))
@@ -25,8 +25,8 @@ class FocusedHybridWavefront(TransmittedWavefront):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        point_position: Array,
+        sender: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         spherical_wavefront = FocusedSphericalWavefront()
@@ -51,8 +51,8 @@ class FocusedBlendedWavefront(TransmittedWavefront):
 
     def __call__(
         self,
-        sender: Array,
-        point_position: Array,
+        sender: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         spherical_wavefront = FocusedSphericalWavefront()

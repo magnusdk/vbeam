@@ -5,7 +5,8 @@ It's all in this one module because it's all so closely related."""
 from abc import abstractmethod
 from typing import Optional, Tuple, Union
 
-from fastmath import Array, Module, ops
+from fastmath import Module
+from spekk import ops
 
 ####
 # Functions for calculating intersections.
@@ -14,7 +15,7 @@ from fastmath import Array, Module, ops
 
 def intersect_line_line(
     line1: "Line", line2: "Line"
-) -> Tuple[int, Tuple[Array, Array]]:
+) -> Tuple[int, Tuple[ops.array, ops.array]]:
     num_intersections = ops.where(
         ops.cross(line1.direction, line2.direction) == 0, 0, 1
     )
@@ -28,7 +29,7 @@ def intersect_line_line(
 
 def intersect_circle_line(
     circle: "Circle", line: "Line"
-) -> Tuple[int, Tuple[Array, Array]]:
+) -> Tuple[int, Tuple[ops.array, ops.array]]:
     # http://paulbourke.net/geometry/circlesphere/
     a = ops.sum(line.direction**2)
     b = 2 * ops.sum((line.direction * (line.anchor - circle.center)))
@@ -53,12 +54,12 @@ def intersect_circle_line(
 # Some helper functions
 
 
-def distance(point1: Array, point2: Optional[Array] = None, axis: int = -1):
+def distance(point1: ops.array, point2: Optional[ops.array] = None, axis: int = -1):
     diff = point1 if point2 is None else point2 - point1
     return ops.sqrt(ops.sum(diff**2, axis=axis))
 
 
-def rotate(point: Array, theta: float, phi: float) -> Array:
+def rotate(point: ops.array, theta: float, phi: float) -> ops.array:
     # Define the rotation matrices
     rotation_matrix_theta = ops.array(
         [
@@ -86,7 +87,7 @@ class Curve(Module):
     """A 2D curve. See method docstrings for details."""
 
     @abstractmethod
-    def __call__(self, t: Union[float, Array]) -> Tuple[float, float]:
+    def __call__(self, t: Union[float, ops.array]) -> Tuple[float, float]:
         """Evaluate the curve at a given parameter value.
 
         For example, evaluating a circle at t=0 gives the point at angle 0, t=pi/2 gives
@@ -96,7 +97,7 @@ class Curve(Module):
         given point."""
 
     @abstractmethod
-    def signed_distance(self, point: Array) -> Array:
+    def signed_distance(self, point: ops.array) -> ops.array:
         """Return the signed distance from a point to the nearest point on the curve.
 
         The sign of the returned value gives information about which side of the curve
@@ -105,38 +106,43 @@ class Curve(Module):
         outside, and negative on the inside."""
 
     @abstractmethod
-    def intersect(self, other: "Curve") -> Tuple[int, Tuple[Array, Array]]:
+    def intersect(self, other: "Curve") -> Tuple[int, Tuple[ops.array, ops.array]]:
         """Return the number of intersections between this curve and another curve and
         the (potentially none) intersection points."""
 
 
 class Line(Curve):
-    anchor: Array
-    direction: Array
+    anchor: ops.array
+    direction: ops.array
 
     def __post_init__(self):
         # Normalize direction vector (tangent)
         self.direction = self.direction / distance(self.direction)
 
-    def __call__(self, t: Union[float, Array]) -> Tuple[float, float]:
+    def __call__(self, t: Union[float, ops.array]) -> Tuple[float, float]:
         if ops.is_ndarray(t) and t.ndim != 0:
             points = ops.moveaxis(self.anchor + t[..., None] * self.direction, -1, 0)
         else:
             points = self.anchor + t * self.direction
         return points
 
-    def signed_distance(self, point: Array) -> float:
-        return ops.cross(point - self.anchor, self.direction)
+    def signed_distance(self, point: ops.array) -> float:
+        vector_to_point = point - self.anchor
+        perpendicular_vector = ops.array([-1, 1], ["xyz"]) * ops.flip(
+            self.direction, axis="xyz"
+        )
+        signed_distance = ops.sum(vector_to_point * perpendicular_vector, axis="xyz")
+        return signed_distance
 
     @staticmethod
-    def passing_through(point1: Array, point2: Array) -> "Line":
+    def passing_through(point1: ops.array, point2: ops.array) -> "Line":
         return Line(point1, point2 - point1)
 
     @staticmethod
-    def with_angle(anchor: Array, angle: float) -> "Line":
-        return Line(anchor, ops.array([ops.cos(angle), ops.sin(angle)]))
+    def with_angle(anchor: ops.array, angle: float) -> "Line":
+        return Line(anchor, ops.stack([ops.cos(angle), ops.sin(angle)], axis="xyz"))
 
-    def intersect(self, other: Curve) -> Tuple[int, Tuple[Array, Array]]:
+    def intersect(self, other: Curve) -> Tuple[int, Tuple[ops.array, ops.array]]:
         if isinstance(other, Line):
             return intersect_line_line(self, other)
         else:
@@ -147,12 +153,12 @@ class Line(Curve):
         return ops.arctan2(self.direction[1], self.direction[0])
 
     @property
-    def normal(self) -> Array:
+    def normal(self) -> ops.array:
         return ops.array([-self.direction[1], self.direction[0]])
 
 
 class Circle(Curve):
-    center: Array
+    center: ops.array
     radius: float
 
     def __call__(self, t: float) -> Tuple[float, float]:
@@ -161,10 +167,10 @@ class Circle(Curve):
             center = self.center[:, None]
         return ops.array([ops.cos(t), ops.sin(t)]) * self.radius + center
 
-    def signed_distance(self, point: Array) -> Array:
+    def signed_distance(self, point: ops.array) -> ops.array:
         return distance(point, self.center) - self.radius
 
-    def intersect(self, other: Curve) -> Tuple[int, Tuple[Array, Array]]:
+    def intersect(self, other: Curve) -> Tuple[int, Tuple[ops.array, ops.array]]:
         if isinstance(other, Line):
             return intersect_circle_line(self, other)
         else:
@@ -183,11 +189,11 @@ class Ellipse(Curve):
     should also not depend on the derivative of the __call__ method to compute a
     normalized tangent."""
 
-    f1: Array  # Focus point 1
-    f2: Array  # Focus point 2
+    f1: ops.array  # Focus point 1
+    f2: ops.array  # Focus point 2
     d: float  # If p is a point on the ellipse, then d = distance(p, f1) + distance(p, f2)
 
-    def __call__(self, t: Array) -> Array:
+    def __call__(self, t: ops.array) -> ops.array:
         # An ellipse is just a transformed circle
         circle = Circle(ops.array([0, 0]), 1)
         circle_transform = self._circle_transform
@@ -195,12 +201,12 @@ class Ellipse(Curve):
             circle_transform = ops.vmap(circle_transform, [1])
         return circle_transform(circle(t)).T
 
-    def signed_distance(self, point: Array) -> Array:
+    def signed_distance(self, point: ops.array) -> ops.array:
         # Not implemented yet. Need to think about how to normalize the distance since
         # the space is transformed.
         raise NotImplementedError
 
-    def intersect(self, other: Curve) -> Tuple[int, Tuple[Array, Array]]:
+    def intersect(self, other: Curve) -> Tuple[int, Tuple[ops.array, ops.array]]:
         if isinstance(other, Line):
             other = Line.passing_through(
                 self._circle_undo_transform(other(0)),
@@ -219,21 +225,21 @@ class Ellipse(Curve):
     def _circle_rotation(self) -> float:
         return ops.arctan2(self.f2[1] - self.f1[1], self.f2[0] - self.f1[0])
 
-    def _circle_scale(self) -> Array:
+    def _circle_scale(self) -> ops.array:
         a = self.d / 2
         b = ops.sqrt(a**2 - distance(self.f2, self.f1) ** 2 / 4)
         return ops.array([a, b])
 
-    def _circle_translation(self) -> Array:
+    def _circle_translation(self) -> ops.array:
         return (self.f1 + self.f2) / 2
 
-    def _circle_transform(self, point: Array) -> Array:
+    def _circle_transform(self, point: ops.array) -> ops.array:
         point *= self._circle_scale()
         point = rotate(point, self._circle_rotation())
         point += self._circle_translation()
         return point
 
-    def _circle_undo_transform(self, point: Array) -> Array:
+    def _circle_undo_transform(self, point: ops.array) -> ops.array:
         point -= self._circle_translation()
         point = rotate(point, -self._circle_rotation())
         point /= self._circle_scale()

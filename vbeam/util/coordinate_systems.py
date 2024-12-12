@@ -1,7 +1,7 @@
-from fastmath import Array, ops
+from spekk import ops
 
 
-def as_polar(cartesian_point: Array):
+def as_polar(cartesian_point: ops.array):
     """Return a point in cartesian coordinates in its polar coordinates representation.
 
     NOTE: All y-values must be 0. FIXME"""
@@ -11,7 +11,7 @@ def as_polar(cartesian_point: Array):
     return ops.stack([azimuth_angles, ops.zeros(radii.shape), radii], -1)
 
 
-def as_cartesian(polar_point: Array):
+def as_cartesian(polar_point: ops.array):
     "Return a point in polar coordinates in its cartesian coordinates representation."
     azimuth_angles = polar_point[..., 0]
     polar_angles = polar_point[..., 1]

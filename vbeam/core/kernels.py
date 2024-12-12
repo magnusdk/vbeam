@@ -9,7 +9,7 @@ See also:
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.core.apodization import Apodization
 from vbeam.core.interpolation import InterpolationSpace1D
@@ -26,10 +26,10 @@ from vbeam.core.wavefront import (
 
 def signal_for_point(
     probe: ProbeGeometry,
-    sender: Array,
-    receiver: Array,
-    point_position: Array,
-    signal: Array,
+    sender: ops.array,
+    receiver: ops.array,
+    point_position: ops.array,
+    signal: ops.array,
     transmitted_wavefront: TransmittedWavefront,
     reflected_wavefront: ReflectedWavefront,
     speed_of_sound: Union[float, SpeedOfSound],
@@ -37,7 +37,7 @@ def signal_for_point(
     interpolate: InterpolationSpace1D,
     modulation_frequency: Optional[float],
     apodization: Apodization,
-) -> Array:
+) -> ops.array:
     """The core beamforming function. Return the delayed and interpolated signal from a
     single transmit, for a single receiver, for a single point (pixel).
 
@@ -83,7 +83,7 @@ def signal_for_point(
         speed_of_sound = speed_of_sound.average(sender, point_position, receiver)
 
     delay = (tx_distance + rx_distance) / speed_of_sound - wave_data.t0
-    signal = interpolate(delay, signal)
+    signal = interpolate(delay, signal, axis="time")
 
     if modulation_frequency is not None:
         signal = phase_correction(signal, delay, modulation_frequency)
@@ -104,10 +104,10 @@ class SignalForPointData(KernelData):
     See the docstring of signal_for_point for documentation of each field."""
 
     probe: ProbeGeometry
-    sender: Array
-    receiver: Array
-    point_position: Array
-    signal: Array
+    sender: ops.array
+    receiver: ops.array
+    point_position: ops.array
+    signal: ops.array
     transmitted_wavefront: TransmittedWavefront
     reflected_wavefront: ReflectedWavefront
     speed_of_sound: Union[float, SpeedOfSound]

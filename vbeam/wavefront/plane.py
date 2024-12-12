@@ -1,4 +1,4 @@
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
 
@@ -7,14 +7,17 @@ class PlaneWavefront(TransmittedWavefront):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        point_position: Array,
+        sender: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         diff = point_position - sender
-        x, y, z = diff[0], diff[1], diff[2]
-        return (
-            x * ops.sin(wave_data.azimuth) * ops.cos(wave_data.elevation)
-            + y * ops.sin(wave_data.elevation)
-            + z * ops.cos(wave_data.azimuth) * ops.cos(wave_data.elevation)
+        v = ops.stack(
+            [
+                ops.sin(wave_data.azimuth) * ops.cos(wave_data.elevation),
+                ops.sin(wave_data.elevation),
+                ops.cos(wave_data.azimuth) * ops.cos(wave_data.elevation),
+            ],
+            axis="xyz",
         )
+        return ops.sum(diff * v, axis="xyz")

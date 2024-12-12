@@ -4,7 +4,7 @@ from enum import Enum
 from functools import reduce
 from typing import Callable, Literal, Optional, Tuple, Union
 
-from fastmath import ArrayOrNumber, Module
+from spekk import Module, ops
 
 from vbeam.util import ensure_positive_index
 
@@ -16,18 +16,16 @@ class CoordinateSystem(Enum):
 
 class Scan(Module):
     @abstractmethod
-    def get_points(self, flatten: bool = True) -> ArrayOrNumber:
+    def get_points(self, flatten: bool = True) -> ops.array:
         """Return the points defined by the scan, flattened to a (N, 3) array by
         default, where N is the number of points."""
 
     @abstractmethod
-    def replace(self, *_axes: Union[ArrayOrNumber, Literal["unchanged"]]) -> "Scan":
+    def replace(self, *_axes: Union[ops.array, Literal["unchanged"]]) -> "Scan":
         "Return a copy of the scan with values replaced."
 
     @abstractmethod
-    def update(
-        self, *_axes: Optional[Callable[[ArrayOrNumber], ArrayOrNumber]]
-    ) -> "Scan":
+    def update(self, *_axes: Optional[Callable[[ops.array], ops.array]]) -> "Scan":
         "Return a copy of the scan with updates applied to the given axes."
 
     @abstractmethod
@@ -36,7 +34,7 @@ class Scan(Module):
 
     @property
     @abstractmethod
-    def axes(self) -> Tuple[ArrayOrNumber, ...]:
+    def axes(self) -> Tuple[ops.array, ...]:
         """Return the axes of the scan.
 
         E.g.: if the scan is a sector scan, return the azimuth and depths axes."""
@@ -44,10 +42,10 @@ class Scan(Module):
     @property
     def shape(self) -> Tuple[int, ...]:
         "Return the shape of the grid of points defined by the scan."
-        return tuple([len(axis) for axis in self.axes])
+        return tuple([axis.size for axis in self.axes])
 
     @property
-    def bounds(self) -> ArrayOrNumber:
+    def bounds(self) -> ops.array:
         "Return the bounds of the axes of the scan."
         bounds = []
         for ax in self.axes:
@@ -56,7 +54,7 @@ class Scan(Module):
 
     @property
     @abstractmethod
-    def cartesian_bounds(self) -> ArrayOrNumber:
+    def cartesian_bounds(self) -> ops.array:
         """Return the bounds in cartesian coordinates of the axes of the scan (useful
         for sector scans)."""
 
@@ -66,9 +64,7 @@ class Scan(Module):
         """Return the coordinate system of the scan. E.g.: sector scans are in polar
         coordinates and linear scans are in cartesian coordinates."""
 
-    def unflatten(
-        self, imaged_points: ArrayOrNumber, points_axis: int = -1
-    ) -> ArrayOrNumber:
+    def unflatten(self, imaged_points: ops.array, points_axis: int = -1) -> ops.array:
         "Unflatten a flattened array of values into the original shape of the scan."
         points_axis = ensure_positive_index(imaged_points.ndim, points_axis)
         return imaged_points.reshape(

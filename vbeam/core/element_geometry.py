@@ -4,7 +4,7 @@ the position, orientation, etc.
 
 from typing import Callable, Optional
 
-from fastmath import Array, Module
+from spekk import Module, ops
 
 identity_fn = lambda x: x  # Just return value as-is
 
@@ -19,7 +19,7 @@ class ElementGeometry(Module):
     additional dimension. For example, position may have the shape (64, 3) if there are
     64 elements (each with x, y, and z coordinates)."""
 
-    position: Array
+    position: ops.array
     theta: Optional[float] = None
     phi: Optional[float] = None
     sub_elements: Optional["ElementGeometry"] = None
@@ -59,7 +59,7 @@ class ElementGeometry(Module):
     def with_updates_to(
         self,
         *,
-        position: Callable[[Array], Array] = identity_fn,
+        position: Callable[[ops.array], ops.array] = identity_fn,
         theta: Callable[[float], float] = identity_fn,
         phi: Callable[[float], float] = identity_fn,
         sub_elements: Callable[["ElementGeometry"], "ElementGeometry"] = identity_fn,

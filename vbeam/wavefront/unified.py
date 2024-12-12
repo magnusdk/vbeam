@@ -1,6 +1,6 @@
 from dataclasses import field
 
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
 from vbeam.util.geometry import Line
@@ -19,8 +19,8 @@ class UnifiedWavefront(TransmittedWavefront):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        point_position: Array,
+        sender: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         # Set up the geometry

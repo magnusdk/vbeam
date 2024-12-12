@@ -1,24 +1,24 @@
 from typing import Tuple, Union
 
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.interpolation import FastInterpLinspace
 
 
-def coherence_factor(beamformed_data: Array, receivers_axis: int):
+def coherence_factor(beamformed_data: ops.array, receivers_axis: int):
     coherent_sum = ops.abs(ops.sum(beamformed_data, receivers_axis)) ** 2
     incoherent_sum = ops.sum(ops.abs(beamformed_data) ** 2, receivers_axis)
     num_receivers = beamformed_data.shape[receivers_axis]
     return ops.nan_to_num(coherent_sum / incoherent_sum / num_receivers)
 
 
-def normalized_decibels(data: Array):
+def normalized_decibels(data: ops.array):
     "Convert the data into decibels normalized for dynamic range."
     data_db = 20 * ops.nan_to_num(ops.log10(ops.abs(data)))
     return data_db - data_db.max()
 
 
-def _upsampling_indices(n: int, data_size: int) -> Array:
+def _upsampling_indices(n: int, data_size: int) -> ops.array:
     """Return the sampling indices of data with size data_size after upsampling by n.
 
     The formula is a bit complicated because it is as general as possible. Check out
@@ -31,10 +31,10 @@ def _upsampling_indices(n: int, data_size: int) -> Array:
 
 
 def upsample_by_interpolation(
-    data: Array,
+    data: ops.array,
     n: int,
     axis: Union[int, Tuple[int, ...]] = 0,
-) -> Array:
+) -> ops.array:
     """Upsample the data along the given axes. Multiple axes may be given."""
     # No axis has been given: upsample all axes
     if axis is None:

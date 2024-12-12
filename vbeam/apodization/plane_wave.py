@@ -1,12 +1,11 @@
 from typing import Optional, Tuple, Union
 
-from fastmath import Array, ops
+from spekk import ops
 
+from vbeam.apodization.window import Window
 from vbeam.core import Apodization, ProbeGeometry, WaveData
 from vbeam.util import ensure_2d_point
 from vbeam.util.geometry.v2 import Line, distance
-
-from .window import Window
 
 
 class PlaneWaveTransmitApodization(Apodization):
@@ -15,9 +14,9 @@ class PlaneWaveTransmitApodization(Apodization):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        receiver: Array,
-        point_position: Array,
+        sender: ops.array,
+        receiver: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         # Set up the geometry. There is one line originating from each side of the
@@ -73,9 +72,9 @@ class PlaneWaveReceiveApodization(Apodization):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        receiver: Array,
-        point_position: Array,
+        sender: ops.array,
+        receiver: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         f_number = (
@@ -89,7 +88,7 @@ class PlaneWaveReceiveApodization(Apodization):
         tan_phi = y_dist / z_dist
         ratio_theta = ops.abs(f_number[0] * tan_theta)
         ratio_phi = ops.abs(f_number[1] * tan_phi)
-        return ops.array(
+        return ops.astype(
             self.window(ratio_theta) * self.window(ratio_phi),
-            dtype="float32",
+            "float32",
         )

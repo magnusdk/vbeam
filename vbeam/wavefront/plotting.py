@@ -1,3 +1,5 @@
+# TODO: Redo with spekk 2.0.0
+
 from typing import Callable, Optional
 
 from fastmath import Array, Array

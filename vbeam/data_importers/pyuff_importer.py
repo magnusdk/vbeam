@@ -2,9 +2,8 @@ from typing import List, Literal, Optional, Tuple, Union
 
 import numpy
 import pyuff_ustb as pyuff
-from fastmath import Array, ops
 from scipy.signal import hilbert
-from spekk import Spec
+from spekk import ops
 
 from vbeam.apodization import (
     Hamming,
@@ -15,7 +14,7 @@ from vbeam.apodization import (
     TxRxApodization,
 )
 from vbeam.core import ProbeGeometry, WaveData
-from vbeam.data_importers.setup import SignalForPointSetup
+#from vbeam.data_importers.setup import SignalForPointSetup
 from vbeam.interpolation import FastInterpLinspace
 from vbeam.scan import Scan, linear_scan, sector_scan
 from vbeam.util.geometry.v2 import distance
@@ -27,17 +26,20 @@ def parse_pyuff_scan(scan: pyuff.Scan) -> Scan:
     if isinstance(scan, Scan):
         return scan
     elif isinstance(scan, pyuff.LinearScan):
-        return linear_scan(ops.squeeze(scan.x_axis), ops.squeeze(scan.z_axis))
+        return linear_scan(
+            ops.array(scan.x_axis, ["x_axis"]),
+            ops.array(scan.z_axis, ["z_axis"]),
+        )
     elif isinstance(scan, pyuff.SectorScan):
         origin = (
-            scan.origin.xyz
+            ops.array(scan.origin.xyz, ["xyz"])
             if isinstance(scan.origin, pyuff.Point)
-            else [p.xyz for p in scan.origin]
+            else ops.array([p.xyz for p in scan.origin], ["tx", "xyz"])
         )
         return sector_scan(
-            ops.squeeze(scan.azimuth_axis),
-            ops.squeeze(scan.depth_axis),
-            apex=ops.array(origin),
+            ops.array(scan.azimuth_axis, ["azimuth_axis"]),
+            ops.array(scan.depth_axis, ["depth_axis"]),
+            apex=origin,
         )
     else:
         raise ValueError("The scan is not an instance of pyuff.Scan")
@@ -48,7 +50,7 @@ def import_pyuff(
     scan: Optional[Union[pyuff.Scan, Scan]] = None,
     *,
     frames: Union[Literal["all"], int, Tuple[int], List[int], range] = "all",
-) -> SignalForPointSetup:
+):
     """Return an instance of ImportedData based on the available data in channel_data
     and optionally a pyuff scan.
 
@@ -57,7 +59,7 @@ def import_pyuff(
     if scan is not None:
         scan = parse_pyuff_scan(scan)
 
-    speed_of_sound = ops.array(float(channel_data.sound_speed), dtype="float32")
+    speed_of_sound = float(channel_data.sound_speed)
     t_axis_interpolate = FastInterpLinspace(
         min=float(channel_data.initial_time),
         d=1 / float(channel_data.sampling_frequency),
@@ -73,34 +75,40 @@ def import_pyuff(
     # Selecting a single frame
     if isinstance(frames, int):
         if channel_data.data.ndim == 4:
-            data = channel_data.data[:, :, :, frames]
+            signal = channel_data.data[:, :, :, frames]
         else:
             assert frames == 0, "Only frame 0 is available."
-            data = channel_data.data
-        receiver_signals = ops.transpose(data, (2, 1, 0))
-        has_multiple_frames = False
+            signal = channel_data.data
+        signal = ops.array(signal, ["time", "rx", "tx"])
     # Selecting multiple frames
     elif isinstance(frames, (tuple, list, range)):
         if channel_data.data.ndim == 4:
-            data = channel_data.data[:, :, :, frames]
+            signal = channel_data.data[:, :, :, frames]
         else:
             assert all(frame == 0 for frame in frames), "Only frame 0 is available."
-            data = ops.stack([channel_data.data for _ in frames], -1)
-        receiver_signals = ops.transpose(data, (3, 2, 1, 0))
-        has_multiple_frames = True
+            signal = ops.stack([channel_data.data for _ in frames], -1)
+        signal = ops.array(signal, ["time", "rx", "tx", "frames"])
     # Selecting all frames
     else:
         if channel_data.data.ndim == 4:
-            receiver_signals = ops.transpose(channel_data.data, (3, 2, 1, 0))
-            has_multiple_frames = True
+            signal = ops.array(
+                channel_data.data,
+                ["time", "rx", "tx", "frames"],
+            )
         else:
-            receiver_signals = ops.transpose(channel_data.data, (2, 1, 0))
-            has_multiple_frames = False
+            signal = ops.array(
+                channel_data.data,
+                ["time", "rx", "tx"],
+            )
 
     # Apply hilbert transform if modulation_frequency is 0
     modulation_frequency = ops.array(channel_data.modulation_frequency)
     if ops.abs(modulation_frequency) == 0:
-        receiver_signals = ops.array(hilbert(receiver_signals), dtype="complex64")
+        signal = ops.array(
+            hilbert(signal),
+            signal.dims,
+            dtype="complex64",
+        )
 
     if (
         channel_data.probe.__class__
@@ -126,7 +134,7 @@ def import_pyuff(
         ops.max(channel_data.probe.y) - ops.min(channel_data.probe.y),
     )
 
-    receiver = ops.array(channel_data.probe.xyz)
+    receiver = ops.array(channel_data.probe.xyz, ["rx", "xyz"])
 
     sequence: List[pyuff.Wave] = channel_data.sequence
     all_wavefronts = {wave.wavefront for wave in sequence}
@@ -152,60 +160,64 @@ given {all_wavefronts})."
         )
 
     wave_data = WaveData(
-        azimuth=ops.array([wave.source.azimuth for wave in sequence]),
-        elevation=ops.array([wave.source.elevation for wave in sequence]),
-        source=ops.array([wave.source.xyz for wave in sequence]),
-        t0=ops.array([wave.delay for wave in sequence]),
-    )
-
-    spec = Spec(
-        {
-            "signal": ["transmits", "receivers", "signal_time"],
-            "receiver": ["receivers"],
-            "point_position": ["points"],
-            "wave_data": ["transmits"],
-        }
+        azimuth=ops.array([wave.source.azimuth for wave in sequence], ["tx"]),
+        elevation=ops.array([wave.source.elevation for wave in sequence], ["tx"]),
+        source=ops.array([wave.source.xyz for wave in sequence], ["tx", "xyz"]),
+        t0=ops.array([wave.delay for wave in sequence], ["tx"]),
     )
 
     # Set sender
-    sender = ops.array(
-        list(map(lambda x: x.origin.xyz, channel_data.sequence)), dtype="float32"
-    )
-    if sender.any():
+    if False:#any(wave.origin.xyz is not None for wave in channel_data.sequence):
         # Walking aperture
         # Redefine t0 to be when the wave passes through the sender position
+        sender = ops.array(
+            [wave.origin.xyz for wave in channel_data.sequence],
+            ["tx", "xyz"],
+        )
         wave_data = wave_data.with_updates_to(
             t0=lambda t0: t0
             + (distance(sender, wave_data.source) - distance(wave_data.source))
             / speed_of_sound
         )
-        spec = spec.at["sender"].set(["transmits"])
     else:
-        sender = ops.array([0.0, 0.0, 0.0], dtype="float32")
+        sender = ops.array([0, 0, 0], ["xyz"], dtype="float32")
 
     # Check if we are dealing with a STAI dataset: is each virtual source placed at
-    # exactly at an element position?
-    if receiver.shape == wave_data.source.shape and (
-        numpy.allclose(probe.receiver_position, wave_data.source)
-    ):
-        # We are dealing with a STAI dataset! Senders are each element in the array
-        sender = receiver.copy()
-        # One sending element for each transmitted wave
-        spec = spec.at["sender"].set(["transmits"])
-        # Redefine t0 to be when the wave passes through the sender position
-        wave_data = wave_data.with_updates_to(
-            t0=lambda t0: t0 - distance(probe.sender_position) / speed_of_sound
-        )
+    # exactly an element position?
+    # TODO: I don't think this works?
+    # if receiver.shape == wave_data.source.shape and (
+    #    numpy.allclose(probe.receiver_position, wave_data.source)
+    # ):
+    #    # We are dealing with a STAI dataset! Senders are each element in the array
+    #    sender = receiver.copy()
+    #    # One sending element for each transmitted wave
+    #    spec = spec.at["sender"].set(["transmits"])
+    #    # Redefine t0 to be when the wave passes through the sender position
+    #    wave_data = wave_data.with_updates_to(
+    #        t0=lambda t0: t0 - distance(probe.sender_position) / speed_of_sound
+    #    )
+    return dict(
+        probe=probe,
+        sender=sender,
+        receiver=receiver,
+        point_position=scan.get_points(),
+        signal=signal,
+        transmitted_wavefront=transmitted_wavefront,
+        reflected_wavefront=ReflectedWavefront(),
+        speed_of_sound=speed_of_sound,
+        wave_data=wave_data,
+        interpolate=t_axis_interpolate,
+        modulation_frequency=modulation_frequency,
+        apodization=apodization,
+    )
 
-    if has_multiple_frames:
-        spec = spec.add_dimension("frames", ["signal"])
     return SignalForPointSetup(
         probe=probe,
         sender=sender,
         receiver=receiver,
         # point_position is dynamically set from the scan in SignalForPointSetup,
         point_position=None,
-        signal=receiver_signals,
+        signal=signal,
         transmitted_wavefront=transmitted_wavefront,
         reflected_wavefront=ReflectedWavefront(),
         speed_of_sound=speed_of_sound,
@@ -219,7 +231,7 @@ given {all_wavefronts})."
     )
 
 
-def parse_beamformed_data(beamformed_data: pyuff.BeamformedData) -> Array:
+def parse_beamformed_data(beamformed_data: pyuff.BeamformedData) -> ops.array:
     "Parse the beamformed data from a PyUFF file into an array with the correct shape."
     imaged_points = ops.squeeze(beamformed_data.data)
     scan = parse_pyuff_scan(beamformed_data.scan)

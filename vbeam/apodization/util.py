@@ -1,3 +1,4 @@
+# TODO: This should be must simpler now that we have named dimensions
 import math
 from typing import Optional, Sequence
 

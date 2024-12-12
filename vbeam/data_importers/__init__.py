@@ -3,10 +3,10 @@ from vbeam.data_importers.pyuff_importer import (
     parse_beamformed_data,
     parse_pyuff_scan,
 )
-from vbeam.data_importers.setup import SignalForPointSetup
+#from vbeam.data_importers.setup import SignalForPointSetup
 
 __all__ = [
-    "SignalForPointSetup",
+    #"SignalForPointSetup",
     "import_pyuff",
     "parse_beamformed_data",
     "parse_pyuff_scan",

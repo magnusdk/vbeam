@@ -8,7 +8,7 @@ speed of sound of the medium."""
 from abc import abstractmethod
 from typing import Callable, Union
 
-from fastmath import Array, Module, ops
+from spekk import Module, ops
 
 from vbeam.util.geometry.v2 import distance
 
@@ -61,8 +61,8 @@ class TransmittedWavefront(Module):
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        point_position: Array,
+        sender: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> Union[float, "MultipleTransmitDistances"]:
         """Return the *distance (in meters)* from the sender element to the point for a transmit.
@@ -86,8 +86,8 @@ class ReflectedWavefront(Module):
         :class:`TransmittedWavefront`
         :func:`~vbeam.core.kernels.signal_for_point`"""
 
-    def __call__(self, point_position: Array, receiver: Array) -> float:
-        return distance(point_position, receiver)
+    def __call__(self, point_position: ops.array, receiver: ops.array) -> float:
+        return distance(point_position, receiver, axis="xyz")
 
 
 class MultipleTransmitDistances(Module):
@@ -106,8 +106,8 @@ class MultipleTransmitDistances(Module):
     will apply them to the :attr:`values` attribute as if it was just a numpy array.
 
     Attributes:
-        values (ArrayOrNumber): The distance values that will be used to delay the element signals.
-        aggregate_samples (Callable[[ArrayOrNumber, ArrayOrNumber], ArrayOrNumber]): A function
+        values (ops.arrayOrNumber): The distance values that will be used to delay the element signals.
+        aggregate_samples (Callable[[ops.arrayOrNumber, ops.arrayOrNumber], ops.arrayOrNumber]): A function
             that will be used to combine the delayed samples into one value, for
             example as a weighted sum. If None, the samples will be averaged.
 
@@ -116,8 +116,8 @@ class MultipleTransmitDistances(Module):
         :class:`TransmittedWavefront`
     """
 
-    values: Array
-    aggregate_samples: Callable[[Array, Array], Array] = None
+    values: ops.array
+    aggregate_samples: Callable[[ops.array, ops.array], ops.array] = None
 
     def __post_init__(self):
         # If no aggregate function is set, just average the samples
@@ -126,8 +126,8 @@ class MultipleTransmitDistances(Module):
 
     # Mathematical operators applied to the :class:`MultipleTransmitDistances` object
     # will apply them to the ``values`` attribute as if it was just a numpy array.
-    def __truediv__(self, other) -> Array:
+    def __truediv__(self, other) -> ops.array:
         return self.values / other
 
-    def __add__(self, other) -> Array:
+    def __add__(self, other) -> ops.array:
         return self.values + other

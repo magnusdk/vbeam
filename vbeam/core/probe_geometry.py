@@ -2,18 +2,16 @@
 the position, orientation, etc.
 """
 
-from typing import Callable, Optional, Tuple
+from typing import Callable, Tuple
 
-from fastmath import ops
+from spekk import Module, ops
 
-from vbeam.fastmath.traceable import traceable_dataclass
 from vbeam.util.geometry.v2 import distance
 
 identity_fn = lambda x: x  # Just return value as-is
 
 
-@traceable_dataclass(("ROC", "rx_aperture_length_s", "tx_aperture_length_s"))
-class ProbeGeometry:
+class ProbeGeometry(Module):
     """A container for probe parameters.
     The aperture lengths are arc lenghts of the probe surface in azimuth and elevation.
     """
@@ -39,8 +37,8 @@ class ProbeGeometry:
     @property
     def curvature_center(self):
         return (
-            ops.array([0.0, 0.0, -self.ROC[0]]),
-            ops.array([0.0, 0.0, -self.ROC[1]]),
+            ops.array([0.0, 0.0, -self.ROC[0]], ["xyz"]),
+            ops.array([0.0, 0.0, -self.ROC[1]], ["xyz"]),
         )
 
     def get_sender_normal(self):
@@ -52,10 +50,10 @@ class ProbeGeometry:
         return vector / distance(vector)
 
     def get_theta(self, position):
-        return ops.arctan2(position[0], self.ROC[0] + position[2])
+        return ops.atan2(position[0], self.ROC[0] + position[2])
 
     def get_phi(self, position):
-        return ops.arctan2(position[1], self.ROC[1] + position[2])
+        return ops.atan2(position[1], self.ROC[1] + position[2])
 
     def aperture_distance(self, position1, position2):
         pos1_s = self.cart2surface(position=position1)
@@ -72,7 +70,7 @@ class ProbeGeometry:
         )
 
     def surface2cart(self, position_s):
-        return ops.array(
+        return ops.stack(
             (
                 self.ROC[0] * ops.sin(position_s[0] / self.ROC[0]),
                 self.ROC[1] * ops.sin(position_s[1] / self.ROC[1]),
@@ -82,7 +80,8 @@ class ProbeGeometry:
                     self.ROC[0] * ops.cos(position_s[0] / self.ROC[0]) - self.ROC[0],
                     self.ROC[1] * ops.cos(position_s[1] / self.ROC[1]) - self.ROC[1],
                 ),
-            )
+            ),
+            axis="xyz",
         )
 
     def get_rx_aperture_borders(self):

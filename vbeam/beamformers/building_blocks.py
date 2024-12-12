@@ -1,3 +1,5 @@
+# TODO: Redo this whole thing with new spekk 2.0.0
+
 import operator
 from typing import Sequence, Set, Union
 

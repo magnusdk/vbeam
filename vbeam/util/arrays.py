@@ -1,8 +1,9 @@
 from typing import Optional, Sequence
 
-from fastmath import ArrayOrNumber, ops
+from spekk import ops
 
-def grid(*axes: ArrayOrNumber, shape: Optional[Sequence[int]] = None) -> ArrayOrNumber:
+
+def grid(*axes: ops.array, shape: Optional[Sequence[int]] = None) -> ops.array:
     """Return an array of each point position, organized in a grid.
 
     >>> x, z = np.array([1,2,3]), np.array([1,2,3,4])
@@ -21,7 +22,7 @@ def grid(*axes: ArrayOrNumber, shape: Optional[Sequence[int]] = None) -> ArrayOr
     >>> (points_3d[:, :, [0, 2]] == points).all()
     True
     """
-    points = ops.stack(ops.meshgrid(*axes, indexing="ij"), axis=-1)
+    points = ops.stack(ops.meshgrid(*axes, indexing="ij"), axis="xyz")
     if shape:
-        points = points.reshape(shape)
+        points = ops.reshape(points, shape)
     return points

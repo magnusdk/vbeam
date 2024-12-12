@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.apodization.window import Window
 from vbeam.core import Apodization, ProbeGeometry, WaveData
@@ -9,10 +9,10 @@ from vbeam.util.geometry.v2 import Line, distance
 
 
 def rtb_apodization(
-    point: Array,
-    array_left: Array,
-    array_right: Array,
-    focus_point: Array,
+    point: ops.array,
+    array_left: ops.array,
+    array_right: ops.array,
+    focus_point: ops.array,
     minimum_aperture: float,
     maximum_aperture: Optional[float] = None,
     window: Optional[Window] = None,
@@ -83,14 +83,14 @@ class RTBApodization(Apodization):
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     maximum_aperture: Optional[float] = None
     window: Optional[Window] = None
-    replacement_sender: Optional[Array] = None
+    replacement_sender: Optional[ops.array] = None
 
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        receiver: Array,
-        point_position: Array,
+        sender: ops.array,
+        receiver: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         if self.replacement_sender is None:
@@ -114,14 +114,14 @@ class RTBApodization(Apodization):
 class SteppingApertureRTBApodization(Apodization):
     minimum_aperture: float = 0.001  # TODO: Calculate this based on F# and wavelength
     window: Optional[Window] = None
-    replacement_sender: Array = None
+    replacement_sender: ops.array = None
 
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        receiver: Array,
-        point_position: Array,
+        sender: ops.array,
+        receiver: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         if self.replacement_sender is None:
@@ -155,14 +155,14 @@ def get_bounds(
         use_parent, sender.parent_element.theta, sender.theta
     )
     sender_normal = ops.array(
-        [ops.sin(sender_element_theta), 0.0, ops.cos(sender_element_theta)]
+        [ops.sin(sender_element_theta), 0.0, ops.cos(sender_element_theta)], ["xyz"]
     )
     array_left = (
         sender_element_position
-        + ops.cross(ops.array([0, -1, 0]), sender_normal) * array_width / 2
+        + ops.cross(ops.array([0, -1, 0], ["xyz"]), sender_normal) * array_width / 2
     )
     array_right = (
         sender_element_position
-        + ops.cross(ops.array([0, 1, 0]), sender_normal) * array_width / 2
+        + ops.cross(ops.array([0, 1, 0], ["xyz"]), sender_normal) * array_width / 2
     )
     return [array_left, array_right]

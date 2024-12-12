@@ -1,14 +1,13 @@
+# TODO: Redo with spekk 2.0.0
+
 from typing import Optional, Sequence, Tuple
 
-from fastmath import Array, field, ops
-from spekk import Spec
+from spekk import ops, field
 
 from vbeam.apodization.util import get_apodization_values
 from vbeam.core import Apodization, ProbeGeometry, WaveData
-from vbeam.fastmath import backend_manager
 from vbeam.scan.advanced.base import ExtraDimsScanMixin, WrappedScan
 from vbeam.scan.base import Scan
-from vbeam.util.transformations import *
 from vbeam.util.vmap import vmap_all_except
 
 

@@ -1,4 +1,4 @@
-from fastmath import Array, Module, ops
+from spekk import Module, ops
 
 
 class Line(Module):
@@ -13,7 +13,7 @@ class Line(Module):
     c: float
 
     @staticmethod
-    def passing_through(point1: Array, point2: Array) -> "Line":
+    def passing_through(point1: ops.array, point2: ops.array) -> "Line":
         "Construct a line that passes through both point1 and point2."
         x1, y1, z1 = point1
         x2, y2, z2 = point2
@@ -23,25 +23,33 @@ class Line(Module):
         return Line(a, b, c)
 
     @staticmethod
-    def from_anchor_and_angle(anchor: Array, angle: float) -> "Line":
+    def from_anchor_and_angle(anchor: ops.array, angle: float) -> "Line":
         "Construct a line that passes through the anchor and has the given angle."
         return Line.passing_through(
-            anchor, anchor + ops.stack([ops.cos(angle), ops.zeros(shape=angle.shape, dtype=angle.dtype), ops.sin(angle)])
+            anchor,
+            anchor
+            + ops.stack(
+                [
+                    ops.cos(angle),
+                    ops.zeros(shape=angle.shape, dtype=angle.dtype),
+                    ops.sin(angle),
+                ]
+            ),
         )
 
-    def intersection(l1: "Line", l2: "Line") -> Array:
+    def intersection(l1: "Line", l2: "Line") -> ops.array:
         "Return the point where the lines l1 and l2 intersect."
         x = (l1.b * l2.c - l2.b * l1.c) / (l1.a * l2.b - l2.a * l1.b)
         y = ops.zeros(shape=x.shape, dtype=x.dtype)
         z = (l2.a * l1.c - l1.a * l2.c) / (l1.a * l2.b - l2.a * l1.b)
-        return ops.stack([x, y, z], axis=-1) 
+        return ops.stack([x, y, z], axis=-1)
 
     @property
     def angle(self):
         "The angle of the line."
         return ops.arctan2(self.b, self.a)
 
-    def signed_distance(self, point: Array) -> float:
+    def signed_distance(self, point: ops.array) -> float:
         """Return the signed distance between the point and the nearest point on the
         line.
 

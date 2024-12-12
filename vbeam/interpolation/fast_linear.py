@@ -1,11 +1,11 @@
 from typing import Tuple
 
-from fastmath import Array, ops
+from spekk import ops
 
 from vbeam.core import InterpolationSpace1D
 from vbeam.util import ensure_positive_index
 
-from fastmath import utils
+
 class FastInterpLinspace(InterpolationSpace1D):
     """Interpolation for linspace.
 
@@ -17,14 +17,14 @@ class FastInterpLinspace(InterpolationSpace1D):
     n: int
 
     @staticmethod
-    def from_array(arr: Array) -> "FastInterpLinspace":
+    def from_array(arr: ops.array) -> "FastInterpLinspace":
         # Assumes that arr was created as a linspace.
         return FastInterpLinspace(arr[0], arr[1] - arr[0], len(arr))
 
-    def to_array(self) -> Array:
+    def to_array(self) -> ops.array:
         return ops.linspace(self.min, self.min + self.d * self.n, self.n)
 
-    def interp1d_indices(self, x: Array) -> Tuple[float, int, int, float, float]:
+    def interp1d_indices(self, x: ops.array) -> Tuple[float, int, int, float, float]:
         """Return a tuple of 5 elements with information about how to interpolate the
         array.
 
@@ -52,33 +52,40 @@ class FastInterpLinspace(InterpolationSpace1D):
         bounds_flag = 0
         bounds_flag = ops.where(pseudo_index < 0, -1, bounds_flag)
         bounds_flag = ops.where(pseudo_index > (self.n - 1), 1, bounds_flag)
-        clipped_i1 = ops.int32(ops.clip(i_floor, 0, self.n - 1))
-        clipped_i2 = ops.int32(ops.clip(i_floor + 1, 0, self.n - 1))
+        clipped_i1 = ops.int32(ops.clip(i_floor, 0.0, self.n - 1.0))
+        clipped_i2 = ops.int32(ops.clip(i_floor + 1.0, 0.0, self.n - 1.0))
         p1, p2 = (1 - di), di
         return bounds_flag, clipped_i1, clipped_i2, p1, p2
 
     def interp1d(
         self,
-        x: Array,
-        fp: Array,
+        x: ops.array,
+        fp: ops.array,
         left: int = 0,
         right: int = 0,
         axis: int = 0,
-    ) -> Array:
+    ) -> ops.array:
 
         bounds_flag, clipped_i1, clipped_i2, p1, p2 = self.interp1d_indices(x)
-        bounds_flag = ops.expand_dims(bounds_flag, tuple(range(1, fp.ndim)))
-        p1 = ops.expand_dims(p1, tuple(range(1, fp.ndim)))
-        p2 = ops.expand_dims(p2, tuple(range(1, fp.ndim)))
-        #v = fp[clipped_i1] * p1 + fp[clipped_i2] * p2
-        v = utils.getitem_along_axis(fp, axis, clipped_i1) * p1+utils.getitem_along_axis(fp, axis, clipped_i2) * p2
+        # bounds_flag = ops.expand_dims(bounds_flag, tuple(range(1, fp.ndim)))
+        # p1 = ops.expand_dims(p1, tuple(range(1, fp.ndim)))
+        # p2 = ops.expand_dims(p2, tuple(range(1, fp.ndim)))
+        # v = fp[clipped_i1] * p1 + fp[clipped_i2] * p2
+        # v = (
+        #    utils.getitem_along_axis(fp, axis, clipped_i1) * p1
+        #    + utils.getitem_along_axis(fp, axis, clipped_i2) * p2
+        # )
+        v = (
+            ops.take_along_dim(fp, clipped_i1, axis) * p1
+            + ops.take_along_dim(fp, clipped_i2, axis) * p2
+        )
         v = ops.where(bounds_flag == -1, left, v)
         v = ops.where(bounds_flag == 1, right, v)
         return v
 
     # InterpolationSpace1D interface
-    def __call__(self, x, fp):
-        return self.interp1d(x, fp)
+    def __call__(self, x, fp, axis):
+        return self.interp1d(x, fp, axis=axis)
 
     @property
     def start(self) -> float:
@@ -90,17 +97,17 @@ class FastInterpLinspace(InterpolationSpace1D):
 
     @staticmethod
     def interp2d(
-        x: Array,
-        y: Array,
+        x: ops.array,
+        y: ops.array,
         xp: "FastInterpLinspace",
         yp: "FastInterpLinspace",
-        z: Array,
+        z: ops.array,
         azimuth_axis: int = 0,
         depth_axis: int = 1,
         *,  # Remaining args must be passed by name (to avoid confusion)
         edge_handling: str = "Value",
         default_value: float = 0.0,
-    ) -> Array:
+    ) -> ops.array:
         # Ensure that the axes are positive numbers
         azimuth_axis = ensure_positive_index(z.ndim, azimuth_axis)
         depth_axis = ensure_positive_index(z.ndim, depth_axis)

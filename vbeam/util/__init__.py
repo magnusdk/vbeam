@@ -1,6 +1,6 @@
 from typing import Sequence, Union
 
-from fastmath import Array, ops
+from spekk import ops
 
 
 def ensure_positive_index(n: int, index: Union[int, Sequence[int]]) -> int:
@@ -13,17 +13,17 @@ def ensure_positive_index(n: int, index: Union[int, Sequence[int]]) -> int:
         return [ensure_positive_index(n, i) for i in index]
 
 
-def broadcast_to_axis(a: Array, axis: int, ndims: int) -> Array:
+def broadcast_to_axis(a: ops.array, axis: int, ndims: int) -> ops.array:
     assert a.ndim <= 1
     shape = [1] * ndims
     shape[axis] = -1
     return a.reshape(shape)
 
 
-def ensure_2d_point(point: Array) -> Array:
-    if point.shape[-1] == 2:
+def ensure_2d_point(point: ops.array) -> ops.array:
+    if point.dim_sizes["xyz"] == 2:
         return point
-    elif point.shape[-1] == 3:
-        return point[..., ops.array([0, 2])]  # Return x- and z-coordinates
+    elif point.dim_sizes["xyz"] == 3:
+        return ops.take(point, ops.array([0, 2]), axis="xyz")
     else:
         raise ValueError(f"Expected 2D or 3D point, got shape={point.shape}.")

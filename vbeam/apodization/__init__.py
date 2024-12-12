@@ -7,7 +7,7 @@ from vbeam.apodization.plane_wave import (
 )
 from vbeam.apodization.rtb import RTBApodization
 from vbeam.apodization.tx_rx_apodization import TxRxApodization
-from vbeam.apodization.util import get_apodization_values
+#from vbeam.apodization.util import get_apodization_values
 from vbeam.apodization.window import (
     Bartlett,
     Hamming,
@@ -30,7 +30,7 @@ __all__ = [
     "PlaneWaveTransmitApodization",
     "RTBApodization",
     "TxRxApodization",
-    "get_apodization_values",
+    #"get_apodization_values",
     "Bartlett",
     "Hamming",
     "Hanning",

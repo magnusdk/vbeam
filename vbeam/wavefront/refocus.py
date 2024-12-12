@@ -1,4 +1,4 @@
-from fastmath import Array
+from spekk import ops
 
 from vbeam.core import ProbeGeometry, TransmittedWavefront, WaveData
 from vbeam.util.geometry.v2 import distance
@@ -15,14 +15,14 @@ class REFoCUSWavefront(TransmittedWavefront):
     """
 
     base_wavefront: TransmittedWavefront
-    base_sender: Array
+    base_sender: ops.array
     compensation_scalar: float = 1.0
 
     def __call__(
         self,
         probe: ProbeGeometry,
-        sender: Array,
-        point_position: Array,
+        sender: ops.array,
+        point_position: ops.array,
         wave_data: WaveData,
     ) -> float:
         """Return the distance that the wave travels, starting from time 0, to when it

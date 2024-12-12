@@ -1,10 +1,9 @@
+# TODO: Remove old spekk stuff
+
 from functools import partial
 from typing import Callable, Optional, Sequence, Union
 
-from fastmath import Array, ops
-from spekk import Spec
-
-from vbeam.util.transformations import *
+from spekk import ops
 
 
 def vmap_all_except(f: Union[Callable, int], axis: Optional[int] = None):
