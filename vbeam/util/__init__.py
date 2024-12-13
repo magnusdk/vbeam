@@ -13,10 +13,10 @@ def ensure_positive_index(n: int, index: Union[int, Sequence[int]]) -> int:
         return [ensure_positive_index(n, i) for i in index]
 
 
-def ensure_2d_point(point: np.ndarray) -> np.ndarray:
+def ensure_2d_point(point: np.ndarray, horizontal_dimension_idx: int = 0) -> np.ndarray:
     if point.shape[-1] == 2:
         return point
     elif point.shape[-1] == 3:
-        return point[..., np.array([0, 2])]  # Return x- and z-coordinates
+        return point[..., np.array([horizontal_dimension_idx, -1])]
     else:
         raise ValueError(f"Expected 2D or 3D point, got shape={point.shape}.")
