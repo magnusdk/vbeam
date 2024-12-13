@@ -94,8 +94,11 @@ class NumpyBackend(Backend):
     def maximum(self, a, b):
         return np.maximum(a, b)
 
-    def sum(self, a, axis=None,keepdims=False):
-        return np.sum(a, axis=axis,keepdims=keepdims)
+    def all(self, a, axis=None, keepdims=False):
+        return np.all(a, axis=axis, keepdims=keepdims)
+
+    def sum(self, a, axis=None, keepdims=False):
+        return np.sum(a, axis=axis, keepdims=keepdims)
 
     def prod(self, a, axis=None):
         return np.prod(a, axis=axis)

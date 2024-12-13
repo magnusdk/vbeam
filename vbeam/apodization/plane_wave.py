@@ -1,18 +1,42 @@
 from typing import Optional, Tuple, Union
 
+from vbeam.apodization.window import Rectangular, Window
 from vbeam.core import Apodization, ElementGeometry, WaveData
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
-from vbeam.util import ensure_2d_point
-from vbeam.util.geometry.v2 import Line, distance
-
-from .window import Window
+from vbeam.util.coordinate_systems import az_el_to_cartesian
+from vbeam.util.geometry.v2 import distance
 
 
 @traceable_dataclass(("array_bounds", "window"))
 class PlaneWaveTransmitApodization(Apodization):
-    array_bounds: Tuple[np.ndarray, np.ndarray]
+    # array_bounds relative to the sender
+    array_bounds: Union[
+        Tuple[np.ndarray, np.ndarray],  # 1D array
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],  # 2D array
+    ]
     window: Optional[Window] = None
+
+    def __post_init__(self):
+        """Validate the array bounds."""
+        if len(self.array_bounds) not in [2, 4]:
+            raise ValueError(
+                "Expected either left/right or left/right/front/back array bounds"
+            )
+        if not np.all(np.stack(self.array_bounds)[..., -1] == 0):
+            raise NotImplementedError(
+                "Currently require all array-bounds to have 0-depth"
+            )
+        if not np.all(np.abs(np.mean(np.array(self.array_bounds[:2]), axis=0)) < 1e-6):
+            raise NotImplementedError(
+                "Currently require left/right array-bounds to be centered"
+            )
+        if (len(self.array_bounds) == 4) and not np.all(
+            np.abs(np.mean(np.array(self.array_bounds[2:]), axis=0)) < 1e-6
+        ):
+            raise NotImplementedError(
+                "Currently require front/back array-bounds to be centered"
+            )
 
     def __call__(
         self,
@@ -21,48 +45,27 @@ class PlaneWaveTransmitApodization(Apodization):
         receiver: ElementGeometry,
         wave_data: WaveData,
     ) -> float:
-        # Set up the geometry. There is one line originating from each side of the
-        # array, going in the direction of the transmitted wave. If the point is
-        # outside of those lines, then it is weighted by 0.
-        array_left, array_right = self.array_bounds
+        # Normalized vector pointing in the direction of the transmitted wave
+        direction = az_el_to_cartesian(
+            azimuth=wave_data.azimuth, elevation=wave_data.elevation
+        )
 
-        # We are only supporting 2D points (for now).
-        array_left = ensure_2d_point(array_left)
-        array_right = ensure_2d_point(array_right)
-        point_position = ensure_2d_point(point_position)
+        # Project the point onto the xy-plane with origin at the beam at depth z
+        point_position = point_position - sender.position
+        point_x = point_position[..., 0]
+        point_y = point_position[..., 1]
+        point_z = point_position[..., 2]
+        x_projected = point_x - direction[0] * point_z / direction[2]
+        y_projected = point_y - direction[1] * point_z / direction[2]
 
-        # FIXME: There's something funky going on with the geometry code here 🤔 Angles
-        # need to be inverted to make it work.
-        azimuth = np.pi / 2 - wave_data.azimuth  # This is a hack to make it work.
-        # Construct the lines going from either side of the array
-        line_left = Line.with_angle(array_left, azimuth)
-        line_right = Line.with_angle(array_right, azimuth)
-
-        # The point is within the line if it has negative (to the left) signed distance
-        # of one of the lines and positive (to the right) signed distance of the other.
-        # Multiplying the signed distances gives a negative number if that's the case.
-        # apodization_value is True if the point is within the lines, False otherwise.
-        apodization_value = (
-            line_left.signed_distance(point_position)
-            * line_right.signed_distance(point_position)
-        ) < 0
-
-        if self.window is not None:
-            # Apply the window function. It gradually goes to 0 as the point gets
-            # closer to the edges of the apodization values.
-            point_perp = Line.with_angle(point_position, azimuth + np.pi / 2)
-            _, A = line_left.intersect(point_perp)
-            _, B = line_right.intersect(point_perp)
-            dist_A = distance(A, point_position)
-            dist_B = distance(B, point_position)
-            total_distance = dist_A + dist_B
-            # p is 0 when the point is exactly between the two lines, and 0.5 when it is
-            # on top of one of the lines.
-            p = 0.5 - np.min(np.array([dist_A, dist_B])) / total_distance
-            apodization_value *= self.window(p)
-
-        # Ensure that it the returned value is a float.
-        return apodization_value * 1.0
+        # Apply the window over the projected aperture and evaluate point
+        window = self.window if self.window is not None else Rectangular()
+        array_width = distance(self.array_bounds[1] - self.array_bounds[0])
+        weight = window(np.abs(x_projected / array_width))
+        if len(self.array_bounds) == 4:  # If we use a 2D probe, also apply in elevation
+            array_height = distance(self.array_bounds[3] - self.array_bounds[2])
+            weight *= window(np.abs(y_projected / array_height))
+        return weight
 
 
 @traceable_dataclass(("window", "f_number"))

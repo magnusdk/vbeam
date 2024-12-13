@@ -124,6 +124,9 @@ class TensorflowBackend(Backend):
     def maximum(self, a, b):
         return tnp.maximum(a, b)
 
+    def all(self, a, axis=None):
+        return tnp.all(a, axis=axis)
+
     def sum(self, a, axis=None):
         return tnp.sum(a, axis=axis)
 
