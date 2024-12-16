@@ -93,8 +93,11 @@ class JaxBackend(Backend):
     def maximum(self, a, b):
         return jnp.maximum(a, b)
 
-    def sum(self, a, axis=None,keepdims=False):
-        return jnp.sum(a, axis=axis,keepdims=keepdims)
+    def all(self, a, axis=None, keepdims=False):
+        return jnp.all(a, axis=axis, keepdims=keepdims)
+
+    def sum(self, a, axis=None, keepdims=False):
+        return jnp.sum(a, axis=axis, keepdims=keepdims)
 
     def prod(self, a, axis=None):
         return jnp.prod(a, axis=axis)

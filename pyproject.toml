@@ -16,10 +16,20 @@ description = "vbeam: a fast and differentiable beamformer"
 name = "vbeam"
 readme = "README.md"
 
-requires-python = ">=3.8"
-version = "1.0.8"
+requires-python = ">=3.9"
+version = "1.0.9"
 
 [project.urls]
 "Homepage" = "https://github.com/magnusdk/vbeam/"
 "Documentation" = "https://vbeam.readthedocs.io/en/latest/"
 "Bug Tracker" = "https://github.com/magnusdk/vbeam/issues"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "hypothesis",
+]
+backends = [
+    "jax",
+    "tensorflow"
+]

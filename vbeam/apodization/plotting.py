@@ -43,16 +43,16 @@ def plot_apodization(
 
     # Calculate apodization values
     vals = get_apodization_values(
-        apodization,
-        sender,
-        point_position,
-        receiver,
-        wave_data,
-        spec,
+        apodization=apodization,
+        sender=sender,
+        point_position=point_position,
+        receiver=receiver,
+        wave_data=wave_data,
+        spec=spec,
         # We want to keep the dimensions of point_position
-        spec["point_position"].tree,
-        average_overlap,
-        jit,
+        dimensions=spec["point_position"].tree,
+        average=average_overlap,
+        jit=jit,
     )
     if postprocess is not None:
         vals = postprocess(vals)

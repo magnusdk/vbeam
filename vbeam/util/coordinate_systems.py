@@ -58,7 +58,33 @@ def applied_in_cartesian_coordinates(f):
     >>> move_x(polar_point, 1)
     array([1.57079633, 0.        , 2.        ])
     """
+
     def inner(p, *args, **kwargs):
         return as_polar(f(as_cartesian(p), *args, **kwargs))
 
     return inner
+
+
+def az_el_to_cartesian(
+    azimuth: float, elevation: float, radius: float = 1.0
+) -> np.ndarray:
+    """Convert azimuth and elevation to cartesian coordinates.
+
+    Uses ultrasound convention for azimuth and elevation.
+
+    Args:
+        azimuth: Azimuth angle in radians.
+        elevation: Elevation angle in radians.
+        radius: Radius of the point in cartesian coordinates.
+
+    Returns:
+        Point in cartesian coordinates.
+    """
+    direction = np.array(
+        [
+            np.sin(azimuth) * np.cos(elevation),
+            np.sin(elevation),
+            np.cos(azimuth) * np.cos(elevation),
+        ]
+    )
+    return direction * radius
