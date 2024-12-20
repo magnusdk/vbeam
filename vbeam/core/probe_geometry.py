@@ -1,4 +1,4 @@
-"""A datastructure for representing a transducer probe excluding 
+"""A datastructure for representing a transducer probe excluding
 the position, orientation, etc.
 """
 
@@ -50,10 +50,10 @@ class ProbeGeometry(Module):
         return vector / distance(vector)
 
     def get_theta(self, position):
-        return ops.atan2(position[0], self.ROC[0] + position[2])
+        return ops.atan2(position[0], position[2] + self.ROC[0])
 
     def get_phi(self, position):
-        return ops.atan2(position[1], self.ROC[1] + position[2])
+        return ops.atan2(position[1], position[2] + self.ROC[1])
 
     def aperture_distance(self, position1, position2):
         pos1_s = self.cart2surface(position=position1)
@@ -124,23 +124,23 @@ class ProbeGeometry(Module):
 
     def set_rx_aperture_length(self, min_x, max_x, min_y, max_y):
         width_s = (
-            ops.arcsin(max_x / self.ROC[0]) * self.ROC[0]
-            - ops.arcsin(min_x / self.ROC[0]) * self.ROC[0]
+            ops.asin(max_x / self.ROC[0]) * self.ROC[0]
+            - ops.asin(min_x / self.ROC[0]) * self.ROC[0]
         )
         height_s = (
-            ops.arcsin(max_y / self.ROC[1]) * self.ROC[1]
-            - ops.arcsin(min_y / self.ROC[1]) * self.ROC[1]
+            ops.asin(max_y / self.ROC[1]) * self.ROC[1]
+            - ops.asin(min_y / self.ROC[1]) * self.ROC[1]
         )
         self.rx_aperture_length_s = (width_s, height_s)
 
     def set_tx_aperture_length(self, min_x, max_x, min_y, max_y):
         width_s = (
-            ops.arcsin(max_x / self.ROC[0]) * self.ROC[0]
-            - ops.arcsin(min_x / self.ROC[0]) * self.ROC[0]
+            ops.asin(max_x / self.ROC[0]) * self.ROC[0]
+            - ops.asin(min_x / self.ROC[0]) * self.ROC[0]
         )
         height_s = (
-            ops.arcsin(max_y / self.ROC[1]) * self.ROC[1]
-            - ops.arcsin(min_y / self.ROC[1]) * self.ROC[1]
+            ops.asin(max_y / self.ROC[1]) * self.ROC[1]
+            - ops.asin(min_y / self.ROC[1]) * self.ROC[1]
         )
         self.tx_aperture_length_s = (width_s, height_s)
 

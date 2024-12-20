@@ -138,7 +138,7 @@ def scan_convert(
 
     x, z = points[..., 0], points[..., 1]  # (Ignore y; scan_convert only supports 2D!)
     # and transform each point to polar coordinates.
-    angles = ops.arctan2(x, z)
+    angles = ops.atan2(x, z)
     radii = ops.sqrt(x**2 + z**2)
 
     # Interpolate the imaged points, sampled at the transformed points.

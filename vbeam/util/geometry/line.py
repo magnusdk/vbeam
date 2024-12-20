@@ -31,25 +31,26 @@ class Line(Module):
             + ops.stack(
                 [
                     ops.cos(angle),
-                    ops.zeros(shape=angle.shape, dtype=angle.dtype),
+                    ops.zeros(shape=angle.shape, dims=angle.dims, dtype=angle.dtype),
                     ops.sin(angle),
-                ]
+                ],
+                axis="xyz",
             ),
         )
 
     def intersection(l1: "Line", l2: "Line") -> ops.array:
         "Return the point where the lines l1 and l2 intersect."
         x = (l1.b * l2.c - l2.b * l1.c) / (l1.a * l2.b - l2.a * l1.b)
-        y = ops.zeros(shape=x.shape, dtype=x.dtype)
+        y = ops.zeros_like(x)
         z = (l2.a * l1.c - l1.a * l2.c) / (l1.a * l2.b - l2.a * l1.b)
-        return ops.stack([x, y, z], axis=-1)
+        return ops.stack([x, y, z], axis="xyz")
 
     @property
     def angle(self):
         "The angle of the line."
-        return ops.arctan2(self.b, self.a)
+        return ops.atan2(self.b, self.a)
 
-    def signed_distance(self, point: ops.array) -> float:
+    def signed_distance(self, point: ops.array, axis="xyz") -> float:
         """Return the signed distance between the point and the nearest point on the
         line.
 
@@ -67,4 +68,8 @@ class Line(Module):
         -1.0
         """
         norm = ops.sqrt(self.a**2 + self.b**2)
-        return (self.a * point[..., 0] + self.b * point[..., 2] + self.c) / norm
+        return (
+            self.a * ops.take(point, 0, axis=axis)
+            + self.b * ops.take(point, 2, axis=axis)
+            + self.c
+        ) / norm

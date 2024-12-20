@@ -6,6 +6,7 @@ from typing import Callable, Literal, Optional, Tuple, Union
 
 from spekk import Module, ops
 
+from vbeam.core.kernels import PointsGetter
 from vbeam.util import ensure_positive_index
 
 
@@ -14,7 +15,7 @@ class CoordinateSystem(Enum):
     POLAR = "polar"
 
 
-class Scan(Module):
+class Scan(Module, PointsGetter):
     @abstractmethod
     def get_points(self, flatten: bool = True) -> ops.array:
         """Return the points defined by the scan, flattened to a (N, 3) array by

@@ -16,14 +16,17 @@ from spekk import ops
 def intersect_line_line(
     line1: "Line", line2: "Line"
 ) -> Tuple[int, Tuple[ops.array, ops.array]]:
-    num_intersections = ops.where(
-        ops.cross(line1.direction, line2.direction) == 0, 0, 1
+    direction_det = ops.linalg.det(
+        ops.stack([line1.direction, line2.direction], axis="xyz2"),
+        axes=["xyz", "xyz2"],
     )
+    anchor_det = ops.linalg.det(
+        ops.stack([line2.anchor - line1.anchor, line2.direction], axis="xyz2"),
+        axes=["xyz", "xyz2"],
+    )
+    num_intersections = ops.where(direction_det == 0, 0, 1)
     return num_intersections, (
-        line1.anchor
-        + ops.cross(line2.anchor - line1.anchor, line2.direction)
-        / ops.cross(line1.direction, line2.direction)[..., None]
-        * line1.direction
+        line1.anchor + anchor_det / direction_det * line1.direction
     )
 
 
@@ -54,7 +57,7 @@ def intersect_circle_line(
 # Some helper functions
 
 
-def distance(point1: ops.array, point2: Optional[ops.array] = None, axis: int = -1):
+def distance(point1: ops.array, point2: Optional[ops.array] = None, axis: int = "xyz"):
     diff = point1 if point2 is None else point2 - point1
     return ops.sqrt(ops.sum(diff**2, axis=axis))
 
@@ -129,7 +132,8 @@ class Line(Curve):
     def signed_distance(self, point: ops.array) -> float:
         vector_to_point = point - self.anchor
         perpendicular_vector = ops.array([-1, 1], ["xyz"]) * ops.flip(
-            self.direction, axis="xyz"
+            self.direction,
+            axis="xyz",
         )
         signed_distance = ops.sum(vector_to_point * perpendicular_vector, axis="xyz")
         return signed_distance
@@ -150,11 +154,12 @@ class Line(Curve):
 
     @property
     def angle(self) -> float:
-        return ops.arctan2(self.direction[1], self.direction[0])
+        return ops.atan2(self.direction[1], self.direction[0])
 
     @property
     def normal(self) -> ops.array:
-        return ops.array([-self.direction[1], self.direction[0]])
+        direction = ops.moveaxis(self.direction, "xyz", 0)
+        return ops.stack([-direction[1], direction[0]], axis="xyz")
 
 
 class Circle(Curve):
@@ -223,7 +228,7 @@ class Ellipse(Curve):
             raise NotImplementedError
 
     def _circle_rotation(self) -> float:
-        return ops.arctan2(self.f2[1] - self.f1[1], self.f2[0] - self.f1[0])
+        return ops.atan2(self.f2[1] - self.f1[1], self.f2[0] - self.f1[0])
 
     def _circle_scale(self) -> ops.array:
         a = self.d / 2

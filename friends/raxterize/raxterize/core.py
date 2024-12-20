@@ -42,7 +42,7 @@ class LineNB(Module):
     @property
     def angle(self):
         "The angle of the line."
-        return ops.arctan2(self.b, self.a)
+        return ops.atan2(self.b, self.a)
 
     def signed_distance(self, point: Array) -> float:
         """Return the signed distance between the point and the nearest point on the
