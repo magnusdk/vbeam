@@ -11,6 +11,7 @@ from vbeam.util.geometry.v2 import distance
 @traceable_dataclass(("array_bounds", "window"))
 class PlaneWaveTransmitApodization(Apodization):
     # array_bounds relative to the sender
+    # Should be centered at the origin
     array_bounds: Union[
         Tuple[np.ndarray, np.ndarray],  # 1D array
         Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],  # 2D array
@@ -22,20 +23,6 @@ class PlaneWaveTransmitApodization(Apodization):
         if len(self.array_bounds) not in [2, 4]:
             raise ValueError(
                 "Expected either left/right or left/right/front/back array bounds"
-            )
-        if not np.all(np.stack(self.array_bounds)[..., -1] == 0):
-            raise NotImplementedError(
-                "Currently require all array-bounds to have 0-depth"
-            )
-        if not np.all(np.abs(np.mean(np.array(self.array_bounds[:2]), axis=0)) < 1e-6):
-            raise NotImplementedError(
-                "Currently require left/right array-bounds to be centered"
-            )
-        if (len(self.array_bounds) == 4) and not np.all(
-            np.abs(np.mean(np.array(self.array_bounds[2:]), axis=0)) < 1e-6
-        ):
-            raise NotImplementedError(
-                "Currently require front/back array-bounds to be centered"
             )
 
     def __call__(
