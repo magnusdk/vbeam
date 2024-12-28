@@ -1,7 +1,7 @@
-"""This module implements some popular window functions (also called apodization 
+"""This module implements some popular window functions (also called apodization
 functions or tapering functions).
 
-See the notebook ``docs/tutorials/apodization/windows.ipynb`` for a visualization of 
+See the notebook ``docs/tutorials/apodization/windows.ipynb`` for a visualization of
 the various implemented windows."""
 
 from abc import abstractmethod
@@ -35,7 +35,7 @@ class NoWindow(Window):
 
 
 def _within_valid(ratio: float) -> bool:
-    return ops.logical_and(0 <= ratio, ratio <= 0.5)
+    return ops.logical_and(-0.5 <= ratio, ratio <= 0.5)
 
 
 class Rectangular(Window):
@@ -60,11 +60,12 @@ class Tukey(Window):
     roll: float
 
     def __call__(self, ratio: float) -> float:
-        p1 = ratio <= (1 / 2 * (1 - self.roll))
-        p2 = ratio > (1 / 2 * (1 - self.roll))
-        p3 = (ratio < (1 / 2)) * 0.5
-        p4 = 1 + ops.cos(2 * ops.pi / self.roll * (ratio - self.roll / 2 - 1 / 2))
-        return _within_valid(ratio) * (p1 + p2 * p3 * p4)
+        ratio = ops.abs(ratio)
+        p1 = ratio <= (0.5 * (1 - self.roll))
+        p2 = ratio > (0.5 * (1 - self.roll))
+        p3 = (ratio < 0.5) * 0.5
+        p4 = 1 + ops.cos(2 * ops.pi / self.roll * (ratio - self.roll / 2 - 0.5))
+        return p1 + p2 * p3 * p4
 
 
 def Tukey25() -> Tukey:
@@ -85,13 +86,5 @@ def Tukey80() -> Tukey:
 
 class Bartlett(Window):
     def __call__(self, ratio: float) -> float:
+        ratio = ops.abs(ratio)
         return _within_valid(ratio) * (0.5 - ratio) * 2
-
-
-if __name__ == "__main__":
-    import doctest
-
-    from vbeam.fastmath import backend_manager
-
-    with backend_manager.using_backend("numpy"):
-        doctest.testmod()
