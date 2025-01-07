@@ -8,9 +8,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 sys.path.append(os.path.join(os.path.dirname(__file__), "vbeam_test_helpers"))
 
 import pytest
+from spekk import ops
 
-from vbeam.fastmath import backend_manager
-from vbeam.fastmath import numpy as global_np_backend
+ops.backend.set_backend("numpy")
 
 # backends = ["numpy", "jax", "tensorflow"]
 backends = ["numpy", "jax"]
@@ -27,8 +27,8 @@ def np(request):
     tests/conftest.py (this file) is automatically imported by pytest when running tests
     so this function will be available to all tests automatically.
     """
-    with backend_manager.using_backend(request.param):
-        yield global_np_backend
+    with ops.backend.temporary_backend(request.param):
+        yield ops
 
 
 @pytest.fixture(params=("jit", "no_jit"))
@@ -36,11 +36,11 @@ def jit_able(request, np):
     def _jit(f):
         if request.param == "no_jit":
             return f
-        elif backend_manager._active_backend == "jax":
+        elif ops.backend.backend_name == "jax":
             import jax
 
             return jax.jit(f)
-        elif backend_manager._active_backend == "tensorflow":
+        elif ops.backend.backend_name == "tensorflow":
             import tensorflow as tf
 
             return tf.function(f, jit_compile=True)
