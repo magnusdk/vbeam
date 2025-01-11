@@ -10,5 +10,6 @@ class ProbeElement(Module):
 
 
 class Probe(Module):
+    origin: ops.array
     active_elements: ProbeElement
     active_aperture: Aperture
