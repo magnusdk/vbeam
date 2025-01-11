@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 from spekk import Module, ops
 
-from vbeam.geometry.rotation import Direction, Rotation
+from vbeam.geometry.orientation import Direction, Orientation
 
 
 class Plane(Module):
@@ -11,9 +11,9 @@ class Plane(Module):
     Attributes:
         origin (ops.array): The center of the plane. In local plane coordinates, the
             origin is at (0, 0).
-        orientation (Rotation): The 3D orientation of the plane, including azimuth,
-            elevation, and roll. See :class:`vbeam.geometry.rotation.Rotation` for more
-            information.
+        orientation (Orientation): The 3D orientation of the plane, including azimuth,
+            elevation, and roll. See :class:`vbeam.geometry.orientation.Orientation`
+            for more information.
 
     A plane is oriented in the order of:
     - Azimuth: Rotation around the y-axis.
@@ -22,7 +22,7 @@ class Plane(Module):
     """
 
     origin: ops.array
-    orientation: Rotation
+    orientation: Orientation
 
     @property
     def normal(self) -> Direction:
@@ -50,7 +50,7 @@ class Plane(Module):
         the plane."""
         distance = self.signed_distance(point, along=along)
         if along is None:
-            along = self.orientation
+            along = self.normal
         return point - along.normalized_vector * distance
 
     def to_plane_coordinates(
@@ -62,7 +62,7 @@ class Plane(Module):
     ) -> Tuple[float, float]:
         """Project the `point` onto the plane, optionally `along` a direction,
         returning a tuple of x and y, representing the 2D point in the coordinates of
-        the plane.
+        the plane. If `along` is not given, return the closest 2D point on the plane.
 
         Use `is_already_projected=True` if the point is already projected onto the
         plane."""
@@ -91,4 +91,4 @@ class Plane(Module):
         roll is left unchanged."""
         if roll is None:
             roll = self.orientation.roll
-        return Plane(self.origin, Rotation.from_direction_and_roll(direction, roll))
+        return Plane(self.origin, Orientation.from_direction_and_roll(direction, roll))

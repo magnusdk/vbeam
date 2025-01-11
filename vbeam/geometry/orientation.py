@@ -41,8 +41,8 @@ class Direction(Module):
         "The vector with magnitude one pointing in the direction."
         x, y, z = 0, 0, 1
         # NOTE: the order of rotations are reversed compared to what it says in the
-        # Rotation docstring. If you believe that the docstring is wrong, please create
-        # an issue or pull request on GitHub.
+        # docstring. If you believe that the docstring is wrong, please create an issue
+        # or pull request on GitHub.
         y, z = _rotate_yz(y, z, self.elevation)
         x, z = _rotate_xz(x, z, self.azimuth)
         return ops.stack([x, y, z], axis="xyz")
@@ -73,8 +73,8 @@ class Direction(Module):
         )
 
 
-class Rotation(Module):
-    """A rotation, or orientation, in 3D space, defined by `azimuth` (rotation of the
+class Orientation(Module):
+    """An orientation, or rotation, in 3D space, defined by `azimuth` (rotation of the
     xz-plane), `elevation` (rotation of the yz-plane), and `roll` (rotation of the
     xy-plane).
 
@@ -83,7 +83,8 @@ class Rotation(Module):
     azimuth. The convention in ultrasound is to first rotate using azimuth, then
     elevation. Additionally, roll is applied before anything else because it represents
     the rotation of the ultrasound probe itself, which happens independently of
-    focusing in azimuth and elevation.
+    focusing in azimuth and elevation. If you believe that this is incorrect, please
+    create an issue or pull request on GitHub.
     """
 
     azimuth: float
@@ -94,8 +95,8 @@ class Rotation(Module):
         "Apply the rotation to the `point`."
         x, y, z = get_xyz(point)
         # NOTE: the order of rotations are reversed compared to what it says in the
-        # Rotation docstring. If you believe that the docstring is wrong, please create
-        # an issue or pull request on GitHub.
+        # docstring. If you believe that the docstring is wrong, please create an issue
+        # or pull request on GitHub.
         y, z = _rotate_yz(y, z, self.elevation)
         x, z = _rotate_xz(x, z, self.azimuth)
         x, y = _rotate_xy(x, y, self.roll)
@@ -110,14 +111,14 @@ class Rotation(Module):
         return ops.stack([x, y, z], axis="xyz")
 
     @staticmethod
-    def from_direction_and_roll(direction: Direction, roll: float) -> "Rotation":
-        """Return a new Rotation object that points in the given Direction and with the
-        given roll."""
+    def from_direction_and_roll(direction: Direction, roll: float) -> "Orientation":
+        """Return a new Orientation object that points in the given Direction and with
+        the given roll."""
         x, y, z = get_xyz(direction.normalized_vector)
         x, y = _rotate_xy(x, y, -roll)
         v = ops.stack([x, y, z], axis="xyz")
         direction = Direction.from_array(v)
-        return Rotation(direction.azimuth, direction.elevation, roll)
+        return Orientation(direction.azimuth, direction.elevation, roll)
 
     @property
     def direction(self) -> "Direction":
@@ -125,11 +126,6 @@ class Rotation(Module):
         v = ops.array([0, 0, 1], ["xyz"])
         v = self.rotate(v)
         return Direction.from_array(v)
-
-    @property
-    def normalized_vector(self) -> ops.array:
-        "The unit vector (0,0,1) after being rotated."
-        return self.direction.normalized_vector
 
 
 def average_directions(directions: Direction, *, axis: Dim) -> Direction:

@@ -1,6 +1,6 @@
 from spekk import Module, ops
 
-from vbeam.geometry.rotation import Direction
+from vbeam.geometry.orientation import Direction
 
 
 class Vector(Module):
