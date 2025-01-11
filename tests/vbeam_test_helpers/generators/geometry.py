@@ -1,7 +1,7 @@
 from hypothesis import strategies as st
 from spekk import ops
 
-from vbeam.geometry import Direction, Rotation
+from vbeam.geometry import Direction, Orientation
 
 
 def angles():
@@ -14,8 +14,8 @@ def directions(draw):
 
 
 @st.composite
-def rotations(draw):
-    return Rotation(draw(angles()), draw(angles()), draw(angles()))
+def orientations(draw):
+    return Orientation(draw(angles()), draw(angles()), draw(angles()))
 
 
 @st.composite

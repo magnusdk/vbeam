@@ -2,20 +2,20 @@ import numpy.testing as t
 from hypothesis import assume, given
 from hypothesis import strategies as st
 from spekk import ops
-from vbeam_test_helpers.generators.geometry import directions, points, rotations
+from vbeam_test_helpers.generators.geometry import directions, orientations, points
 
-from vbeam.geometry import Direction, Plane, Rotation
+from vbeam.geometry import Direction, Orientation, Plane
 
 
 @given(
     origin=points(),
-    orientation=rotations(),
+    orientation=orientations(),
     point=points(),
     along=st.one_of(directions(), st.none()),
 )
 def test_plane_coordinate_transformations(
     origin: ops.array,
-    orientation: Rotation,
+    orientation: Orientation,
     point: ops.array,
     along: Direction,
 ):
@@ -36,13 +36,13 @@ def test_plane_coordinate_transformations(
 
 @given(
     origin=points(),
-    orientation=rotations(),
+    orientation=orientations(),
     point=points(),
     along=st.one_of(directions(), st.none()),
 )
 def test_distance_equals_projection_distance(
     origin: ops.array,
-    orientation: Rotation,
+    orientation: Orientation,
     point: ops.array,
     along: Direction,
 ):
