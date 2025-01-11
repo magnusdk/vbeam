@@ -6,3 +6,7 @@ def get_xyz(v: ops.array):
     y = ops.take(v, 1, axis="xyz")
     z = ops.take(v, 2, axis="xyz")
     return x, y, z
+
+
+def distance(point1: ops.array, point2: ops.array) -> float:
+    return ops.linalg.vector_norm(point1 - point2, axis="xyz")
