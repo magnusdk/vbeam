@@ -1,12 +1,14 @@
 from spekk import Module, ops
 
 from vbeam.core.probe.aperture.base import Aperture
-from vbeam.geometry import Direction
+from vbeam.geometry import Orientation
 
 
 class ProbeElement(Module):
     position: ops.array
-    normal: Direction
+    orientation: Orientation
+    width: float
+    height: float
 
 
 class Probe(Module):

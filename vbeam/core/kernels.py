@@ -1,90 +1,80 @@
-"""Function (:func:`.signal_for_point`) for beamforming a single point, which is 
-usually repeated over all :term:`points<Point>`, :term:`receivers<Receiver>` and 
-:term:`transmits<Transmit>` (or any other arbitrary dimensions).
-
-See also:
-    :mod:`vbeam.beamformers`
+"""A module containing the main beamforming function:
+:func:`~vbeam.core.kernels.signal_for_point`.
 """
 
-from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import Union
 
 from spekk import Module, ops
 
 from vbeam.core.apodization import Apodization
-from vbeam.core.interpolation import InterpolationSpace1D
-from vbeam.core.probe_geometry import ProbeGeometry
-from vbeam.core.speed_of_sound import SpeedOfSound
-from vbeam.core.wave_data import WaveData
-from vbeam.core.wavefront import (
-    MultipleTransmitDistances,
-    ReflectedWavefront,
-    TransmittedWavefront,
-)
+from vbeam.core.channel_data import ChannelData
+from vbeam.core.delay_models import ReflectedWaveDelayModel, TransmittedWaveDelayModel
+from vbeam.core.interpolation import TInterpolator
+from vbeam.core.points_getter import PointsGetter
+from vbeam.core.probe.base import Probe
+from vbeam.core.transmitted_wave import TransmittedWave
 
 
 class Setup(Module):
-    probe: ProbeGeometry
-    sender: ops.array
-    receiver: ops.array
-    point_position: ops.array
-    signal: ops.array
-    transmitted_wavefront: TransmittedWavefront
-    reflected_wavefront: ReflectedWavefront
-    speed_of_sound: Union[float, SpeedOfSound]
-    wave_data: WaveData
-    interpolate: InterpolationSpace1D
-    modulation_frequency: Optional[float]
+    points: Union[ops.array, PointsGetter]
+    transmitting_probe: Probe
+    receiving_probe: Probe
+    transmitted_wave: TransmittedWave
+    channel_data: ChannelData
+    interpolator: TInterpolator
+    transmitted_wave_delay_model: TransmittedWaveDelayModel
+    reflected_wave_delay_model: ReflectedWaveDelayModel
+    speed_of_sound: float
     apodization: Apodization
 
 
 class Output(Module):
-    value: ops.array
-    apodization: ops.array
-
-
-class PointsGetter(ABC):
-    @abstractmethod
-    def get_points(self) -> ops.array: ...
+    data: ops.array
+    weight: ops.array
+    delays: ops.array
 
 
 def signal_for_point(setup: Setup) -> Output:
-    point_position = (
-        setup.point_position.get_points()
-        if isinstance(setup.point_position, PointsGetter)
-        else setup.point_position
-    )
-    tx_distance = setup.transmitted_wavefront(
-        setup.probe,
-        setup.sender,
-        point_position,
-        setup.wave_data,
-    )
-    rx_distance = setup.reflected_wavefront(point_position, setup.receiver)
+    """Delay and interpolate channel data from the given `setup` and return it.
 
-    # Potentially sample the speed-of-sound using a SpeedOfSound instance.
-    if isinstance(setup.speed_of_sound, SpeedOfSound):
-        speed_of_sound = setup.speed_of_sound.average(
-            setup.sender,
-            point_position,
-            setup.receiver,
-        )
-    else:
-        speed_of_sound = setup.speed_of_sound
-
-    delay = (tx_distance + rx_distance) / speed_of_sound - setup.wave_data.t0
-    signal = setup.interpolate(delay, setup.signal, axis="time")
-
-    if setup.modulation_frequency is not None:
-        w0 = ops.pi * 2 * setup.modulation_frequency
-        signal = signal * ops.exp(1j * w0 * delay)
-    if isinstance(tx_distance, MultipleTransmitDistances):
-        signal = tx_distance.aggregate_samples(signal)
-    apodization = setup.apodization(
-        setup.probe,
-        setup.sender,
-        setup.receiver,
-        point_position,
-        setup.wave_data,
+    Return an :class:`~vbeam.core.kernels.Output` object which also has metadata such
+    as the calculated weights and delays.
+    """
+    points = (
+        setup.points.get_points()
+        if isinstance(setup.points, PointsGetter)
+        else setup.points
     )
-    return Output(signal * apodization, apodization)
+
+    # Get the delay in seconds between when the wave was transmitted from the
+    # transmitting probe to when it reached the given point(s), and the same for the
+    # reflected wave.
+    tx_delays = setup.transmitted_wave_delay_model(
+        setup.transmitting_probe,
+        points,
+        setup.transmitted_wave,
+        setup.speed_of_sound,
+    )
+    rx_delays = setup.reflected_wave_delay_model(
+        points,
+        setup.receiving_probe,
+        setup.speed_of_sound,
+    )
+
+    # Delay, interpolate, and remodulate the channel data.
+    delays = tx_delays + rx_delays
+    values = setup.interpolator(setup.channel_data, delays, "time")
+    if setup.channel_data.modulation_frequency is not None:
+        w0 = ops.pi * 2 * setup.channel_data.modulation_frequency
+        values = values * ops.exp(1j * w0 * (delays - setup.channel_data.t0))
+
+    # Apply weighting to the signal.
+    apodization_values = setup.apodization(
+        setup.transmitting_probe,
+        setup.receiving_probe,
+        points,
+        setup.transmitted_wave,
+    )
+    values = values * apodization_values
+
+    return Output(values, apodization_values)
