@@ -11,11 +11,46 @@ to travel from a point in space and back up to a receiving element.
 """
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING, Optional
 
 from spekk import Module, ops
 
 from vbeam.core.probe.base import Probe
 from vbeam.core.transmitted_wave import TransmittedWave
+
+# For adding type hints to TransmittedWaveDelayModel.plot:
+if TYPE_CHECKING:
+    try:
+        from matplotlib.axes import Axes
+    except ImportError:
+        pass
+
+
+def _plot(
+    delay_values: ops.array, transmitting_probe: Probe, points: ops.array, ax: "Axes"
+) -> "Axes":
+    from vbeam.probe import RectangularPlanarAperture
+
+    extent_mm = [
+        1000 * ops.min(ops.take(points, 0, axis="xyz")),
+        1000 * ops.max(ops.take(points, 0, axis="xyz")),
+        1000 * ops.max(ops.take(points, 2, axis="xyz")),
+        1000 * ops.min(ops.take(points, 2, axis="xyz")),
+    ]
+
+    ax.imshow(delay_values, extent=extent_mm, cmap="gray")
+    if isinstance(transmitting_probe.active_aperture, RectangularPlanarAperture):
+        aperture_bounds = transmitting_probe.active_aperture.bounds
+        center_left_mm = aperture_bounds.center_left * 1000
+        center_right_mm = aperture_bounds.center_right * 1000
+        ax.plot(
+            [center_left_mm[0], center_right_mm[0]],
+            [center_left_mm[2], center_right_mm[2]],
+            c="blue",
+        )
+    ax.set_xlabel("x [mm]")
+    ax.set_ylabel("z [mm]")
+    return ax
 
 
 class TransmittedWaveDelayModel(Module):
@@ -42,6 +77,32 @@ class TransmittedWaveDelayModel(Module):
         :class:`~vbeam.core.transmitted_wave.TransmittedWave.origin`) and until it
         reached the given `point` in space.
         """
+
+    def plot(
+        self,
+        *,
+        transmitting_probe: Optional[Probe] = None,
+        points: Optional[ops.array] = None,
+        transmitted_wave: Optional[TransmittedWave] = None,
+        speed_of_sound: Optional[float] = None,
+        ax: Optional["Axes"] = None,
+    ) -> "Axes":
+        import matplotlib.pyplot as plt
+
+        from vbeam.util import _default_values
+
+        if transmitting_probe is None:
+            transmitting_probe = _default_values.transmitting_probe()
+        if points is None:
+            points = _default_values.points()
+        if transmitted_wave is None:
+            transmitted_wave = _default_values.transmitted_wave()
+        if speed_of_sound is None:
+            speed_of_sound = _default_values.speed_of_sound()
+        if ax is None:
+            _, ax = plt.subplots()
+        values = self(transmitting_probe, points, transmitted_wave, speed_of_sound)
+        return _plot(values, transmitting_probe, points, ax)
 
 
 class ReflectedWaveDelayModel(Module):
