@@ -1,12 +1,19 @@
-"""This module implements some popular window functions (also called apodization
-functions or tapering functions).
-
-See the notebook ``docs/tutorials/apodization/windows.ipynb`` for a visualization of
-the various implemented windows."""
+"""This module implements some popular window functions (also called tapering functions
+or apodization functions; but don't mix up window functions and vbeam's
+`~vbeam.core.apodization.Apodization` class!).
+"""
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING, Optional
 
 from spekk import Module, ops
+
+# For adding type hints to Apodization.plot:
+if TYPE_CHECKING:
+    try:
+        from matplotlib.axes import Axes
+    except ImportError:
+        pass
 
 
 class Window(Module):
@@ -25,8 +32,36 @@ class Window(Module):
 
     @abstractmethod
     def __call__(self, ratio: float) -> float:
-        """Return the weight for the ratio (between 0 and 0.5). The peak is at ratio=0,
-        and it tapers off as the ratio approaches 0.5."""
+        """Return the weight for the ratio (between -0.5 and 0.5). The peak is at
+        ratio=0, and it tapers off as the ratio approaches ±0.5.
+
+        Try plotting window functions like this:
+        >>> from vbeam.apodization import window
+        >>> win = window.Hamming()
+        >>> win.plot()
+        """
+
+    def plot(self) -> "Axes":
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots(ncols=2, figsize=(10, 3))
+        ratios = ops.linspace(-1, 1, 200)
+        values = self(ratios)
+        ax[0].plot(ratios, values)
+        ax[0].set_title(repr(self))
+        ax[0].set_xlabel("Ratio")
+        ax[0].set_ylabel(f"{repr(self)}(ratio)")
+
+        values_fft = ops.fft.fftshift(ops.fft.fft(self(ops.linspace(-1, 1, 25)), n=400))
+        values_fft = 20 * ops.log10(ops.abs(values_fft))
+        values_fft -= ops.max(values_fft)
+        ax[1].plot(values_fft)
+        ax[1].set_ylim([-100, 2])
+        ax[1].set_title(f"{repr(self)} in frequency domain")
+        ax[1].set_xticks([])
+        ax[1].set_ylabel("Amplitude [dB]")
+
+        fig.tight_layout()
 
 
 class NoWindow(Window):

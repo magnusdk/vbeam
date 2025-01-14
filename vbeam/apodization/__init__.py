@@ -1,13 +1,12 @@
-from vbeam.apodization.combine import combine_apodizations
-from vbeam.apodization.mla import MLAApodization
+import vbeam.apodization.window as window
+from vbeam.apodization.constant_width_apodization import ConstantWidthApodization
+from vbeam.apodization.expanding_aperture import ExpandingAperture
 from vbeam.apodization.no_apodization import NoApodization
 from vbeam.apodization.plane_wave import (
-    PlaneWaveReceiveApodization,
     PlaneWaveTransmitApodization,
 )
 from vbeam.apodization.rtb import RTBApodization
 from vbeam.apodization.tx_rx_apodization import TxRxApodization
-#from vbeam.apodization.util import get_apodization_values
 from vbeam.apodization.window import (
     Bartlett,
     Hamming,
@@ -21,16 +20,16 @@ from vbeam.apodization.window import (
     Tukey80,
     Window,
 )
+from vbeam.core.apodization import Apodization
 
 __all__ = [
-    "combine_apodizations",
-    "MLAApodization",
+    "window",
+    "ConstantWidthApodization",
+    "ExpandingAperture",
     "NoApodization",
-    "PlaneWaveReceiveApodization",
     "PlaneWaveTransmitApodization",
     "RTBApodization",
     "TxRxApodization",
-    #"get_apodization_values",
     "Bartlett",
     "Hamming",
     "Hanning",
@@ -42,4 +41,5 @@ __all__ = [
     "Tukey75",
     "Tukey80",
     "Window",
+    "Apodization",
 ]

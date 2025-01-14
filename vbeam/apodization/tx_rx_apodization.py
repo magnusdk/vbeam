@@ -2,27 +2,30 @@ from typing import Optional
 
 from spekk import ops
 
-from vbeam.core import Apodization, ProbeGeometry, WaveData
+from vbeam.core import Apodization, Probe, TransmittedWave
 
 
 class TxRxApodization(Apodization):
-    """Apodization for both transmit and receive (just a container of two Apodization
-    functions)."""
+    """Apodization for both tx and rx (just a container of two
+    `~vbeam.core.apodization.Apodization` objects)."""
 
-    transmit: Optional[Apodization] = None
-    receive: Optional[Apodization] = None
+    tx: Optional[Apodization] = None
+    rx: Optional[Apodization] = None
 
     def __call__(
         self,
-        probe: ProbeGeometry,
-        sender: ops.array,
-        receiver: ops.array,
-        point_position: ops.array,
-        wave_data: WaveData,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
     ) -> float:
         weight = 1.0
-        if self.transmit:
-            weight *= self.transmit(probe, sender, receiver, point_position, wave_data)
-        if self.receive:
-            weight *= self.receive(probe, sender, receiver, point_position, wave_data)
+        if self.tx:
+            weight *= self.tx(
+                transmitting_probe, receiving_probe, point, transmitted_wave
+            )
+        if self.rx:
+            weight *= self.rx(
+                transmitting_probe, receiving_probe, point, transmitted_wave
+            )
         return weight
