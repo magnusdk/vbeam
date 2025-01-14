@@ -4,11 +4,11 @@ or apodization functions; but don't mix up window functions and vbeam's
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from spekk import Module, ops
 
-# For adding type hints to Apodization.plot:
+# For adding type hints to Window.plot:
 if TYPE_CHECKING:
     try:
         from matplotlib.axes import Axes
