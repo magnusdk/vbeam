@@ -1,7 +1,21 @@
-from vbeam.interpolation.fast_linear import FastInterpLinspace
-from vbeam.interpolation.nearest import NearestInterpolation
+from vbeam.core.interpolation import (
+    Interpolable,
+    InterpolationCoordinates,
+    InterpolationIndices,
+    Interpolator,
+    LinearInterpolationCoordinates,
+    LinearlySampledData,
+    TInterpolator,
+)
+from vbeam.interpolation.linear import LinearInterpolator
 
 __all__ = [
-    "FastInterpLinspace",
-    "NearestInterpolation",
+    "Interpolable",
+    "InterpolationCoordinates",
+    "InterpolationIndices",
+    "Interpolator",
+    "LinearInterpolationCoordinates",
+    "LinearlySampledData",
+    "TInterpolator",
+    "LinearInterpolator",
 ]
