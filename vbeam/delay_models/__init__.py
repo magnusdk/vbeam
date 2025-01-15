@@ -7,7 +7,8 @@ from vbeam.delay_models.focused import (
 from vbeam.delay_models.plane import PlaneDelayModel
 from vbeam.delay_models.refocus import REFoCUSDelayModel
 from vbeam.delay_models.stai import STAIDelayModel
-from vbeam.delay_models.unified import UnifiedDelayModel
+# TODO: Re-implement unified delay model
+# from vbeam.delay_models.unified import UnifiedDelayModel
 
 __all__ = [
     "ReflectedWaveDelayModel",
@@ -17,6 +18,6 @@ __all__ = [
     "PlaneDelayModel",
     "REFoCUSDelayModel",
     "STAIDelayModel",
-    "UnifiedDelayModel",
+    # "UnifiedDelayModel",
     "SphericalBlendedDelayModel",
 ]
