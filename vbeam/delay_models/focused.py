@@ -42,15 +42,16 @@ class SphericalDelayModel(TransmittedWaveDelayModel):
         )
 
         # Get the depths of the virtual source and point along the direction of the
-        # transmitted wave. To get the direction we first need to project the aperture
-        # towards the virtual source.
-        projected_aperture = transmitting_probe.active_aperture.project_aperture(
+        # transmitted wave. To get the direction we first need the effective aperture
+        # facing towards the virtual source.
+
+        aperture = transmitting_probe.get_effective_aperture(
             transmitted_wave.virtual_source
         )
-        virtual_source_depth = projected_aperture.plane.signed_distance(
+        virtual_source_depth = aperture.plane.signed_distance(
             transmitted_wave.virtual_source.to_array()
         )
-        point_depth = projected_aperture.plane.signed_distance(point)
+        point_depth = aperture.plane.signed_distance(point)
 
         # Find out whether the point lies before or beyond the virtual source. If it
         # lies before, depth_sign will equal negative 1, otherwise positive 1.
@@ -98,13 +99,13 @@ class SphericalHybridDelayModel(TransmittedWaveDelayModel):
         raise_if_not_geometrically_focused_wave(transmitted_wave)
 
         # Find the depth of the point compared to the depth of the virtual source.
-        projected_aperture = transmitting_probe.active_aperture.project_aperture(
+        aperture = transmitting_probe.get_effective_aperture(
             transmitted_wave.virtual_source
         )
-        virtual_source_depth = projected_aperture.plane.signed_distance(
+        virtual_source_depth = aperture.plane.signed_distance(
             transmitted_wave.virtual_source.to_array()
         )
-        point_depth = projected_aperture.plane.signed_distance(point)
+        point_depth = aperture.plane.signed_distance(point)
         depth_difference = ops.abs(point_depth - virtual_source_depth)
 
         # Use plane wave delay model when the depth is <= plane_wave_region_size, else
@@ -167,13 +168,13 @@ class SphericalBlendedDelayModel(TransmittedWaveDelayModel):
         )
 
         # Find the depth of the point compared to the depth of the virtual source.
-        projected_aperture = transmitting_probe.active_aperture.project_aperture(
+        aperture = transmitting_probe.get_effective_aperture(
             transmitted_wave.virtual_source
         )
-        virtual_source_depth = projected_aperture.plane.signed_distance(
+        virtual_source_depth = aperture.plane.signed_distance(
             transmitted_wave.virtual_source.to_array()
         )
-        point_depth = projected_aperture.plane.signed_distance(point)
+        point_depth = aperture.plane.signed_distance(point)
         depth_difference = ops.abs(point_depth - virtual_source_depth)
 
         # Get the weight p for the plane wave delay. If p is 1, then we use the plane

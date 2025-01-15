@@ -28,7 +28,7 @@ class PlaneWaveTransmitApodization(Apodization):
     ) -> float:
         raise_if_not_geometrically_focused_wave(transmitted_wave)
 
-        projected_aperture = transmitting_probe.active_aperture.project_aperture(
+        aperture = transmitting_probe.get_effective_aperture(
             transmitted_wave.virtual_source
         )
-        return projected_aperture.project_and_apply_window(point, self.window)
+        return aperture.project_and_apply_window(point, self.window)

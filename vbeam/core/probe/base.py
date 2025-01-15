@@ -1,7 +1,9 @@
+from abc import abstractmethod
+
 from spekk import Module, ops
 
-from vbeam.core.probe.aperture.base import Aperture
-from vbeam.geometry import Orientation
+from vbeam.core.probe.aperture import Aperture
+from vbeam.geometry import Direction, Orientation, Vector
 
 
 class ProbeElement(Module):
@@ -10,8 +12,15 @@ class ProbeElement(Module):
     width: float
     height: float
 
+    @property
+    def normal(self) -> Direction:
+        return self.orientation.direction
+
 
 class Probe(Module):
-    origin: ops.array
     active_elements: ProbeElement
-    active_aperture: Aperture
+
+    @abstractmethod
+    def get_effective_aperture(self, virtual_source: Vector) -> Aperture:
+        """Return the effective aperture that is geometrically focused towards the
+        given virtual source."""

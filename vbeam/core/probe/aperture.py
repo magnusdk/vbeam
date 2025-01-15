@@ -9,8 +9,6 @@ from vbeam.geometry import (
     Orientation,
     Plane,
     RectangularBounds,
-    Vector,
-    average_directions,
 )
 
 if TYPE_CHECKING:
@@ -111,15 +109,6 @@ class Aperture(Module):
             height=self.height * scale_height,
         )
 
-    def project_aperture(self: "TAperture", virtual_source: Vector) -> "TAperture":
-        """Return the effective aperture when geometrically focusing towards a virtual
-        source.
-
-        This is done by projecting the aperture onto a flat plane that is oriented
-        towards the virtual source.
-        """
-        return project_aperture(self, virtual_source)
-
     def project_and_apply_window(self, point: ops.array, window: "Window") -> float:
         """Project the `point` onto the plane and apply the `window` function according
         to where the projected point lies on the plane.
@@ -130,45 +119,3 @@ class Aperture(Module):
     @abstractmethod
     def apply_window(self, x: float, y: float, window: "Window") -> float:
         "Apply the given `window`, given the 2D point (`x`, `y`) in plane coordinates."
-
-
-def project_aperture(aperture: TAperture, virtual_source: Vector) -> TAperture:
-    # We find the normal vector (Direction) of the projected aperture by averaging
-    # the directions pointing from each corner of the original aperture to the
-    # virtual source.
-    corners = aperture.bounds.corners
-    corners_to_source_direction = (virtual_source - corners).direction
-    projected_plane_normal = average_directions(
-        corners_to_source_direction, axis="bounds_corners"
-    )
-
-    # Orient the plane of the projected aperture towards the direction of the
-    # virtual source from the projected origin, but keep the roll unchanged.
-    plane_orientation = Orientation.from_direction_and_roll(
-        projected_plane_normal, aperture.plane.orientation.roll
-    )
-    oriented_plane = Plane(aperture.center, plane_orientation)
-
-    # Project the corners onto the oriented plane along the directions pointing
-    # from them to the virtual source. The projected corners are the corners of the
-    # projected aperture.
-    projected_corners = oriented_plane.project(
-        corners, along=corners_to_source_direction
-    )
-    # The center of the projected corners is the center of the projected aperture.
-    projected_origin = ops.mean(projected_corners, axis="bounds_corners")
-    projected_plane = Plane(projected_origin, plane_orientation)
-
-    # Find the width and height of the projected aperture.
-    diff_azimuth = aperture.plane.normal.azimuth - projected_plane_normal.azimuth
-    diff_elevation = aperture.plane.normal.elevation - projected_plane_normal.elevation
-    projected_width = aperture.width * ops.cos(diff_azimuth)
-    projected_height = aperture.height * ops.cos(diff_elevation)
-
-    # Return the projected aperture :) It is a copy.
-    return replace(
-        aperture,
-        plane=projected_plane,
-        width=projected_width,
-        height=projected_height,
-    )

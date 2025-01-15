@@ -42,13 +42,13 @@ class RTBApodization(Apodization):
     ) -> float:
         raise_if_not_geometrically_focused_wave(transmitted_wave)
 
-        projected_aperture = transmitting_probe.active_aperture.project_aperture(
+        aperture = transmitting_probe.get_effective_aperture(
             transmitted_wave.virtual_source
         )
         virtual_source_depth = geometry.distance(
-            transmitted_wave.virtual_source.to_array(), projected_aperture.center
+            transmitted_wave.virtual_source.to_array(), aperture.center
         )
-        depths = projected_aperture.plane.signed_distance(point)
+        depths = aperture.plane.signed_distance(point)
 
         # focusing_scale creates the familiar RTB "hourglass" shape.
         focusing_scale = ops.abs(1 - depths / virtual_source_depth)
@@ -56,14 +56,14 @@ class RTBApodization(Apodization):
         # _minimum_aperture_size gives the opening apertude size close to the focus
         # point as a function of full width at half maximum (FWHM).
         width = ops.maximum(
-            projected_aperture.width * focusing_scale,
-            _minimum_aperture_size(self.wavelength, projected_aperture.width, depths),
+            aperture.width * focusing_scale,
+            _minimum_aperture_size(self.wavelength, aperture.width, depths),
         )
         height = ops.maximum(
-            projected_aperture.height * focusing_scale,
-            _minimum_aperture_size(self.wavelength, projected_aperture.height, depths),
+            aperture.height * focusing_scale,
+            _minimum_aperture_size(self.wavelength, aperture.height, depths),
         )
 
         # Set the width and height
-        projected_aperture = replace(projected_aperture, width=width, height=height)
-        return projected_aperture.project_and_apply_window(point, self.window)
+        aperture = replace(aperture, width=width, height=height)
+        return aperture.project_and_apply_window(point, self.window)

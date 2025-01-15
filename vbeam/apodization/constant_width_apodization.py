@@ -36,16 +36,11 @@ class ConstantWidthApodization(Apodization):
         if beam_height is None:
             beam_height = self.beam_width
 
-        # Project the aperture to face towards the virtual source and with a projected
-        # origin.
-        projected_aperture = transmitting_probe.active_aperture.project_aperture(
+        # Get the effective aperture facing towards the virtual source.
+        aperture = transmitting_probe.get_effective_aperture(
             transmitted_wave.virtual_source
         )
 
         # Set the specified constant width and height.
-        projected_aperture = replace(
-            projected_aperture,
-            width=self.beam_width,
-            height=beam_height,
-        )
-        return projected_aperture.project_and_apply_window(point, self.window)
+        aperture = replace(aperture, width=self.beam_width, height=beam_height)
+        return aperture.project_and_apply_window(point, self.window)
