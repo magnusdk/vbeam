@@ -31,14 +31,13 @@ class Setup(Module):
 class Output(Module):
     data: ops.array
     weight: ops.array
-    delays: ops.array
 
 
 def signal_for_point(setup: Setup) -> Output:
     """Delay and interpolate channel data from the given `setup` and return it.
 
     Return an :class:`~vbeam.core.kernels.Output` object which also has metadata such
-    as the calculated weights and delays.
+    as the calculated weights.
     """
     points = (
         setup.points.get_points()
