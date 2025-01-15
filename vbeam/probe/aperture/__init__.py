@@ -1,5 +1,5 @@
-from vbeam.probe.aperture.rectangular_planar_aperture import RectangularPlanarAperture
+from vbeam.probe.aperture.rectangular_aperture import RectangularAperture
 
 __all__ = [
-    "RectangularPlanarAperture",
+    "RectangularAperture",
 ]
