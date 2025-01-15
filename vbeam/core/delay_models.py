@@ -76,6 +76,14 @@ class TransmittedWaveDelayModel(Module):
         through its origin (see
         :class:`~vbeam.core.transmitted_wave.TransmittedWave.origin`) and until it
         reached the given `point` in space.
+
+        Args:
+            transmitting_probe (Probe): The transmitting probe.
+            point (ops.array): The point, or pixel, that we want to calculate the delay
+                for.
+            transmitted_wave (TransmittedWave): Information about the transmitted wave,
+                such as its origin or virtual source (if geometrically focused).
+            speed_of_sound (float): The speed of sound of the medium.
         """
 
     def plot(
@@ -123,8 +131,16 @@ class ReflectedWaveDelayModel(Module):
         """Return the time elapsed (in seconds) since a wave was
         reflected/backscattered from the given `point` and traveled back up to the
         receiving elements of the given `receiving_probe`.
+
+        Args:
+            point (ops.array): The point, or pixel, that we want to calculate the delay
+                for.
+            receiving_probe (Probe): The receiving probe.
+            speed_of_sound (float): The speed of sound of the medium.
         """
         distance = ops.linalg.vector_norm(
-            point - receiving_probe.active_elements.position, axis="xyz"
+            point - receiving_probe.active_elements.position,
+            axis="xyz",
         )
-        return distance / speed_of_sound
+        delay = distance / speed_of_sound
+        return delay
