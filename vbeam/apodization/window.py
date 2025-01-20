@@ -66,7 +66,7 @@ class Window(Module):
 
 class NoWindow(Window):
     def __call__(self, ratio: float) -> float:
-        return ops.ones(ratio.shape)
+        return ops.ones_like(ratio)
 
 
 def _within_valid(ratio: float) -> bool:
