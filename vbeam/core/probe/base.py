@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Union
 
 from spekk import Module, ops
 
@@ -21,6 +22,8 @@ class Probe(Module):
     active_elements: ProbeElement
 
     @abstractmethod
-    def get_effective_aperture(self, virtual_source: Vector) -> Aperture:
+    def get_effective_aperture(
+        self, virtual_source: Union[Vector, Direction]
+    ) -> Aperture:
         """Return the effective aperture that is geometrically focused towards the
         given virtual source."""

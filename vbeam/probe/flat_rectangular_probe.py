@@ -1,8 +1,11 @@
+from typing import Union
+
 from spekk import ops
 
 from vbeam.core.probe import Probe
 from vbeam.core.probe.aperture import Aperture
 from vbeam.geometry import (
+    Direction,
     Orientation,
     Plane,
     RectangularBounds,
@@ -21,7 +24,13 @@ class FlatRectangularProbe(Probe):
     def bounds(self) -> RectangularBounds:
         return RectangularBounds(self.plane, self.width, self.height)
 
-    def get_effective_aperture(self, virtual_source: Vector) -> Aperture:
+    def get_effective_aperture(
+        self, virtual_source: Union[Vector, Direction]
+    ) -> Aperture:
+        # Ensure that virtual source is a Vector.
+        if isinstance(virtual_source, Direction):
+            virtual_source = Vector(ops.inf, virtual_source)
+
         # We find the normal vector (Direction) of the projected aperture by averaging
         # the directions pointing from each corner of the probe to the virtual source.
         corners = self.bounds.corners
