@@ -9,6 +9,10 @@ class RectangularBounds(Module):
     height: float
 
     @property
+    def center(self) -> ops.array:
+        return self.plane.origin
+
+    @property
     def upper_left(self) -> ops.array:
         return self.plane.from_plane_coordinates(-self.width / 2, self.height / 2)
 

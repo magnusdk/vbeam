@@ -62,7 +62,7 @@ def signal_for_point(setup: Setup) -> Output:
 
     # Delay, interpolate, and remodulate the channel data.
     delays = tx_delays + rx_delays
-    values = setup.interpolator(setup.channel_data, delays, "time")
+    values = setup.interpolator(setup.channel_data, delays, axis="time")
     if setup.channel_data.modulation_frequency is not None:
         w0 = ops.pi * 2 * setup.channel_data.modulation_frequency
         values = values * ops.exp(1j * w0 * (delays - setup.channel_data.t0))

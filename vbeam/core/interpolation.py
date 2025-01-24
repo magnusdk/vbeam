@@ -48,6 +48,17 @@ class InterpolationCoordinates(Module):
                 `n_samples`.
         """
 
+    def is_flipped(self) -> bool:
+        return self.start > self.end
+
+    def is_left(self, x: float) -> bool:
+        # XOR with is_flipped in case start > end.
+        return ops.logical_xor(x < self.start, self.is_flipped())
+
+    def is_right(self, x: float) -> bool:
+        # XOR with is_flipped in case start > end.
+        return ops.logical_xor(x > self.end, self.is_flipped())
+
 
 class Interpolable(Module):
     """Interface for things that can be interpolated.

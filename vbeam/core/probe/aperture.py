@@ -109,6 +109,13 @@ class Aperture(Module):
             height=self.height * scale_height,
         )
 
+    def translate_in_plane_coordinates(
+        self: TAperture, dx: float, dy: float
+    ) -> TAperture:
+        translation = self.plane.from_plane_coordinates(dx, dy)
+        new_plane = replace(self.plane, origin=self.plane.origin + translation)
+        return replace(self, plane=new_plane)
+
     def project_and_apply_window(self, point: ops.array, window: "Window") -> float:
         """Project the `point` onto the plane and apply the `window` function according
         to where the projected point lies on the plane.
