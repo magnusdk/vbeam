@@ -28,12 +28,8 @@ class Setup(Module):
     apodization: Apodization
 
 
-class Output(Module):
-    data: ops.array
-    weight: ops.array
 
-
-def signal_for_point(setup: Setup) -> Output:
+def signal_for_point(setup: Setup) -> ops.array:
     """Delay and interpolate channel data from the given `setup` and return it.
 
     Return an :class:`~vbeam.core.kernels.Output` object which also has metadata such
@@ -67,13 +63,4 @@ def signal_for_point(setup: Setup) -> Output:
         w0 = ops.pi * 2 * setup.channel_data.modulation_frequency
         values = values * ops.exp(1j * w0 * (delays - setup.channel_data.t0))
 
-    # Apply weighting to the signal.
-    apodization_values = setup.apodization(
-        setup.transmitting_probe,
-        setup.receiving_probe,
-        points,
-        setup.transmitted_wave,
-    )
-    values = values * apodization_values
-
-    return Output(values, apodization_values)
+    return values

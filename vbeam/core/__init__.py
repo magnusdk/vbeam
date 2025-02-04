@@ -80,7 +80,7 @@ from vbeam.core.interpolation import (
     LinearInterpolationCoordinates,
     LinearlySampledData,
 )
-from vbeam.core.kernels import Output, Setup, signal_for_point
+from vbeam.core.kernels import Setup, signal_for_point
 from vbeam.core.points_getter import PointsGetter
 from vbeam.core.probe import Aperture, Probe, ProbeElement
 from vbeam.core.transmitted_wave import GeometricallyFocusedWave, TransmittedWave
@@ -96,7 +96,6 @@ __all__ = [
     "Interpolator",
     "LinearInterpolationCoordinates",
     "LinearlySampledData",
-    "Output",
     "Setup",
     "signal_for_point",
     "PointsGetter",
