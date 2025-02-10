@@ -145,7 +145,7 @@ class LinearlySampledData(Interpolable):
         return {
             self.axis: LinearInterpolationCoordinates(
                 self.start,
-                self.start + self.step * (self.data.dim_size(self.axis) - 1),
+                self.start + self.step * (self.data.dim_sizes[self.axis] - 1),
                 self.step,
             )
         }

@@ -33,7 +33,7 @@ class ChannelData(Interpolable):
         return {
             "time": LinearInterpolationCoordinates(
                 self.t0,
-                self.t0 + (self.data.dim_size("time") - 1) / self.sampling_frequency,
+                self.t0 + (self.data.dim_sizes["time"] - 1) / self.sampling_frequency,
                 1 / self.sampling_frequency,
             )
         }

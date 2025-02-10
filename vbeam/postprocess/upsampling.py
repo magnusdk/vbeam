@@ -11,7 +11,7 @@ def upsample_grid(data: ops.array, n: int, axis: Dim):
     # Create the n indices to sample the data at.
     sample_indices = ops.arange(
         n // 2,
-        n * data.dim_size(axis) - n // 2,
+        n * data.dim_sizes[axis] - n // 2,
         dim=axis,
     )
     sample_indices /= n
