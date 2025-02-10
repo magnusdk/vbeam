@@ -130,7 +130,7 @@ class LinearlySampledData(Interpolable):
         axis: Dim,
     ) -> "LinearlySampledData":
         if xs is not None:
-            sample_0, sample_1 = xs.slice_dim(axis)[0], xs.slice_dim(axis)[1]
+            sample_0, sample_1 = xs[axis, 0], xs[axis, 1]
         else:
             sample_0, sample_1 = 0, 1
         return LinearlySampledData(
