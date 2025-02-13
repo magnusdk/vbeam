@@ -30,8 +30,7 @@ class LinearCoordinates(Coordinates):
         )
         indices_around_x = ops.floor(fractional_index_of_x + offsets)
 
-        # Get the actual positions/coordinates of the samples at the indices. Note that
-        # we subtract 0.5 to undo the half-pixel offset that we added earlier.
+        # Get the actual positions/coordinates of the samples at the indices.
         indices_positions = indices_around_x * width / last_index + self.start
 
         # Convert to int and ensure that we don't index outside of the range.
