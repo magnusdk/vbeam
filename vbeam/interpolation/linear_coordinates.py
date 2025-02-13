@@ -14,12 +14,9 @@ class LinearCoordinates(Coordinates):
         dim_name = util.random_dim_name(self)
 
         # Find the (fractional) index of the sample that lies closest to x, i.e. the
-        # index before rounding. Note that we compensate for the half-pixel offset
+        # index before rounding. We add 0.5 to compensate for the half-pixel offset
         # which is needed when interpolating pixels.
-        half_pixel_comp = 0.5 * (2 - n_samples % 2)
-        fractional_index_of_x = (x - self.start) / width * last_index + half_pixel_comp
-        # Floor it to get the integer index (note: the dtype is still float).
-        base_index = ops.floor(fractional_index_of_x)
+        fractional_index_of_x = (x - self.start) / width * last_index + 0.5
 
         # Add an array of offsets centered around zero. For example:
         # - with n_samples=2, offsets become [-0.5, 0.5].
@@ -29,16 +26,17 @@ class LinearCoordinates(Coordinates):
             -(n_samples - 1) / 2,
             n_samples / 2,
             dim=dim_name,
-            dtype=base_index.dtype,
+            dtype=fractional_index_of_x.dtype,
         )
-        sample_indices = base_index + offsets
+        indices_around_x = ops.floor(fractional_index_of_x + offsets)
 
         # Get the actual positions/coordinates of the samples at the indices. Note that
         # we subtract 0.5 to undo the half-pixel offset that we added earlier.
-        indices_positions = (sample_indices - 0.5) * width / last_index + self.start
+        indices_positions = indices_around_x * width / last_index + self.start
 
         # Convert to int and ensure that we don't index outside of the range.
-        indices_around_x = ops.clip((sample_indices).int32(), 0, last_index)
+        indices_around_x = ops.int32(indices_around_x)
+        indices_around_x = ops.clip(indices_around_x, 0, last_index)
 
         return IndicesInfo(
             x,
