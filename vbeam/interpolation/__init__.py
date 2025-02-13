@@ -1,21 +1,15 @@
-from vbeam.core.interpolation import (
-    Interpolable,
-    InterpolationCoordinates,
-    InterpolationIndices,
-    Interpolator,
-    LinearInterpolationCoordinates,
-    LinearlySampledData,
-    TInterpolator,
+from vbeam.core.interpolation import Coordinates, IndicesInfo, NDInterpolator
+from vbeam.interpolation.linear_coordinates import LinearCoordinates
+from vbeam.interpolation.nd_interpolator import (
+    LinearNDInterpolator,
+    NearestNDInterpolator,
 )
-from vbeam.interpolation.linear import LinearInterpolator
 
 __all__ = [
-    "Interpolable",
-    "InterpolationCoordinates",
-    "InterpolationIndices",
-    "Interpolator",
-    "LinearInterpolationCoordinates",
-    "LinearlySampledData",
-    "TInterpolator",
-    "LinearInterpolator",
+    "Coordinates",
+    "IndicesInfo",
+    "NDInterpolator",
+    "LinearCoordinates",
+    "LinearNDInterpolator",
+    "NearestNDInterpolator",
 ]

@@ -1,6 +1,6 @@
 from spekk import Dim, ops
 
-from vbeam.interpolation import LinearInterpolator, LinearlySampledData
+from vbeam.interpolation import LinearCoordinates, LinearNDInterpolator
 
 
 def upsample_grid(data: ops.array, n: int, axis: Dim):
@@ -20,6 +20,7 @@ def upsample_grid(data: ops.array, n: int, axis: Dim):
     sample_indices -= (n - 1) / (2 * n)
 
     # Upsample the data by interpolation at the sample indices
-    interpolator = LinearInterpolator()
-    interpolable = LinearlySampledData.from_array(data, axis=axis)
-    return interpolator(interpolable, sample_indices, axis)
+    last_index = data.dim_sizes[axis] - 1
+    data_coordinates = {axis: LinearCoordinates(0, last_index, last_index)}
+    interpolator = LinearNDInterpolator(data_coordinates, data, fill_value=None)
+    return interpolator({axis: sample_indices})
