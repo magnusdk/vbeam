@@ -1,41 +1,51 @@
 from abc import abstractmethod
-from typing import Callable, Dict, Optional, Union
+from typing import Dict, Union
 
 from spekk import Dim, Module, ops
 
 
-class InterpolationIndices(Module):
-    """Indices of an array and corresponding coordinate positions, useful for
-    interpolation.
+class IndicesInfo(Module):
+    """Information about the indices used to interpolate an array.
 
     Attributes:
-        indices (ops.array): The indices of the array.
-        positions (ops.array): The coordinate positions for each index.
+        x (ops.array): The position used to interpolate.
+        indices (ops.array): The nearest indices in the data array.
+        indices_positions (ops.array): The corresponding physical coordinates of the
+            sampled indices. It has the same shape as `indices`.
+        within_bounds (ops.array): A bool array indicating whether the sampled position
+            is within bounds. It has the same shape as `x`.
+        dim_name (Dim): The name of the dimension along which the indices are sampled.
     """
 
+    x: ops.array
     indices: ops.array
-    positions: ops.array
+    indices_positions: ops.array
+    within_bounds: ops.array
+    dim_name: Dim
+
+    @property
+    def offset_distances(self) -> ops.array:
+        "The distance from the sampled positions to the interpolated position."
+        return ops.abs(self.indices_positions - self.x)
 
 
-class InterpolationCoordinates(Module):
-    """Coordinates of data, useful for interpolating the data.
-
-    See also :class:`~vbeam.core.interpolation.LinearInterpolationCoordinates`.
+class Coordinates(Module):
+    """Coordinates of data, useful for interpolating an array of data. It gives
+    information about how to map from a physical position to an index in an array, and
+    vice-versa.
 
     Attributes:
         start (float): The coordinate (e.g. time or position) of the first sample.
-        end (float): The coordinate (e.g. time or position) of the last sample.
+        stop (float): The coordinate (e.g. time or position) of the last sample.
 
-    `start` and `end` are useful for implementing boundary condition logic.
+    `start` and `stop` are used to check whether a sample is within bounds.
     """
 
     start: float
-    end: float
+    stop: float
 
     @abstractmethod
-    def get_nearest_indices(
-        self, x: float, n_samples: int, new_dim: Dim
-    ) -> InterpolationIndices:
+    def get_nearest_indices(self, x: ops.array, n_samples: int) -> IndicesInfo:
         """Return the `n_samples` nearest indices around `x` and the corresponding
         positions.
 
@@ -44,111 +54,35 @@ class InterpolationCoordinates(Module):
                 and in the context of delay-and-sum, this would be the delay (i.e.:
                 time).
             n_samples (int): The number of samples around `x` to return.
-            new_dim (Dim): The name of the dimension of the indices. It will have size
-                `n_samples`.
         """
 
-    def is_flipped(self) -> bool:
-        return self.start > self.end
-
-    def is_left(self, x: float) -> bool:
-        # XOR with is_flipped in case start > end.
-        return ops.logical_xor(x < self.start, self.is_flipped())
-
-    def is_right(self, x: float) -> bool:
-        # XOR with is_flipped in case start > end.
-        return ops.logical_xor(x > self.end, self.is_flipped())
+    def is_within_bounds(self, x: ops.array) -> bool:
+        lower = ops.minimum(self.start, self.stop)
+        upper = ops.maximum(self.start, self.stop)
+        return ops.logical_and(lower <= x, x < upper)
 
 
-class Interpolable(Module):
-    """Interface for things that can be interpolated.
+class NDInterpolator(Module):
+    """A base class for interpolating N-dimensional arrays with named dimensions.
 
-    It needs to let interpolators know the coordinates of the data in order to know
-    what indices to sample at, and it needs to be able to get values from an array of
-    indices.
+    Attributes:
+        data_coordinates (Dict[Dim, Coordinates]): The coordinates of the data, giving
+            information on how to map from a physical position to an index in the data.
+        data (ops.array): The data to be interpolated.
+        fill_value (Union[float, None]): The value to give if an index is out of bounds
+            of the data. If set to None, then we keep whatever was returned after
+            indexing.
     """
 
-    @property
-    @abstractmethod
-    def interpolation_coordinates(self) -> Dict[Dim, InterpolationCoordinates]:
-        """A dictionary from dimension to interpolation coordinates for the data across
-        that dimension. Interpolators use this to look up the coordinates for a given
-        dimension.
-        """
-
-    @abstractmethod
-    def get_values(self, indices: ops.array, axis: Dim) -> ops.array:
-        """Return the values for the given indices along the given axis."""
-
-
-class Interpolator(Module):
-    @abstractmethod
-    def __call__(self, interpolable: Interpolable, x: float, axis: Dim) -> ops.array:
-        pass
-
-
-# The type of an interpolation function
-TInterpolator = Union[
-    Interpolator,
-    Callable[[Interpolable, float], ops.array],
-]
-
-
-class LinearInterpolationCoordinates(InterpolationCoordinates):
-    step: float
-
-    def get_nearest_indices(
-        self, x: float, n_samples: int, indices_dim: Dim
-    ) -> InterpolationIndices:
-        # Get the first sample index (fractional, meaning before rounding). It will lie
-        # a little to the left of `x` when `n_samples>1`.
-        i_frac_first_sample = (x - self.start) / self.step
-        i_frac_first_sample -= (n_samples - 1) / 2
-
-        # Round the "fractional" index to make it an integer that we can index by, and
-        # add the `n_samples` other indices.
-        all_samples_indices = ops.round(i_frac_first_sample)
-        all_samples_indices += ops.arange(n_samples, dim=indices_dim)
-
-        # Get back the actual positions/coordinates of the samples at the indices.
-        positions = all_samples_indices * self.step + self.start
-
-        return InterpolationIndices(ops.int32(all_samples_indices), positions)
-
-
-class LinearlySampledData(Interpolable):
+    data_coordinates: Dict[Dim, Coordinates]
     data: ops.array
-    start: float
-    step: float
-    axis: Dim
+    fill_value: Union[float, None] = float("nan")
 
-    @staticmethod
-    def from_array(
-        data: ops.array,
-        xs: Optional[ops.array] = None,
-        *,
-        axis: Dim,
-    ) -> "LinearlySampledData":
-        if xs is not None:
-            sample_0, sample_1 = xs[axis, 0], xs[axis, 1]
-        else:
-            sample_0, sample_1 = 0, 1
-        return LinearlySampledData(
-            data,
-            start=sample_0,
-            step=sample_1 - sample_0,
-            axis=axis,
-        )
+    @abstractmethod
+    def __call__(self, xi: Dict[Dim, ops.array]) -> ops.array:
+        """Interpolate the data at the new positions given by `xi`.
 
-    @property
-    def interpolation_coordinates(self) -> Dict[Dim, LinearInterpolationCoordinates]:
-        return {
-            self.axis: LinearInterpolationCoordinates(
-                self.start,
-                self.start + self.step * (self.data.dim_sizes[self.axis] - 1),
-                self.step,
-            )
-        }
-
-    def get_values(self, indices: ops.array, axis: Dim) -> ops.array:
-        return ops.take_along_dim(self.data, indices, axis)
+        Args:
+            xi (Dict[Dim, ops.array]): A dictionary from dimension name to positions
+                that we want to sample at.
+        """

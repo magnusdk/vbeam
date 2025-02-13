@@ -2,14 +2,14 @@
 :func:`~vbeam.core.kernels.signal_for_point`.
 """
 
-from typing import Union
+from typing import Type, Union
 
 from spekk import Module, ops
 
 from vbeam.core.apodization import Apodization
-from vbeam.core.channel_data import ChannelData
+from vbeam.core.channel_data import TChannelData
 from vbeam.core.delay_models import ReflectedWaveDelayModel, TransmittedWaveDelayModel
-from vbeam.core.interpolation import TInterpolator
+from vbeam.core.interpolation import NDInterpolator
 from vbeam.core.points_getter import PointsGetter
 from vbeam.core.probe.base import Probe
 from vbeam.core.transmitted_wave import TransmittedWave
@@ -20,8 +20,8 @@ class Setup(Module):
     transmitting_probe: Probe
     receiving_probe: Probe
     transmitted_wave: TransmittedWave
-    channel_data: ChannelData
-    interpolator: TInterpolator
+    channel_data: TChannelData
+    interpolator_type: Type[NDInterpolator]
     transmitted_wave_delay_model: TransmittedWaveDelayModel
     reflected_wave_delay_model: ReflectedWaveDelayModel
     speed_of_sound: float
@@ -56,11 +56,14 @@ def signal_for_point(setup: Setup) -> ops.array:
         setup.speed_of_sound,
     )
 
-    # Delay, interpolate, and remodulate the channel data.
+    # Delay, interpolate, and remodulate the channel data (if IQ).
     delays = tx_delays + rx_delays
-    values = setup.interpolator(setup.channel_data, delays, axis="time")
-    if setup.channel_data.modulation_frequency is not None:
-        w0 = ops.pi * 2 * setup.channel_data.modulation_frequency
-        values = values * ops.exp(1j * w0 * (delays - setup.channel_data.t0))
+    interpolator = setup.interpolator_type(
+        setup.channel_data.data_coordinates,
+        setup.channel_data.data,
+        fill_value=None,
+    )
+    values = interpolator({"time": delays})
+    values = setup.channel_data.remodulate_if_iq(values, delays)
 
     return values
