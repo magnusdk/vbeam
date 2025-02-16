@@ -29,10 +29,28 @@ class Vector(Module):
         return self.direction.normalized_vector * self.magnitude
 
     def __sub__(self, other: ops.array) -> "Vector":
-        result = Vector.from_array(self.to_array() - other)
         # Return self if magnitude is infinite, because subtracting a finite number
         # from infinity is a no-op.
-        return ops.where(ops.isfinite(self.magnitude), result, self)
+        if not isinstance(other, ops.array):
+            raise TypeError()
+
+        diff = Vector.from_array(self.to_array() - other)
+        magnitude = ops.where(
+            ops.isfinite(self.magnitude),
+            diff.magnitude,
+            self.magnitude,
+        )
+        azimuth = ops.where(
+            ops.isfinite(self.magnitude),
+            diff.direction.azimuth,
+            self.direction.azimuth,
+        )
+        elevation = ops.where(
+            ops.isfinite(self.magnitude),
+            diff.direction.elevation,
+            self.direction.elevation,
+        )
+        return Vector(magnitude, Direction(azimuth, elevation))
 
     @staticmethod
     def from_array(v: ops.array) -> "Vector":
