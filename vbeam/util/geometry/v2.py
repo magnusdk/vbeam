@@ -2,12 +2,12 @@
 
 It's all in this one module because it's all so closely related."""
 
-
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple, Union
 
 from vbeam.fastmath import numpy as np
 from vbeam.fastmath.traceable import traceable_dataclass
+from scipy.spatial.transform import Rotation
 
 ####
 # Functions for calculating intersections.
@@ -76,6 +76,46 @@ def rotate(point: np.ndarray, theta: float, phi: float) -> np.ndarray:
     )
     # Rotate the point
     return rotation_matrix_theta @ rotation_matrix_phi @ point
+
+
+def az_el_rotation(azimuth: float, elevation: float) -> Rotation:
+    """Return a Rotation object that corresponds to the azimuth and elevation angles.
+
+    Uses vbeam ultrasound conventions:
+    - azimuth is the angle in the xz-plane from the z-axis
+    - elevation is the angle from the xz-plane
+    """
+
+    # elevation is clockwise rotation around fixed x-axis
+    r_elevation = Rotation.from_euler("x", -elevation, degrees=False)
+    # azimuth is rotation around fixed y-axis
+    r_azimuth = Rotation.from_euler("y", azimuth, degrees=False)
+
+    # https://github.com/magnusdk/vbeam/pull/44#issuecomment-2504705798
+    # Equations and conventions appear to be equivalent to:
+    # 1. rotate elevation (clockwise) around fixed x-axis,
+    # 2. then rotate azimuth (counter-clockwise) around fixed y-axis
+    return r_azimuth * r_elevation
+
+
+def rotate_az_el(point: np.ndarray, azimuth: float, elevation: float) -> np.ndarray:
+    """Rotate a point around the azimuth and elevation angles.
+
+    Uses vbeam ultrasound conventions:
+    - azimuth is the angle in the xz-plane from the z-axis
+    - elevation is the angle from the xz-plane
+
+    Args:
+        point: The point to rotate. Shape: (3, ...)
+        azimuth: The azimuth angle in radians.
+        elevation: The elevation angle in radians.
+    """
+    if not (point.shape[0] == 3):
+        raise ValueError("Point must be 3D")
+
+    rotation = az_el_rotation(azimuth, elevation)
+    return rotation.apply(point.T).T
+
 
 ####
 # Curve classes
