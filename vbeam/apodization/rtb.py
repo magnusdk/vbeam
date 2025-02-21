@@ -1,6 +1,4 @@
-from dataclasses import replace
-
-from spekk import ops
+from spekk import ops, replace
 
 from vbeam import geometry
 from vbeam.apodization.window import Window

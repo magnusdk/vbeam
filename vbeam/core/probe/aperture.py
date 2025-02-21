@@ -1,12 +1,9 @@
 from abc import abstractmethod
-from dataclasses import replace
 from typing import TYPE_CHECKING, Optional, TypeVar
 
-from spekk import Module, ops
+from spekk import Module, ops, replace, replace_at
 
 from vbeam.geometry import (
-    Direction,
-    Orientation,
     Plane,
     RectangularBounds,
 )
@@ -50,12 +47,7 @@ class Aperture(Module):
         return self.plane.origin
 
     @property
-    def orientation(self) -> Orientation:
-        "The orientation of the aperture."
-        return self.plane.orientation
-
-    @property
-    def normal(self) -> Direction:
+    def normal(self) -> ops.array:
         "The direction that the aperture points in."
         return self.plane.normal
 
@@ -66,7 +58,7 @@ class Aperture(Module):
 
     def set_origin(self: TAperture, origin: ops.array) -> TAperture:
         "Set the origin (center) of the aperture, returning a new copy."
-        return replace(self, plane=Plane(origin, self.plane.orientation))
+        return replace_at(self, ["plane", "origin"], origin)
 
     def set_size(
         self: TAperture,

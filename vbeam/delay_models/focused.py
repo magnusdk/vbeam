@@ -33,12 +33,10 @@ class SphericalFocusedDelayModel(TransmittedWaveDelayModel):
 
         # Calculate distances.
         origin_source_distance = geometry.distance(
-            transmitted_wave.origin,
-            transmitted_wave.virtual_source.to_array(),
+            transmitted_wave.origin, transmitted_wave.virtual_source
         )
         virtual_source_point_distance = geometry.distance(
-            transmitted_wave.virtual_source.to_array(),
-            point,
+            transmitted_wave.virtual_source, point
         )
 
         # Get the depths of the virtual source and point along the direction of the

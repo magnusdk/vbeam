@@ -60,7 +60,7 @@ def receiving_probe(n_elements: int = 64) -> Probe:
 def transmitted_wave() -> TransmittedWave:
     return GeometricallyFocusedWave(
         ops.array([0, 0, 0], ["xyz"]),
-        Vector(50e-3, Direction(ops.pi / 8, 0)),
+        Vector(50e-3, Direction.from_angles(ops.pi / 8, 0)),
     )
 
 
