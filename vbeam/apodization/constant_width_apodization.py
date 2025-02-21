@@ -1,7 +1,6 @@
-from dataclasses import replace
 from typing import Optional
 
-from spekk import ops
+from spekk import ops, replace
 
 from vbeam.apodization.window import Window
 from vbeam.core import Apodization, GeometricallyFocusedWave, Probe

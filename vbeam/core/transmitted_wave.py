@@ -1,6 +1,8 @@
+from typing import Union
+
 from spekk import Module, ops
 
-from vbeam.geometry import Vector
+from vbeam.geometry import Vector, VectorWithInfiniteMagnitude
 
 
 class TransmittedWave(Module):
@@ -31,4 +33,4 @@ class GeometricallyFocusedWave(TransmittedWave):
     This class is based on the formulation of the Generalized Beamformer from USTB.
     """
 
-    virtual_source: Vector
+    virtual_source: Union[Vector, VectorWithInfiniteMagnitude]

@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 from spekk import Module, ops
 
-from vbeam.geometry.orientation import Direction, Orientation
+from vbeam.geometry.util import get_rotation_matrix, get_yz
 
 
 class Plane(Module):
@@ -22,57 +22,55 @@ class Plane(Module):
     """
 
     origin: ops.array
-    orientation: Orientation
-
-    @property
-    def normal(self) -> Direction:
-        """The normal direction of the plane.
-
-        You can use `plane.normal.normalized_vector` to get the normal vector."""
-        return self.orientation.direction
+    basis_x: ops.array
+    basis_y: ops.array
+    normal: ops.array
 
     def signed_distance(
-        self, point: ops.array, *, along: Optional[Direction] = None
+        self,
+        point: ops.array,
+        *,
+        along: Optional[ops.array] = None,
+        along_is_normalized: bool = False,
     ) -> float:
         """Return the distance from a `point` to the plane, optionally `along` a
         direction. If `along` is not given, return the distance to the closest point
         on the plane."""
-        normal_vector = self.normal.normalized_vector
-        distance = ops.linalg.vecdot(point - self.origin, normal_vector, axis="xyz")
+        distance = ops.linalg.vecdot(point - self.origin, self.normal, axis="xyz")
         if along is not None:
-            alignment = ops.vecdot(along.normalized_vector, normal_vector, axis="xyz")
+            if not along_is_normalized:
+                along = along / ops.linalg.vector_norm(along, axis="xyz")
+            alignment = ops.vecdot(along, self.normal, axis="xyz")
             distance /= alignment
         return distance
 
-    def project(self, point: ops.array, *, along: Optional[Direction] = None):
-        """Project the `point` onto the plane, optionally `along` a direction,
-        returning a 3D point. If `along` is not given, return the closest point on
-        the plane."""
-        distance = self.signed_distance(point, along=along)
-        if along is None:
-            along = self.normal
-        return point - along.normalized_vector * distance
-
-    def to_plane_coordinates(
+    def project(
         self,
         point: ops.array,
         *,
-        along: Optional[Direction] = None,
-        is_already_projected: bool = False,
-    ) -> Tuple[float, float]:
+        along: Optional[ops.array] = None,
+        along_is_normalized: bool = False,
+    ):
+        """Project the `point` onto the plane, optionally `along` a direction,
+        returning a 3D point. If `along` is not given, return the closest point on
+        the plane."""
+        if along is not None and not along_is_normalized:
+            along = along / ops.linalg.vector_norm(along, axis="xyz")
+        distance = self.signed_distance(point, along=along, along_is_normalized=True)
+        if along is None:
+            along = self.normal
+        return point - along * distance
+
+    def to_plane_coordinates(self, point: ops.array) -> Tuple[float, float]:
         """Project the `point` onto the plane, optionally `along` a direction,
         returning a tuple of x and y, representing the 2D point in the coordinates of
         the plane. If `along` is not given, return the closest 2D point on the plane.
 
         Use `is_already_projected=True` if the point is already projected onto the
         plane."""
-        if not is_already_projected:
-            point = self.project(point, along=along)
-        # Subtract origin and un-rotate the orientation.
-        point -= self.origin
-        point = self.orientation.rotate_inverse(point)
-        x = ops.take(point, 0, axis="xyz")
-        y = ops.take(point, 1, axis="xyz")
+        point = point - self.origin
+        x = ops.vecdot(point, self.basis_x, axis="xyz")
+        y = ops.vecdot(point, self.basis_y, axis="xyz")
         return x, y
 
     def from_plane_coordinates(self, x: float, y: float) -> ops.array:
@@ -81,14 +79,31 @@ class Plane(Module):
 
         For example, `plane.from_plane_coordinates(0, 0)` would return the origin of
         the plane in 3D."""
-        point = ops.stack([x, y, ops.zeros_like(x)], axis="xyz")
-        point = self.orientation.rotate(point)
-        point += self.origin
-        return point
+        return x * self.basis_x + y * self.basis_y + self.origin
 
-    def orient(self, direction: Direction, roll: Optional[float] = None) -> "Plane":
-        """Rotate the plane such that it points in the given direction. By default,
-        roll is left unchanged."""
-        if roll is None:
-            roll = self.orientation.roll
-        return Plane(self.origin, Orientation.from_direction_and_roll(direction, roll))
+    @staticmethod
+    def from_origin_and_angles(
+        origin: ops.array,
+        *,
+        azimuth: float,
+        elevation: float,
+    ) -> "Plane":
+        basis_x, basis_y, normal = get_rotation_matrix(
+            azimuth=azimuth, elevation=elevation
+        )
+        return Plane(origin, basis_x, basis_y, normal)
+
+    @staticmethod
+    def from_origin_and_normal(
+        origin: ops.array, normal: ops.array, *, normal_is_normalized: bool = False
+    ) -> "Plane":
+        if not normal_is_normalized:
+            normal = normal / ops.linalg.vector_norm(normal, axis="xyz")
+
+        # TODO: This is unstable and the basis vectors switches signs at specific angles
+        normal_y, normal_z = get_yz(normal)
+        basis_y = ops.stack([0, normal_z, -normal_y], axis="xyz")
+        basis_x = -ops.linalg.cross(normal, basis_y)
+        basis_y /= ops.linalg.vector_norm(basis_y, axis="xyz")
+        basis_x /= ops.linalg.vector_norm(basis_x, axis="xyz")
+        return Plane(origin, basis_x, basis_y, normal)

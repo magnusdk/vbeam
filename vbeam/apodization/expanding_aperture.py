@@ -26,7 +26,7 @@ class ExpandingAperture(Apodization):
 
         depth = ops.vecdot(
             point - receiving_probe.active_elements.position,
-            receiving_probe.active_elements.normal.normalized_vector,
+            receiving_probe.active_elements.normal,
             axis="xyz",
         )
 

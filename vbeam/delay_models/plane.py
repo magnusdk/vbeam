@@ -23,7 +23,7 @@ class PlaneDelayModel(TransmittedWaveDelayModel):
         raise_if_not_geometrically_focused_wave(transmitted_wave)
 
         distance = ops.linalg.vecdot(
-            transmitted_wave.virtual_source.direction.normalized_vector,
+            transmitted_wave.virtual_source.direction,
             point - transmitted_wave.origin,
             axis="xyz",
         )

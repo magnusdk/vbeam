@@ -11,7 +11,7 @@ from vbeam.core import (
 class STAIDelayModel(TransmittedWaveDelayModel):
     """Synthetic transmit aperture beamforming.
 
-    NOTE: This delay model does **not** use the transmitted wave object, instead it 
+    NOTE: This delay model does **not** use the transmitted wave object, instead it
     uses the active elements of the probe.
     """
 
