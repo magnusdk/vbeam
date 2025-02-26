@@ -9,15 +9,15 @@ if TYPE_CHECKING:
 
 
 def get_x(v: ops.array):
-    return ops.take(v, 0, axis="xyz")
+    return v["xyz", 0]
 
 
 def get_y(v: ops.array):
-    return ops.take(v, 1, axis="xyz")
+    return v["xyz", 1]
 
 
 def get_z(v: ops.array):
-    return ops.take(v, 2, axis="xyz")
+    return v["xyz", 2]
 
 
 def get_xy(v: ops.array):
