@@ -63,36 +63,35 @@ def get_rotation_matrix(
     if azimuth is not None:
         cos_azimuth, sin_azimuth = ops.cos(azimuth), ops.sin(azimuth)
         transformation_chain.append(
-            ops.array(
+            ops.stack(
                 [
-                    [cos_azimuth, 0, -sin_azimuth],
-                    [0, 1, 0],
-                    [sin_azimuth, 0, cos_azimuth],
+                    ops.stack([cos_azimuth, 0, -sin_azimuth], axis="xyz"),
+                    ops.stack([0, 1, 0], axis="xyz"),
+                    ops.stack([sin_azimuth, 0, cos_azimuth], axis="xyz"),
                 ],
-                ["xyz_new_basis", "xyz"],
+                axis="xyz_new_basis",
             )
         )
     if elevation is not None:
         cos_elevation, sin_elevation = ops.cos(elevation), ops.sin(elevation)
         transformation_chain.append(
-            ops.array(
+            ops.stack(
                 [
-                    [1, 0, 0],
-                    [0, cos_elevation, -sin_elevation],
-                    [0, sin_elevation, cos_elevation],
+                    ops.stack([1, 0, 0], axis="xyz"),
+                    ops.stack([0, cos_elevation, -sin_elevation], axis="xyz"),
+                    ops.stack([0, sin_elevation, cos_elevation], axis="xyz"),
                 ],
-                ["xyz_new_basis", "xyz"],
+                axis="xyz_new_basis",
             )
         )
 
     if len(transformation_chain) == 0:
-        return ops.array(
+        return ops.stack(
             [
-                [1, 0, 0],
-                [0, 1, 0],
-                [0, 0, 1],
+                ops.stack([1.0, 0.0, 0.0], axis="xyz"),
+                ops.stack([0.0, 1.0, 0.0], axis="xyz"),
+                ops.stack([0.0, 0.0, 1.0], axis="xyz"),
             ],
-            ["xyz_new_basis", "xyz"],
-            dtype="float32",
+            axis="xyz_new_basis",
         )
     return functools.reduce(operator.matmul, transformation_chain)
