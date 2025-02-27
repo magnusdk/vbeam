@@ -55,12 +55,8 @@ class ExpandingAperture(Apodization):
         x = ops.clip(x, (-aperture.width + width) / 2, (aperture.width - width) / 2)
         y = ops.clip(y, (-aperture.height + height) / 2, (aperture.height - height) / 2)
 
-        # Convert back to glbal 3D coordinates.
-        point = aperture.plane.from_plane_coordinates(x, y)
-
         # Transform the aperture into an expanding aperture originating from the
-        # receiving elements.
+        # receiving elements, apply window and return.
         aperture = aperture.set_origin(receiving_probe.active_elements.position)
         aperture = aperture.set_size(width=width, height=height)
-        # Project the point onto the aperture and apply window.
-        return aperture.project_and_apply_window(point, self.window)
+        return aperture.apply_window(x, y, self.window)
