@@ -22,7 +22,7 @@ class ExpandingAperture(Apodization):
         # effective aperture from the probe for expanding aperture?
         aperture = receiving_probe.get_effective_aperture(
             receiving_probe.active_elements.normal
-        )
+        ).set_origin(receiving_probe.active_elements.position)
 
         depth = ops.vecdot(
             point - receiving_probe.active_elements.position,
@@ -57,6 +57,5 @@ class ExpandingAperture(Apodization):
 
         # Transform the aperture into an expanding aperture originating from the
         # receiving elements, apply window and return.
-        aperture = aperture.set_origin(receiving_probe.active_elements.position)
         aperture = aperture.set_size(width=width, height=height)
         return aperture.apply_window(x, y, self.window)
