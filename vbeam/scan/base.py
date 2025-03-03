@@ -15,7 +15,8 @@ class CoordinateSystem(Enum):
     POLAR = "polar"
 
 
-class Scan(Module, PointsGetter):
+
+class Scan(PointsGetter):
     @abstractmethod
     def get_points(self, flatten: bool = True) -> ops.array:
         """Return the points defined by the scan, flattened to a (N, 3) array by
