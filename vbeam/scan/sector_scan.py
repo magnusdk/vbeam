@@ -118,9 +118,9 @@ class SectorScan(Scan):
             )
 
         min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(self.bounds)
-        x_axis = ops.linspace(min_x, max_x, shape[0])
-        z_axis = ops.linspace(min_z, max_z, shape[1])
-
+        x_axis = ops.linspace(min_x, max_x, shape[0], dim="xs")
+        z_axis = ops.linspace(min_z, max_z, shape[1], dim="zs")
+        
         return (x_axis, z_axis)
 
     @_deprecations.renamed_kwargs("1.0.5", imaged_points="image")

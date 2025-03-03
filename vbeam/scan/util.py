@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from spekk import ops
 
-from vbeam.interpolation import FastInterpLinspace
+from vbeam.interpolation import LinearNDInterpolator, LinearCoordinates
 from vbeam.util import _deprecations
 from vbeam.util.arrays import grid
 
@@ -127,8 +127,8 @@ def scan_convert(
             else:
                 raise ValueError(f"Unsupported shape {shape}")
         points = grid(
-            ops.linspace(min_x, max_x, shape[0]),
-            ops.linspace(min_z, max_z, shape[1]),
+            ops.linspace(min_x, max_x, shape[0], dim="xs"),
+            ops.linspace(min_z, max_z, shape[1], dim="zs"),
         )
     else:
         points = grid(
@@ -136,23 +136,23 @@ def scan_convert(
             cartesian_axes[1],
         )
 
-    x, z = points[..., 0], points[..., 1]  # (Ignore y; scan_convert only supports 2D!)
+    x, z = points["xyz", 0], points["xyz", 1]  # (Ignore y; scan_convert only supports 2D!)
     # and transform each point to polar coordinates.
     angles = ops.atan2(x, z)
     radii = ops.sqrt(x**2 + z**2)
-
-    # Interpolate the imaged points, sampled at the transformed points.
-    return FastInterpLinspace.interp2d(
-        angles,
-        radii,
-        FastInterpLinspace(min_az, (max_az - min_az) / (width - 1), width),
-        FastInterpLinspace(min_depth, (max_depth - min_depth) / (height - 1), height),
-        image,
-        azimuth_axis,
-        depth_axis,
-        default_value=default_value,
-        edge_handling=edge_handling,
+    
+    data_coordinates = {
+        "azimuths": LinearCoordinates(min_az, max_az, image.dim_sizes["azimuths"]),
+        "depths": LinearCoordinates(min_depth, max_depth, image.dim_sizes["depths"]),
+    }
+    interpolator = LinearNDInterpolator(data_coordinates, image, fill_value=0)
+    interpolated_data = interpolator(
+        {
+            "azimuths": angles,
+            "depths": radii,
+        }
     )
+    return interpolated_data
 
 
 def parse_axes(xyz):
