@@ -1,10 +1,12 @@
+import matplotlib
+print(matplotlib.get_backend())
 
 import matplotlib.pyplot as plt
 
 from vbeam.interpolation import IrregularSampledCoordinates, LinearCoordinates
 from spekk import ops
 
-ops.backend.set_backend("numpy")
+# ops.backend.set_backend("numpy")
 
 def plot_linear_coordinates(index, n_samples):
     # For linear sampels
@@ -16,7 +18,6 @@ def plot_linear_coordinates(index, n_samples):
     
     indices_info = linear_coordinates.get_nearest_indices(x_in, n_samples)
 
-    # nearest_indices = indices_info.indices[index]
     nearest_indices_positions = indices_info.indices_positions[index]
 
     plt.figure()
@@ -29,16 +30,13 @@ def plot_linear_coordinates(index, n_samples):
 
 
 def plot_irregular_sampled_coordinates(index, n_samples):
-    # For linear sampels
     x = ops.array([0,0.5,1,2,2.4,3,4,5,6.6,9], dims=['depth_2'])
 
     irregular_sampled_coordinate = IrregularSampledCoordinates(ops.min(x), ops.max(x), x, dim='depth_2')
-    # x_in = ops.linspace(0, 9, 37, dim='depth')
     x_in = ops.linspace(-2, 11, 53, dim='xs')
 
-    indices_info = irregular_sampled_coordinate.get_nearest_indices2(x_in, n_samples)
+    indices_info = irregular_sampled_coordinate.get_nearest_indices(x_in, n_samples)
     
-    # nearest_indices = indices_info.indices[index]
     nearest_indices_positions = indices_info.indices_positions[index]
     
     plt.figure()
@@ -52,7 +50,7 @@ def plot_irregular_sampled_coordinates(index, n_samples):
 
 if __name__== '__main__':
     
-    n_samples = 4
+    n_samples = 3
     index = 30
 
     # plot_linear_coordinates(index, n_samples)
