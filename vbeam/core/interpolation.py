@@ -59,7 +59,7 @@ class Coordinates(Module):
     def is_within_bounds(self, x: ops.array) -> bool:
         lower = ops.minimum(self.start, self.stop)
         upper = ops.maximum(self.start, self.stop)
-        return ops.logical_and(lower <= x, x < upper)
+        return ops.logical_and(lower <= x, x <= upper)
 
 
 class NDInterpolator(Module):
