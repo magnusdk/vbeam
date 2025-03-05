@@ -9,14 +9,7 @@ from vbeam.core import IndicesInfo, NDInterpolator
 class LinearNDInterpolator(NDInterpolator):
     def _get_weights(self, indices: IndicesInfo) -> ops.array:
             distances_between_sampled_positions = ops.sum(indices.offset_distances, axis=indices.dim_name, keepdims=True)
-            weights = 1 - indices.offset_distances / distances_between_sampled_positions
-
-            # Due to clipping of indices outside of the data region. When a new interpolated sample falls on the egde, the 
-            # "distances_between_indices" may become zero and needs to be handled. 
-            zero_indices = ops.where(distances_between_sampled_positions==0, True, False)
-            zero_indices = ops.concat((zero_indices, zero_indices), axis=indices.dim_name)
-            weights[zero_indices] = 0.5
-            
+            weights = 1 - indices.offset_distances / distances_between_sampled_positions            
             return weights
 
     def __call__(self, xi: Dict[Dim, ops.array]) -> ops.array:

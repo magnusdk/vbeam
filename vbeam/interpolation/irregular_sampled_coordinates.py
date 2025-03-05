@@ -38,14 +38,18 @@ class IrregularSampledCoordinates(Coordinates):
         
         # Convert to int and ensure that we don't index outside of the range.
         indices_around_x = ops.int32(indices_around_x)
-        indices_around_x = ops.clip(indices_around_x, 0, last_index)   
+        indices_around_x_clipped = ops.clip(indices_around_x, 0, last_index)   
         
         # Get the actual positions/coordinates of the samples at the indices.
-        indices_positions = self.x_data[self.dim, indices_around_x]
+        indices_positions = self.x_data[self.dim, indices_around_x_clipped]
+
+        # Need to pertubate indices positions on data bondary to prevent both offset_distanceses to be zero.
+        indices_outside = ops.where(indices_around_x_clipped!=indices_around_x, True, False)
+        indices_positions[indices_outside] += 1
 
         return IndicesInfo(
             x,
-            indices_around_x,
+            indices_around_x_clipped,
             indices_positions,
             self.is_within_bounds(x),
             dim_name,

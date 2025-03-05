@@ -25,12 +25,12 @@ class LinearCoordinates(Coordinates):
             offsets = ops.arange(n_samples, dim=dim_name) - n_samples // 2
             indices_around_x = nearest_index + offsets
         
+            # Get the actual positions/coordinates of the samples at the indices.
+            indices_positions = indices_around_x * width / last_index + self.start
+
             # Convert to int and ensure that we don't index outside of the range.
             indices_around_x = ops.int32(indices_around_x)
             indices_around_x = ops.clip(indices_around_x, 0, last_index)
-    
-            # Get the actual positions/coordinates of the samples at the indices.
-            indices_positions = indices_around_x * width / last_index + self.start
 
             return IndicesInfo(
                 x,
