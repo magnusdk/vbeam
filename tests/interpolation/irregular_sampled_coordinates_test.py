@@ -30,6 +30,7 @@ def plot_linear_coordinates(index, n_samples):
         plt.plot(x_in[index], float(nearest_indices_positions[ii].data), '.', color='g')
     plt.title(f"indices_positions={nearest_indices_positions.data} | indices_index={nearest_indices_index.data}, \n {nearest_indices_positions.data-x_in[index:index+1]}")       
     plt.show()
+    return indices_info
 
 
 def plot_irregular_sampled_coordinates(index, n_samples):
@@ -43,6 +44,7 @@ def plot_irregular_sampled_coordinates(index, n_samples):
     nearest_indices_positions = indices_info.indices_positions[index]
     nearest_indices_index = indices_info.indices[index]
     
+    plt.ion()
     plt.figure()
     plt.plot(x.data, x.data, '.', color='k', label='new samples')
     plt.plot(x_in.data, x_in.data, 'o', label='new samples',  mfc='none')
@@ -51,24 +53,29 @@ def plot_irregular_sampled_coordinates(index, n_samples):
         plt.plot(x_in[index], float(nearest_indices_positions[ii].data), '.', color='g')
     plt.title(f"indices_positions={nearest_indices_positions.data} | indices_index={nearest_indices_index.data}, \n {nearest_indices_positions.data-x_in[index:index+1]}")
     plt.show()
+    return indices_info
 
 if __name__== '__main__':
-    
-    # n_samples = 2
-    # index = 44
-    # index = 20
-    # index = 46
-
-
-    # plot_irregular_sampled_coordinates(index, n_samples)
 
     n_samples = 2
     # index = 44
-    # index = 8
+    # index = 20
     index = 45
+    ops.backend.backend_name
+    
+    indices = plot_irregular_sampled_coordinates(index, n_samples)
+
+    n_samples = 2
+    index = 44
+    # index = 40
+    # index = 8
+    # index = 45
     
 
-    plot_linear_coordinates(index, n_samples)
+    # indices = plot_linear_coordinates(index, n_samples)
+
+    ops.sum(indices.offset_distances, axis=indices.dim_name, keepdims=True)
 
     a = 1
+    
     

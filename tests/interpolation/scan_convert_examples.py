@@ -114,10 +114,35 @@ def irregular_coordinates_scan_convert():
 
     return
 
+def Interpolation_1d():
+    x = ops.array([0,0.5,1,2,2.4,3,4,5,6.6,9], dims=['azimuths'])
+    data_coordinates = {"azimuths": IrregularSampledCoordinates(ops.min(x), ops.max(x), x, dim='azimuths')}
+
+    # x = ops.linspace(0, 9, 10, dim='azimuths')
+    # data_coordinates = {"azimuths": LinearCoordinates(ops.min(x), ops.max(x), x.size)}
+
+    data = x
+    
+    x_in = ops.linspace(-2, 11, 53, dim='xs')
+
+    interpolator = LinearNDInterpolator(data_coordinates, data, fill_value=None)
+
+    interpolated_data = interpolator({"azimuths": x_in})
+
+    fig, ax = plt.subplots(1,1)
+    ax.plot(x.data, data.data, '.', color='k')
+    ax.plot(x_in.data, interpolated_data.data, 'o', color='r',mfc='none')
+    plt.show()
+    
+    return
+
 if __name__== '__main__':
 
+    ops.backend.set_backend("numpy")
+
+    Interpolation_1d()
+
     # linear_coordinates_scan_convert()
-    irregular_coordinates_scan_convert()
+    # irregular_coordinates_scan_convert()
 
     a = 1
-    
