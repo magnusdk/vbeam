@@ -45,7 +45,9 @@ class IrregularSampledCoordinates(Coordinates):
 
         # Need to pertubate indices positions on data bondary to prevent both offset_distanceses to be zero.
         indices_outside = ops.where(indices_around_x_clipped!=indices_around_x, True, False)
-        indices_positions[indices_outside] += 1
+
+        # indices_positions[indices_outside] += 1
+        indices_positions = ops.where(indices_outside, indices_positions+1, indices_positions)
 
         return IndicesInfo(
             x,
@@ -54,3 +56,4 @@ class IrregularSampledCoordinates(Coordinates):
             self.is_within_bounds(x),
             dim_name,
         )
+        
