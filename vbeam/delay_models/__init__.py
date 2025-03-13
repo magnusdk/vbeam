@@ -1,7 +1,8 @@
 from vbeam.core.delay_models import ReflectedWaveDelayModel, TransmittedWaveDelayModel
 from vbeam.delay_models.focused import (
     SphericalBlendedDelayModel,
-    SphericalDelayModel,
+    SphericalFocusedDelayModel,
+    SphericalDivergingDelayModel,
     SphericalHybridDelayModel,
 )
 from vbeam.delay_models.plane import PlaneDelayModel
@@ -14,7 +15,8 @@ __all__ = [
     "ReflectedWaveDelayModel",
     "TransmittedWaveDelayModel",
     "SphericalHybridDelayModel",
-    "SphericalDelayModel",
+    "SphericalFocusedDelayModel",
+    "SphericalDivergingDelayModel",
     "PlaneDelayModel",
     "REFoCUSDelayModel",
     "STAIDelayModel",
