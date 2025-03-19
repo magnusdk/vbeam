@@ -18,7 +18,7 @@ class IrregularSampledCoordinates(Coordinates):
         When n_samples is even, retuns equally number of indices on both sides of the new sampled position. 
           """
         
-        last_index = self.x_data.size - 1
+        last_index = self.x_data.dim_sizes[self.dim]-1
 
         # Generate a unique dimension name for the new axis with size=n_samples.
         dim_name = util.random_dim_name(self)
