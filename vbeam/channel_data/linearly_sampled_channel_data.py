@@ -31,7 +31,7 @@ class LinearlySampledChannelData(Module):
     def remodulate_if_iq(self, values: ops.array, delays: ops.array) -> ops.array:
         if self.modulation_frequency is not None:
             w0 = ops.pi * 2 * self.modulation_frequency
-            values = values * ops.exp(1j * w0 * (delays - self.t0))
+            values = values * ops.exp(ops.array(0+1j) * w0 * (delays - self.t0))
         return values
 
     @property
