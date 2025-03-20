@@ -54,6 +54,11 @@ def distance(
     return ops.linalg.vector_norm(point1 - point2, axis="xyz")
 
 
+def normalize_vector(v: ops.array) -> ops.array:
+    magnitude = ops.linalg.vector_norm(v, axis="xyz")
+    return v / magnitude
+
+
 def get_rotation_matrix(
     *,
     azimuth: Optional[float] = None,
