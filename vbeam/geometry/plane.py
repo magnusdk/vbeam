@@ -62,12 +62,8 @@ class Plane(Module):
         return point - along * distance
 
     def to_plane_coordinates(self, point: ops.array) -> Tuple[float, float]:
-        """Project the `point` onto the plane, optionally `along` a direction,
-        returning a tuple of x and y, representing the 2D point in the coordinates of
-        the plane. If `along` is not given, return the closest 2D point on the plane.
-
-        Use `is_already_projected=True` if the point is already projected onto the
-        plane."""
+        """Project the `point` onto the plane, returning a tuple of x and y,
+        representing the 2D point in the coordinates of the plane."""
         point = point - self.origin
         x = ops.vecdot(point, self.basis_x, axis="xyz")
         y = ops.vecdot(point, self.basis_y, axis="xyz")

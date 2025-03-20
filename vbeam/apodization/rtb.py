@@ -43,8 +43,8 @@ class RTBApodization(Apodization):
         aperture = transmitting_probe.get_effective_aperture(
             transmitted_wave.virtual_source
         )
-        virtual_source_depth = geometry.distance(
-            transmitted_wave.virtual_source.to_array(), aperture.center
+        virtual_source_depth = aperture.plane.signed_distance(
+            transmitted_wave.virtual_source.to_array()
         )
         depths = aperture.plane.signed_distance(point)
 

@@ -30,7 +30,7 @@ class VectorWithInfiniteMagnitude(Vector):
 
     def to_array(self) -> ops.array:
         raise ValueError(
-            "Can not convert a vector with infinite mangitude to an array."
+            "Can not convert a vector with infinite magnitude to an array."
         )
 
     @staticmethod
