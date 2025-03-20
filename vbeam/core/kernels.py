@@ -28,12 +28,7 @@ class Setup(Module):
     apodization: Apodization
 
 
-class Output(Module):
-    data: ops.array
-    weight: ops.array
-
-
-def signal_for_point(setup: Setup) -> Output:
+def signal_for_point(setup: Setup) -> ops.array:
     """Delay and interpolate channel data from the given `setup` and return it.
 
     Return an :class:`~vbeam.core.kernels.Output` object which also has metadata such
@@ -69,8 +64,15 @@ def signal_for_point(setup: Setup) -> Output:
     )
     values = interpolator({"time": delays})
     values = setup.channel_data.remodulate_if_iq(values, delays)
-    weights = setup.apodization(
-        setup.transmitting_probe, setup.receiving_probe, points, setup.transmitted_wave
-    )
 
-    return Output(values*weights, weights)
+    # Apply apodization, if given
+    if setup.apodization is not None:
+        weights = setup.apodization(
+            setup.transmitting_probe,
+            setup.receiving_probe,
+            points,
+            setup.transmitted_wave,
+        )
+        values *= weights
+
+    return values
