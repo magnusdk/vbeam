@@ -99,7 +99,7 @@ class Plane(Module):
         # TODO: This is unstable and the basis vectors switches signs at specific angles
         normal_y, normal_z = get_yz(normal)
         basis_y = ops.stack([0, normal_z, -normal_y], axis="xyz")
-        basis_x = -ops.linalg.cross(normal, basis_y)
+        basis_x = -ops.linalg.cross(normal, basis_y, axis="xyz")
         basis_y /= ops.linalg.vector_norm(basis_y, axis="xyz")
         basis_x /= ops.linalg.vector_norm(basis_x, axis="xyz")
         return Plane(origin, basis_x, basis_y, normal)
