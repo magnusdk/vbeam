@@ -33,14 +33,14 @@ class ExpandingAperture(Apodization):
         # Include two additional elements when finding the max width. Otherwise, the
         # edge elements will be weighted to 0, because Tukey window becomes zero at
         # either side.
-        max_width = aperture.width + receiving_probe.active_elements.width * 2
-        max_height = aperture.height + receiving_probe.active_elements.height * 2
+        max_width = aperture.width + receiving_probe.active_elements.width
+        max_height = aperture.height + receiving_probe.active_elements.height
         width = ops.clip(depth / self.f_number, min_width, max_width)
         height = ops.clip(depth / self.f_number, min_height, max_height)
 
         x, y = aperture.plane.to_plane_coordinates(point)
         x = ops.clip(x, (-max_width + width) / 2, (max_width - width) / 2)
-        y = ops.clip(y, (-max_width + height) / 2, (max_height - height) / 2)
+        y = ops.clip(y, (-max_height + height) / 2, (max_height - height) / 2)
 
         elements_x, elements_y = aperture.plane.to_plane_coordinates(
             receiving_probe.active_elements.position
