@@ -1,6 +1,5 @@
 from spekk import ops, replace
 
-from vbeam import geometry
 from vbeam.apodization.window import Window
 from vbeam.core import Apodization, GeometricallyFocusedWave, Probe
 from vbeam.util._transmitted_wave import raise_if_not_geometrically_focused_wave
@@ -40,12 +39,9 @@ class RTBApodization(Apodization):
     ) -> float:
         raise_if_not_geometrically_focused_wave(transmitted_wave)
 
-        aperture = transmitting_probe.get_effective_aperture(
-            transmitted_wave.virtual_source
-        )
-        virtual_source_depth = aperture.plane.signed_distance(
-            transmitted_wave.virtual_source.to_array()
-        )
+        virtual_source = transmitted_wave.virtual_source.to_array()
+        aperture = transmitting_probe.get_effective_aperture(virtual_source)
+        virtual_source_depth = aperture.plane.signed_distance(virtual_source)
         depths = aperture.plane.signed_distance(point)
 
         # focusing_scale creates the familiar RTB "hourglass" shape.
