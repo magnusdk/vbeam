@@ -60,22 +60,23 @@ class SphericalFocusedDelayModel(TransmittedWaveDelayModel):
 
         return delay
 
+
 class SphericalDivergingDelayModel(TransmittedWaveDelayModel):
     """A simple focused wave delay model, modeling a spherical wave originating from a
     virtual source.
- 
+
     NOTE: This delay model has a harsh discontinuity around the focus depth which may
     create artifacts in your image, often looking like small lines or noise around the
     focus depth. To fix this, you should use either
     :class:`~vbeam.delay_models.focused.SphericalBlendedDelayModel` instead. It has a
     smoother transition in delay values around the focus depth.
- 
+
     See it visually in a notebook by running this code:
     >>> from vbeam.delay_models import SphericalDivergingDelayModel
     >>> delay_model = SphericalDivergingDelayModel()
     >>> delay_model.plot()
     """
- 
+
     def __call__(
         self,
         transmitting_probe: Probe,
@@ -84,7 +85,7 @@ class SphericalDivergingDelayModel(TransmittedWaveDelayModel):
         speed_of_sound: float,
     ) -> float:
         raise_if_not_geometrically_focused_wave(transmitted_wave)
- 
+
         # Calculate distances.
         origin_source_distance = geometry.distance(
             transmitted_wave.origin, transmitted_wave.virtual_source.to_array()
@@ -93,6 +94,7 @@ class SphericalDivergingDelayModel(TransmittedWaveDelayModel):
             transmitted_wave.virtual_source.to_array(), point
         )
         return (virtual_source_point_distance - origin_source_distance) / speed_of_sound
+
 
 class SphericalHybridDelayModel(TransmittedWaveDelayModel):
     """A simple focused wave delay model, modeling a spherical wave originating from a
