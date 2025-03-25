@@ -25,7 +25,7 @@ class Vector(Module):
         return Vector(depth, direction)
 
 
-class VectorWithInfiniteMagnitude(Vector):
+class VectorWithInfiniteMagnitude(Module):
     direction: ops.array
 
     def to_array(self) -> ops.array:
