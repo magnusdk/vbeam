@@ -46,6 +46,17 @@ def renamed_kwargs(version: str, **renamed_kwargs: str):
     return decorator
 
 
+def deprecated(message: str):
+    def decorator(f):
+        def wrapped(*args, **kwargs):
+            warn(f"{_get_function_name(f)} is deprecated: {message}")
+            return f(*args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
+
 if __name__ == "__main__":
     import doctest
 
