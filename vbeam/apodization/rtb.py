@@ -9,7 +9,8 @@ def _minimum_aperture_size(
     wavelength: float,
     aperture_size: float,
     depths: ops.array,
-    mainlobe_width_coefficient: float = 2 * 1.22,
+    mainlobe_width_coefficient: float,
+    # mainlobe_width_coefficient: float = 3 * 1.22,
 ):
     return mainlobe_width_coefficient * wavelength * depths / aperture_size
 
@@ -29,6 +30,7 @@ class RTBApodization(Apodization):
 
     window: Window
     wavelength: float
+    mainlobe_width_coefficient: float
 
     def __call__(
         self,
@@ -51,11 +53,11 @@ class RTBApodization(Apodization):
         # point as a function of full width at half maximum (FWHM).
         width = ops.maximum(
             aperture.width * focusing_scale,
-            _minimum_aperture_size(self.wavelength, aperture.width, depths),
+            _minimum_aperture_size(self.wavelength, aperture.width, depths, self.mainlobe_width_coefficient),
         )
         height = ops.maximum(
             aperture.height * focusing_scale,
-            _minimum_aperture_size(self.wavelength, aperture.height, depths),
+            _minimum_aperture_size(self.wavelength, aperture.height, depths, self.mainlobe_width_coefficient),
         )
 
         # Set the width and height
