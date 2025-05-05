@@ -1,4 +1,4 @@
-from spekk import ops, util
+from spekk import ops, util, Dim
 
 from vbeam.core import Coordinates, IndicesInfo
 
@@ -39,3 +39,6 @@ class LinearCoordinates(Coordinates):
             self.is_within_bounds(x),
             dim_name,
         )
+
+    def to_array(self, *, dim: Dim):
+        return ops.linspace(self.start, self.stop, self.size, dim=dim)
