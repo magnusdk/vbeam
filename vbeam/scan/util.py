@@ -15,8 +15,8 @@ def _ensure_min_and_max(min_x: float, max_x: float) -> Tuple[float, float]:
     return tuple(
         ops.where(
             min_x > max_x,
-            ops.array([max_x, min_x]),
-            ops.array([min_x, max_x]),
+            ops.stack([max_x, min_x]),
+            ops.stack([min_x, max_x]),
         )
     )
 
@@ -41,7 +41,7 @@ def _right_bound(
 
     # Get the maximum x coordinate of the corners of both the inner and outer arc.
     max_corner_x = ops.max(
-        ops.array(
+        ops.stack(
             [
                 cos_min * min_depth,  # Inner arc
                 cos_max * min_depth,  # Inner arc
