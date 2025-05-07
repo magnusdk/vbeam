@@ -31,9 +31,8 @@ class FlatRectangularProbe(Probe):
         self, virtual_source: Union[ops.array, Vector, VectorWithInfiniteMagnitude]
     ) -> Aperture:
         if isinstance(virtual_source, VectorWithInfiniteMagnitude):
-            projected_plane = self.plane.from_origin_and_normal(
-                self.plane.origin,
-                normal=virtual_source.direction,
+            projected_plane = self.plane.orient(
+                virtual_source.direction,
                 normal_is_normalized=True,
             )
 
@@ -49,11 +48,14 @@ class FlatRectangularProbe(Probe):
                 geometry.util.normalize_vector(corners_to_source_vectors),
                 axis="bounds_corners",
             )
+            projected_plane_normal = geometry.util.normalize_vector(
+                projected_plane_normal
+            )
 
             # Orient the plane of the projected aperture towards the direction of the
             # virtual source from the projected origin, but keep the roll unchanged.
-            oriented_plane = self.plane.from_origin_and_normal(
-                self.plane.origin, projected_plane_normal, normal_is_normalized=True
+            oriented_plane = self.plane.orient(
+                projected_plane_normal, normal_is_normalized=True
             )
 
             # Get the origin of the projected plane by projecting the virtual source
