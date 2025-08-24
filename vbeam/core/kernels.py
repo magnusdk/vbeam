@@ -13,6 +13,7 @@ from vbeam.core.interpolation import NDInterpolator
 from vbeam.core.points_getter import PointsGetter
 from vbeam.core.probe.base import Probe
 from vbeam.core.transmitted_wave import TransmittedWave
+from vbeam.core.aberration_correction import AberrationCorrection
 
 
 class Setup(Module):
@@ -26,6 +27,7 @@ class Setup(Module):
     reflected_wave_delay_model: ReflectedWaveDelayModel
     speed_of_sound: float
     apodization: Apodization
+    aberration_correction: AberrationCorrection
 
 
 def signal_for_point(setup: Setup) -> ops.array:
@@ -54,9 +56,10 @@ def signal_for_point(setup: Setup) -> ops.array:
         setup.receiving_probe,
         setup.speed_of_sound,
     )
+    aberration_delays = setup.aberration_correction()
 
     # Delay, interpolate, and remodulate the channel data (if IQ).
-    delays = tx_delays + rx_delays
+    delays = tx_delays + rx_delays + aberration_delays
     interpolator = setup.interpolator_type(
         setup.channel_data.data_coordinates,
         setup.channel_data.data,
