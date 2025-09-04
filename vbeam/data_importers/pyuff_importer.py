@@ -25,6 +25,7 @@ from vbeam.core import (
     TransmittedWaveDelayModel,
     transmitted_wave,
 )
+from vbeam.core.aberration_correction import NoAberrationCorrection
 from vbeam.delay_models import (
     PlaneDelayModel,
     ReflectedWaveDelayModel,
@@ -240,6 +241,7 @@ class PyUFFImporter(Module):
             reflected_wave_delay_model=self.get_reflected_wave_delay_model(),
             speed_of_sound=self.get_speed_of_sound(),
             apodization=self.get_apodization(),
+            abberation_correction=NoAberrationCorrection(),
         )
 
 
