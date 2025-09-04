@@ -96,11 +96,13 @@ class Plane(Module):
 
     @staticmethod
     def from_origin_and_angles(
-        origin: ops.array,
+        origin: ops.array | None = None,
         *,
-        azimuth: float,
-        elevation: float,
+        azimuth: float = 0,
+        elevation: float = 0,
     ) -> "Plane":
+        if origin is None:
+            origin = ops.array([0, 0, 0], ["xyz"])
         basis_x, basis_y, normal = get_rotation_matrix(
             azimuth=azimuth, elevation=elevation
         )
