@@ -11,17 +11,12 @@ from vbeam.util.coordinate_systems import as_cartesian
 
 class SectorScan(Scan):
     azimuths: ops.array
-    elevations: Optional[ops.array]  # May be None for 2D scans
+    elevations: ops.array | float  # May be just a single number for 2D scans
     depths: ops.array
     apex: ops.array
 
-    def get_points(self, flatten: bool = True) -> ops.array:
-        polar_axis = (
-            self.elevations
-            if self.is_3d
-            else ops.array([0.0], dtype=self.azimuths.dtype)
-        )
-        points = grid(self.azimuths, polar_axis, self.depths, shape=(*self.shape, 3))
+    def get_points(self) -> ops.array:
+        points = ops.stack([self.azimuths, self.elevations, self.depths], axis="xyz")
         points = as_cartesian(points)
         # Ensure that points and apex are broadcastable
         apex = (
@@ -30,8 +25,6 @@ class SectorScan(Scan):
             else self.apex
         )
         points = points + apex
-        if flatten:
-            points = points.reshape((self.num_points, 3))
         return points
 
     def replace(
@@ -120,7 +113,7 @@ class SectorScan(Scan):
         min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(self.bounds)
         x_axis = ops.linspace(min_x, max_x, shape[0], dim="xs")
         z_axis = ops.linspace(min_z, max_z, shape[1], dim="zs")
-        
+
         return (x_axis, z_axis)
 
     @_deprecations.renamed_kwargs("1.0.5", imaged_points="image")

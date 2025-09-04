@@ -161,7 +161,7 @@ def parse_axes(xyz):
         x, y, z = xyz
     elif len(xyz) == 2:
         x, z = xyz
-        y = None
+        y = 0
     else:
         raise ValueError(
             f"Provide either x, y, and z (3D) or only x and z (2D). Got {len(xyz)} axes"

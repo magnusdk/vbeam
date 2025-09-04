@@ -22,18 +22,6 @@ class Scan(PointsGetter):
         """Return the points defined by the scan, flattened to a (N, 3) array by
         default, where N is the number of points."""
 
-    @abstractmethod
-    def replace(self, *_axes: Union[ops.array, Literal["unchanged"]]) -> "Scan":
-        "Return a copy of the scan with values replaced."
-
-    @abstractmethod
-    def update(self, *_axes: Optional[Callable[[ops.array], ops.array]]) -> "Scan":
-        "Return a copy of the scan with updates applied to the given axes."
-
-    @abstractmethod
-    def resize(self, *_axes: Optional[int]) -> "Scan":
-        "Return a copy of the scan where the given axes are resized."
-
     @property
     @abstractmethod
     def axes(self) -> Tuple[ops.array, ...]:
