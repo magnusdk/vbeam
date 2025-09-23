@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from spekk import ops
 
-from vbeam.interpolation import LinearNDInterpolator, LinearCoordinates
+from vbeam.interpolation import LinearNDInterpolator, LinearCoordinate
 from vbeam.util import _deprecations
 from vbeam.util.arrays import grid
 
@@ -142,8 +142,8 @@ def scan_convert(
     radii = ops.sqrt(x**2 + z**2)
     
     data_coordinates = {
-        "azimuths": LinearCoordinates(min_az, max_az, image.dim_sizes["azimuths"]),
-        "depths": LinearCoordinates(min_depth, max_depth, image.dim_sizes["depths"]),
+        "azimuths": LinearCoordinate(min_az, max_az, image.dim_sizes["azimuths"]),
+        "depths": LinearCoordinate(min_depth, max_depth, image.dim_sizes["depths"]),
     }
     interpolator = LinearNDInterpolator(data_coordinates, image, fill_value=0)
     interpolated_data = interpolator(

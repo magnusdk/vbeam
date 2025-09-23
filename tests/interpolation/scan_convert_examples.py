@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 from spekk import ops
 from vbeam.interpolation import (
-    LinearCoordinates,
-    IrregularSampledCoordinates,
+    LinearCoordinate,
+    IrregularSampledCoordinate,
     LinearNDInterpolator,
     NearestNDInterpolator,
 )
@@ -42,8 +42,8 @@ def linear_coordinates_scan_convert():
     az, r, data, azimuths_cartesian_grid, depths_cartesian_grid = get_setup()
 
     data_coordinates = {
-        "azimuths": LinearCoordinates(az[0], az[-1], az.size),
-        "depths": LinearCoordinates(r[0], r[-1], r.size),
+        "azimuths": LinearCoordinate(az[0], az[-1], az.size),
+        "depths": LinearCoordinate(r[0], r[-1], r.size),
     }
     # interpolator = LinearNDInterpolator(data_coordinates, data, fill_value=0)
     interpolator = LinearNDInterpolator(data_coordinates, data, fill_value=None)
@@ -80,8 +80,8 @@ def irregular_coordinates_scan_convert():
     az, r, data, azimuths_cartesian_grid, depths_cartesian_grid = get_setup(use_irregular=True)
 
     data_coordinates = {
-        "azimuths": IrregularSampledCoordinates(az[0], az[-1], az),
-        "depths": LinearCoordinates(r[0], r[-1], r.size),
+        "azimuths": IrregularSampledCoordinate(az[0], az[-1], az),
+        "depths": LinearCoordinate(r[0], r[-1], r.size),
     }
     interpolator = LinearNDInterpolator(data_coordinates, data, fill_value=0)
 
@@ -116,7 +116,7 @@ def irregular_coordinates_scan_convert():
 
 def Interpolation_1d():
     x = ops.array([0,0.5,1,2,2.4,3,4,5,6.6,9], dims=['azimuths'])
-    data_coordinates = {"azimuths": IrregularSampledCoordinates(ops.min(x), ops.max(x), x, dim='azimuths')}
+    data_coordinates = {"azimuths": IrregularSampledCoordinate(ops.min(x), ops.max(x), x, dim='azimuths')}
 
     # x = ops.linspace(0, 9, 10, dim='azimuths')
     # data_coordinates = {"azimuths": LinearCoordinates(ops.min(x), ops.max(x), x.size)}

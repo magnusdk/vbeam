@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, Union
+from typing import Mapping, Union
 
 from spekk import Dim, Module, ops
 
@@ -29,20 +29,11 @@ class IndicesInfo(Module):
         return ops.abs(self.indices_positions - self.x)
 
 
-class Coordinates(Module):
-    """Coordinates of data, useful for interpolating an array of data. It gives
+class Coordinate(Module):
+    """Coordinate of data, useful for interpolating an array of data. It gives
     information about how to map from a physical position to an index in an array, and
     vice-versa.
-
-    Attributes:
-        start (float): The coordinate (e.g. time or position) of the first sample.
-        stop (float): The coordinate (e.g. time or position) of the last sample.
-
-    `start` and `stop` are used to check whether a sample is within bounds.
     """
-
-    start: float
-    stop: float
 
     @abstractmethod
     def get_nearest_indices(self, x: ops.array, n_samples: int) -> IndicesInfo:
@@ -56,17 +47,12 @@ class Coordinates(Module):
             n_samples (int): The number of samples around `x` to return.
         """
 
-    def is_within_bounds(self, x: ops.array) -> bool:
-        lower = ops.minimum(self.start, self.stop)
-        upper = ops.maximum(self.start, self.stop)
-        return ops.logical_and(lower <= x, x <= upper)
-
 
 class NDInterpolator(Module):
     """A base class for interpolating N-dimensional arrays with named dimensions.
 
     Attributes:
-        data_coordinates (Dict[Dim, Coordinates]): The coordinates of the data, giving
+        coordinates (Dict[Dim, Coordinate]): The coordinates of the data, giving
             information on how to map from a physical position to an index in the data.
         data (ops.array): The data to be interpolated.
         fill_value (Union[float, None]): The value to give if an index is out of bounds
@@ -74,12 +60,12 @@ class NDInterpolator(Module):
             indexing.
     """
 
-    data_coordinates: Dict[Dim, Coordinates]
+    coordinates: Mapping[str, Coordinate]
     data: ops.array
     fill_value: Union[float, None] = float("nan")
 
     @abstractmethod
-    def __call__(self, xi: Dict[Dim, ops.array]) -> ops.array:
+    def __call__(self, xi: Mapping[str, int | float | ops.array]) -> ops.array:
         """Interpolate the data at the new positions given by `xi`.
 
         Args:

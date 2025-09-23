@@ -8,6 +8,15 @@ class RectangularBounds(Module):
     width: float
     height: float
 
+    def is_within(self, point: ops.array) -> ops.array:
+        x, y = self.plane.to_plane_coordinates(point)
+        return (
+            (x > -self.width / 2)
+            & (x < self.width / 2)
+            & (y > -self.height / 2)
+            & (y < self.height / 2)
+        )
+
     @property
     def center(self) -> ops.array:
         return self.plane.origin

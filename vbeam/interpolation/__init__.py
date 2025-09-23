@@ -1,17 +1,17 @@
-from vbeam.core.interpolation import Coordinates, IndicesInfo, NDInterpolator
-from vbeam.interpolation.linear_coordinates import LinearCoordinates
-from vbeam.interpolation.irregular_sampled_coordinates import IrregularSampledCoordinates
+from vbeam.core.interpolation import Coordinate, IndicesInfo, NDInterpolator
+from vbeam.interpolation.linear_coordinate import LinearCoordinate
+from vbeam.interpolation.irregular_sampled_coordinate import IrregularSampledCoordinate
 from vbeam.interpolation.nd_interpolator import (
     LinearNDInterpolator,
     NearestNDInterpolator,
 )
 
 __all__ = [
-    "Coordinates",
+    "Coordinate",
     "IndicesInfo",
     "NDInterpolator",
-    "LinearCoordinates",
-    "IrregularSampledCoordinates",
+    "LinearCoordinate",
+    "IrregularSampledCoordinate",
     "LinearNDInterpolator",
     "NearestNDInterpolator",
 ]

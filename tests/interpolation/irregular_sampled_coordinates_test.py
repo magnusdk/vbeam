@@ -3,7 +3,7 @@ print(matplotlib.get_backend())
 
 import matplotlib.pyplot as plt
 
-from vbeam.interpolation import IrregularSampledCoordinates, LinearCoordinates
+from vbeam.interpolation import IrregularSampledCoordinate, LinearCoordinate
 from spekk import ops
 
 # ops.backend.set_backend("numpy")
@@ -12,7 +12,7 @@ def plot_linear_coordinates(index, n_samples):
     # For linear sampels
     x = ops.linspace(0, 9, 10, dim='depth')
 
-    linear_coordinates = LinearCoordinates(ops.min(x), ops.max(x), x.size)
+    linear_coordinates = LinearCoordinate(ops.min(x), ops.max(x), x.size)
     # x_in = ops.linspace(0,9, 37, dim='depth')
     # x_in = ops.linspace(-2, 9, 45, dim='depth')
     x_in = ops.linspace(-2, 11, 53, dim='xs')
@@ -36,7 +36,7 @@ def plot_linear_coordinates(index, n_samples):
 def plot_irregular_sampled_coordinates(index, n_samples):
     x = ops.array([0,0.5,1,2,2.4,3,4,5,6.6,9], dims=['depth_2'])
 
-    irregular_sampled_coordinate = IrregularSampledCoordinates(ops.min(x), ops.max(x), x, dim='depth_2')
+    irregular_sampled_coordinate = IrregularSampledCoordinate(ops.min(x), ops.max(x), x, dim='depth_2')
     x_in = ops.linspace(-2, 11, 53, dim='xs')
 
     indices_info = irregular_sampled_coordinate.get_nearest_indices(x_in, n_samples)

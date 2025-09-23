@@ -8,12 +8,11 @@ from spekk import Module, ops
 
 from vbeam.core.apodization import Apodization
 from vbeam.core.channel_data import TChannelData
-from vbeam.core.delay_models import ReflectedWaveDelayModel, TransmittedWaveDelayModel
+from vbeam.core.delay_models import DelayModel
 from vbeam.core.interpolation import NDInterpolator
 from vbeam.core.points_getter import PointsGetter
 from vbeam.core.probe.base import Probe
 from vbeam.core.transmitted_wave import TransmittedWave
-from vbeam.core.aberration_correction import AberrationCorrection
 
 
 class Setup(Module):
@@ -23,11 +22,8 @@ class Setup(Module):
     transmitted_wave: TransmittedWave
     channel_data: TChannelData
     interpolator_type: Type[NDInterpolator]
-    transmitted_wave_delay_model: TransmittedWaveDelayModel
-    reflected_wave_delay_model: ReflectedWaveDelayModel
-    speed_of_sound: float
+    delay_model: DelayModel
     apodization: Apodization
-    aberration_correction: AberrationCorrection
 
 
 def signal_for_point(setup: Setup) -> ops.array:
@@ -42,24 +38,17 @@ def signal_for_point(setup: Setup) -> ops.array:
         else setup.points
     )
 
-    # Get the delay in seconds between when the wave was transmitted from the
-    # transmitting probe to when it reached the given point(s), and the same for the
-    # reflected wave.
-    tx_delays = setup.transmitted_wave_delay_model(
-        setup.transmitting_probe,
+    # Get the delay in seconds between when the wave passed through
+    # transmitted_wave.origin, to when it reached a given point, and to when it was
+    # reflected back to a receiving element.
+    delays = setup.delay_model(
         points,
         setup.transmitted_wave,
-        setup.speed_of_sound,
-    )
-    rx_delays = setup.reflected_wave_delay_model(
-        points,
+        setup.transmitting_probe,
         setup.receiving_probe,
-        setup.speed_of_sound,
     )
-    aberration_delays = setup.aberration_correction()
 
     # Delay, interpolate, and remodulate the channel data (if IQ).
-    delays = tx_delays + rx_delays + aberration_delays
     interpolator = setup.interpolator_type(
         setup.channel_data.data_coordinates,
         setup.channel_data.data,

@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 from spekk import Dim, Module, ops
 
-from vbeam.interpolation import LinearCoordinates
+from vbeam.interpolation import LinearCoordinate
 
 
 class LinearlySampledChannelData(Module):
@@ -24,21 +24,21 @@ class LinearlySampledChannelData(Module):
     """
 
     data: ops.array
-    t0: float
-    sampling_frequency: float
-    modulation_frequency: Optional[float] = None
+    t0: float | ops.array
+    sampling_frequency: float | ops.array
+    modulation_frequency: Optional[float | ops.array] = None
 
     def remodulate_if_iq(self, values: ops.array, delays: ops.array) -> ops.array:
         if self.modulation_frequency is not None:
             w0 = ops.pi * 2 * self.modulation_frequency
-            values = values * ops.exp(ops.array(0+1j) * w0 * (delays - self.t0))
+            values = values * ops.exp(ops.array(0 + 1j) * w0 * (delays - self.t0))
         return values
 
     @property
-    def data_coordinates(self) -> Dict[Dim, LinearCoordinates]:
+    def data_coordinates(self) -> Dict[Dim, LinearCoordinate]:
         n_time_samples = self.data.dim_sizes["time"]
         return {
-            "time": LinearCoordinates(
+            "time": LinearCoordinate(
                 self.t0,
                 self.t0 + (n_time_samples - 1) / self.sampling_frequency,
                 n_time_samples,

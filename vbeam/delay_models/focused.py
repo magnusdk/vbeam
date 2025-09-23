@@ -1,12 +1,16 @@
 from spekk import ops
 
 from vbeam import geometry
-from vbeam.core import GeometricallyFocusedWave, Probe, TransmittedWaveDelayModel
+from vbeam.core import (
+    GeometricallyFocusedWave,
+    Probe,
+    SeparableDelayModel,
+    TransmittedWave,
+)
 from vbeam.delay_models.plane import PlaneDelayModel
-from vbeam.util._transmitted_wave import raise_if_not_geometrically_focused_wave
 
 
-class SphericalFocusedDelayModel(TransmittedWaveDelayModel):
+class SphericalFocusedDelayModel(SeparableDelayModel):
     """A simple focused wave delay model, modeling a spherical wave originating from a
     virtual source.
 
@@ -15,21 +19,22 @@ class SphericalFocusedDelayModel(TransmittedWaveDelayModel):
     focus depth. To fix this, you should use either
     :class:`~vbeam.delay_models.focused.SphericalBlendedDelayModel` instead. It has a
     smoother transition in delay values around the focus depth.
-
-    See it visually in a notebook by running this code:
-    >>> from vbeam.delay_models import SphericalFocusedDelayModel
-    >>> delay_model = SphericalFocusedDelayModel()
-    >>> delay_model.plot()
     """
 
-    def __call__(
+    speed_of_sound: float | ops.array
+
+    def get_tx_delay(
         self,
-        transmitting_probe: Probe,
         point: ops.array,
-        transmitted_wave: GeometricallyFocusedWave,
-        speed_of_sound: float,
-    ) -> float:
-        raise_if_not_geometrically_focused_wave(transmitted_wave)
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        if not isinstance(transmitted_wave, GeometricallyFocusedWave):
+            raise ValueError(
+                "Expected a geometrically focused transmitted wave, but got "
+                f"{type(transmitted_wave)}."
+            )
 
         # Calculate distances.
         origin_source_distance = geometry.distance(
@@ -42,26 +47,38 @@ class SphericalFocusedDelayModel(TransmittedWaveDelayModel):
         # Get the depths of the virtual source and point along the direction of the
         # transmitted wave. To get the direction we first need the effective aperture
         # facing towards the virtual source.
-
-        aperture = transmitting_probe.get_effective_aperture(
+        effective_aperture = transmitting_probe.get_effective_aperture(
             transmitted_wave.virtual_source
         )
-        virtual_source_depth = aperture.plane.signed_distance(
+        virtual_source_depth = effective_aperture.plane.signed_distance(
             transmitted_wave.virtual_source.to_array()
         )
-        point_depth = aperture.plane.signed_distance(point)
+        point_depth = effective_aperture.plane.signed_distance(point)
 
         # Find out whether the point lies before or beyond the virtual source. If it
         # lies before, depth_sign will equal negative 1, otherwise positive 1.
         depth_sign = ops.sign(point_depth - virtual_source_depth)
 
-        distance = virtual_source_point_distance * depth_sign + origin_source_distance
-        delay = distance / speed_of_sound
+        # Calculate distance on tx and rx and divide by speed of sound.
+        tx_distance = (
+            virtual_source_point_distance * depth_sign + origin_source_distance
+        )
+        delay = tx_distance / self.speed_of_sound
+        return delay
 
+    def get_rx_delay(
+        self,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        distance = geometry.distance(point, receiving_probe.active_elements.position)
+        delay = distance / self.speed_of_sound
         return delay
 
 
-class SphericalDivergingDelayModel(TransmittedWaveDelayModel):
+class SphericalDivergingDelayModel(SeparableDelayModel):
     """A simple focused wave delay model, modeling a spherical wave originating from a
     virtual source.
 
@@ -70,21 +87,22 @@ class SphericalDivergingDelayModel(TransmittedWaveDelayModel):
     focus depth. To fix this, you should use either
     :class:`~vbeam.delay_models.focused.SphericalBlendedDelayModel` instead. It has a
     smoother transition in delay values around the focus depth.
-
-    See it visually in a notebook by running this code:
-    >>> from vbeam.delay_models import SphericalDivergingDelayModel
-    >>> delay_model = SphericalDivergingDelayModel()
-    >>> delay_model.plot()
     """
 
-    def __call__(
+    speed_of_sound: float | ops.array
+
+    def get_tx_delay(
         self,
-        transmitting_probe: Probe,
         point: ops.array,
-        transmitted_wave: GeometricallyFocusedWave,
-        speed_of_sound: float,
-    ) -> float:
-        raise_if_not_geometrically_focused_wave(transmitted_wave)
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        if not isinstance(transmitted_wave, GeometricallyFocusedWave):
+            raise ValueError(
+                "Expected a geometrically focused transmitted wave, but got "
+                f"{type(transmitted_wave)}."
+            )
 
         # Calculate distances.
         origin_source_distance = geometry.distance(
@@ -93,10 +111,24 @@ class SphericalDivergingDelayModel(TransmittedWaveDelayModel):
         virtual_source_point_distance = geometry.distance(
             transmitted_wave.virtual_source.to_array(), point
         )
-        return (virtual_source_point_distance - origin_source_distance) / speed_of_sound
+
+        tx_distance = virtual_source_point_distance - origin_source_distance
+        delay = tx_distance / self.speed_of_sound
+        return delay
+
+    def get_rx_delay(
+        self,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        distance = geometry.distance(point, receiving_probe.active_elements.position)
+        delay = distance / self.speed_of_sound
+        return delay
 
 
-class SphericalHybridDelayModel(TransmittedWaveDelayModel):
+class SphericalHybridDelayModel(SeparableDelayModel):
     """A simple focused wave delay model, modeling a spherical wave originating from a
     virtual source, but modeling it as a plane wave around the focus depth. Modeling
     the wave as a plane wave around the focus depth lessens the discontinuity artifacts
@@ -113,23 +145,23 @@ class SphericalHybridDelayModel(TransmittedWaveDelayModel):
         O. M. Hoel Rindal, A. R. -. Molares and A. Austeng, "A Simple, Artifact - Free,
         Virtual Source Model," 2018 IEEE International Ultrasonics Symposium (IUS),
         Kobe, Japan, 2018, pp. 1-4, doi: 10.1109/ULTSYM.2018.8579944.
-
-    See it visually in a notebook by running this code:
-    >>> from vbeam.delay_models import SphericalHybridDelayModel
-    >>> delay_model = SphericalHybridDelayModel(5e-3)
-    >>> delay_model.plot()
     """
 
+    speed_of_sound: float | ops.array
     plane_wave_region_size: float
 
-    def __call__(
+    def get_tx_delay(
         self,
-        transmitting_probe: Probe,
         point: ops.array,
-        transmitted_wave: GeometricallyFocusedWave,
-        speed_of_sound: float,
-    ) -> float:
-        raise_if_not_geometrically_focused_wave(transmitted_wave)
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> ops.array:
+        if not isinstance(transmitted_wave, GeometricallyFocusedWave):
+            raise ValueError(
+                "Expected a geometrically focused transmitted wave, but got "
+                f"{type(transmitted_wave)}."
+            )
 
         # Find the depth of the point compared to the depth of the virtual source.
         aperture = transmitting_probe.get_effective_aperture(
@@ -145,16 +177,27 @@ class SphericalHybridDelayModel(TransmittedWaveDelayModel):
         # spherical wave delay model.
         return ops.where(
             depth_difference <= (self.plane_wave_region_size / 2),
-            PlaneDelayModel()(
-                transmitting_probe, point, transmitted_wave, speed_of_sound
+            PlaneDelayModel(self.speed_of_sound).get_tx_delay(
+                point, transmitted_wave, transmitting_probe, receiving_probe
             ),
-            SphericalFocusedDelayModel()(
-                transmitting_probe, point, transmitted_wave, speed_of_sound
+            SphericalFocusedDelayModel(self.speed_of_sound).get_tx_delay(
+                point, transmitted_wave, transmitting_probe, receiving_probe
             ),
         )
 
+    def get_rx_delay(
+        self,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        distance = geometry.distance(point, receiving_probe.active_elements.position)
+        delay = distance / self.speed_of_sound
+        return delay
 
-class SphericalBlendedDelayModel(TransmittedWaveDelayModel):
+
+class SphericalBlendedDelayModel(SeparableDelayModel):
     """A simple focused wave delay model, modeling a spherical wave originating from a
     virtual source, but gradually modeling it as a plane wave around the focus depth.
     Modeling the wave as a plane wave around the focus depth lessens the discontinuity
@@ -174,30 +217,30 @@ class SphericalBlendedDelayModel(TransmittedWaveDelayModel):
         O. M. Hoel Rindal, A. R. -. Molares and A. Austeng, "A Simple, Artifact - Free,
         Virtual Source Model," 2018 IEEE International Ultrasonics Symposium (IUS),
         Kobe, Japan, 2018, pp. 1-4, doi: 10.1109/ULTSYM.2018.8579944.
-
-    See it visually in a notebook by running this code:
-    >>> from vbeam.delay_models import SphericalBlendedDelayModel
-    >>> delay_model = SphericalBlendedDelayModel(5e-3)
-    >>> delay_model.plot()
     """
 
+    speed_of_sound: float | ops.array
     plane_wave_region_size: float
 
-    def __call__(
+    def get_tx_delay(
         self,
-        transmitting_probe: Probe,
         point: ops.array,
-        transmitted_wave: GeometricallyFocusedWave,
-        speed_of_sound: float,
-    ) -> float:
-        raise_if_not_geometrically_focused_wave(transmitted_wave)
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> ops.array:
+        if not isinstance(transmitted_wave, GeometricallyFocusedWave):
+            raise ValueError(
+                "Expected a geometrically focused transmitted wave, but got "
+                f"{type(transmitted_wave)}."
+            )
 
         # Get delay values for spherical wave model and plane wave model.
-        spherical_wave_delay = SphericalFocusedDelayModel()(
-            transmitting_probe, point, transmitted_wave, speed_of_sound
-        )
-        plane_wave_delay = PlaneDelayModel()(
-            transmitting_probe, point, transmitted_wave, speed_of_sound
+        spherical_wave_delay = SphericalFocusedDelayModel(
+            self.speed_of_sound
+        ).get_tx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
+        plane_wave_delay = PlaneDelayModel(self.speed_of_sound).get_tx_delay(
+            point, transmitted_wave, transmitting_probe, receiving_probe
         )
 
         # Find the depth of the point compared to the depth of the virtual source.
@@ -220,3 +263,14 @@ class SphericalBlendedDelayModel(TransmittedWaveDelayModel):
 
         # Linearly blend the two delay models.
         return plane_wave_delay * p + spherical_wave_delay * (1 - p)
+
+    def get_rx_delay(
+        self,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        distance = geometry.distance(point, receiving_probe.active_elements.position)
+        delay = distance / self.speed_of_sound
+        return delay

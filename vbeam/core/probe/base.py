@@ -3,7 +3,7 @@ from abc import abstractmethod
 from spekk import Module, ops
 
 from vbeam.core.probe.aperture import Aperture
-from vbeam.geometry import Plane, Vector, VectorWithInfiniteMagnitude
+from vbeam.geometry import Plane, RectangularBounds, Vector, VectorWithInfiniteMagnitude
 
 
 class ProbeElement(Module):
@@ -18,6 +18,10 @@ class ProbeElement(Module):
     @property
     def position(self) -> ops.array:
         return self.plane.origin
+
+    @property
+    def bounds(self) -> RectangularBounds:
+        return RectangularBounds(self.plane, self.width, self.height)
 
 
 class Probe(Module):

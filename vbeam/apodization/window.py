@@ -4,16 +4,8 @@ or apodization functions; but don't mix up window functions and vbeam's
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 
 from spekk import Module, ops
-
-# For adding type hints to Window.plot:
-if TYPE_CHECKING:
-    try:
-        from matplotlib.axes import Axes
-    except ImportError:
-        pass
 
 
 class Window(Module):
@@ -41,7 +33,7 @@ class Window(Module):
         >>> win.plot()
         """
 
-    def plot(self) -> "Axes":
+    def plot(self):
         import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots(ncols=2, figsize=(10, 3))

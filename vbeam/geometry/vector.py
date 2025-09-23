@@ -17,7 +17,12 @@ class Vector(Module):
         return Vector(magnitude, v)
 
     @staticmethod
-    def from_angles(depth: float, *, azimuth: float, elevation: float) -> "Vector":
+    def from_angles(
+        depth: float | ops.array,
+        *,
+        azimuth: float | ops.array,
+        elevation: float | ops.array,
+    ) -> "Vector":
         x, y, z = 0.0, 0.0, 1.0
         y, z = rotate_yz(y, z, elevation)
         x, z = rotate_xz(x, z, azimuth)
@@ -34,9 +39,13 @@ class VectorWithInfiniteMagnitude(Module):
         )
 
     @staticmethod
-    def from_angles(*, azimuth: float, elevation: float) -> "Vector":
+    def from_angles(
+        *,
+        azimuth: float | ops.array,
+        elevation: float | ops.array,
+    ) -> "Vector":
         x, y, z = 0.0, 0.0, 1.0
         y, z = rotate_yz(y, z, elevation)
         x, z = rotate_xz(x, z, azimuth)
         direction = ops.stack([x, y, z], axis="xyz")
-        return Vector(direction)
+        return VectorWithInfiniteMagnitude(direction)

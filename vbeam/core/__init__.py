@@ -68,11 +68,8 @@ single :term:`receiving element<Receiver>`, a single
 
 from vbeam.core.apodization import Apodization
 from vbeam.core.channel_data import TChannelData
-from vbeam.core.delay_models import (
-    ReflectedWaveDelayModel,
-    TransmittedWaveDelayModel,
-)
-from vbeam.core.interpolation import Coordinates, IndicesInfo, NDInterpolator
+from vbeam.core.delay_models import DelayModel, SeparableDelayModel
+from vbeam.core.interpolation import Coordinate, IndicesInfo, NDInterpolator
 from vbeam.core.kernels import Setup, signal_for_point
 from vbeam.core.points_getter import PointsGetter
 from vbeam.core.probe import Aperture, Probe, ProbeElement
@@ -81,9 +78,9 @@ from vbeam.core.transmitted_wave import GeometricallyFocusedWave, TransmittedWav
 __all__ = [
     "Apodization",
     "TChannelData",
-    "ReflectedWaveDelayModel",
-    "TransmittedWaveDelayModel",
-    "Coordinates",
+    "DelayModel",
+    "SeparableDelayModel",
+    "Coordinate",
     "IndicesInfo",
     "NDInterpolator",
     "Setup",

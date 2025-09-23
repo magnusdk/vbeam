@@ -32,7 +32,7 @@ class Plane(Module):
         *,
         along: Optional[ops.array] = None,
         along_is_normalized: bool = False,
-    ) -> float:
+    ) -> ops.array:
         """Return the distance from a `point` to the plane, optionally `along` a
         direction. If `along` is not given, return the distance to the closest point
         on the plane."""

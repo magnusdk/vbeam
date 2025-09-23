@@ -17,20 +17,15 @@ from vbeam.apodization import (
 from vbeam.channel_data import LinearlySampledChannelData
 from vbeam.core import (
     Apodization,
+    DelayModel,
     NDInterpolator,
     Probe,
-    ReflectedWaveDelayModel,
     Setup,
     TChannelData,
-    TransmittedWaveDelayModel,
     transmitted_wave,
 )
 from vbeam.core.aberration_correction import NoAberrationCorrection
-from vbeam.delay_models import (
-    PlaneDelayModel,
-    ReflectedWaveDelayModel,
-    SphericalBlendedDelayModel,
-)
+from vbeam.delay_models import PlaneDelayModel, SphericalBlendedDelayModel
 from vbeam.scan import Scan, linear_scan, sector_scan
 
 
@@ -128,7 +123,8 @@ class PyUFFImporter(Module):
             float(self.channel_data.modulation_frequency),
         )
 
-    def get_transmitted_wave_delay_model(self) -> TransmittedWaveDelayModel:
+    def get_delay_model(self) -> DelayModel:
+        speed_of_sound = float(self.channel_data.sound_speed)
         waves = self.channel_data.sequence
         if isinstance(waves, pyuff.Wave):
             waves = [waves]
@@ -142,15 +138,12 @@ class PyUFFImporter(Module):
 
         _wave_xyz = waves[0].source.xyz
         if wavefront == pyuff.Wavefront.plane or numpy.isinf(_wave_xyz).any():
-            return PlaneDelayModel()
+            return PlaneDelayModel(speed_of_sound)
         elif wavefront == pyuff.Wavefront.spherical:
             plane_wave_region_size = float(self.channel_data.wavelength * 4)
-            return SphericalBlendedDelayModel(plane_wave_region_size)
+            return SphericalBlendedDelayModel(speed_of_sound, plane_wave_region_size)
         else:
             raise ValueError(f"Unrecognized wavefront type: {wavefront}.")
-
-    def get_reflected_wave_delay_model(self) -> ReflectedWaveDelayModel:
-        return ReflectedWaveDelayModel()
 
     def get_transmitting_probe(self) -> probe.Probe:
         # assert isinstance(self.channel_data.probe, pyuff.MatrixArray)
@@ -186,9 +179,6 @@ class PyUFFImporter(Module):
         if self.scan is not None:
             return parse_pyuff_scan(self.scan)
         return None
-
-    def get_speed_of_sound(self) -> float:
-        return float(self.channel_data.sound_speed)
 
     def get_transmitted_wave(self) -> transmitted_wave.GeometricallyFocusedWave:
         waves = self.channel_data.sequence
@@ -237,11 +227,8 @@ class PyUFFImporter(Module):
             transmitted_wave=self.get_transmitted_wave(),
             channel_data=self.get_channel_data(frame),
             interpolator_type=self.get_interpolator_type(),
-            transmitted_wave_delay_model=self.get_transmitted_wave_delay_model(),
-            reflected_wave_delay_model=self.get_reflected_wave_delay_model(),
-            speed_of_sound=self.get_speed_of_sound(),
+            delay_model=self.get_delay_model(),
             apodization=self.get_apodization(),
-            aberration_correction=NoAberrationCorrection(),
         )
 
 

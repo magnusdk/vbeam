@@ -1,25 +1,26 @@
-from vbeam.core.delay_models import ReflectedWaveDelayModel, TransmittedWaveDelayModel
+from vbeam.core.delay_models import DelayModel, SeparableDelayModel
 from vbeam.delay_models.focused import (
     SphericalBlendedDelayModel,
-    SphericalFocusedDelayModel,
     SphericalDivergingDelayModel,
+    SphericalFocusedDelayModel,
     SphericalHybridDelayModel,
 )
 from vbeam.delay_models.plane import PlaneDelayModel
 from vbeam.delay_models.refocus import REFoCUSDelayModel
-from vbeam.delay_models.stai import STAIDelayModel
+from vbeam.delay_models.synthetic_transmit_aperture import STADelayModel
+
 # TODO: Re-implement unified delay model
 # from vbeam.delay_models.unified import UnifiedDelayModel
 
 __all__ = [
-    "ReflectedWaveDelayModel",
-    "TransmittedWaveDelayModel",
+    "DelayModel",
+    "SeparableDelayModel",
     "SphericalHybridDelayModel",
     "SphericalFocusedDelayModel",
     "SphericalDivergingDelayModel",
     "PlaneDelayModel",
     "REFoCUSDelayModel",
-    "STAIDelayModel",
+    "STADelayModel",
     # "UnifiedDelayModel",
     "SphericalBlendedDelayModel",
 ]

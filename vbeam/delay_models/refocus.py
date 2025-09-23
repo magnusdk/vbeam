@@ -1,50 +1,45 @@
-from typing import Optional
+from spekk import field, ops, replace
 
-from spekk import ops
-
-from vbeam import geometry
-from vbeam.core import GeometricallyFocusedWave, Probe, TransmittedWaveDelayModel
-from vbeam.util._transmitted_wave import raise_if_not_geometrically_focused_wave
+from vbeam.core import DelayModel, Probe, SeparableDelayModel, TransmittedWave
+from vbeam.delay_models.synthetic_transmit_aperture import STADelayModel
 
 
-class REFoCUSDelayModel(TransmittedWaveDelayModel):
-    """Model the spherical waves fired by the individual elements of the transmitting 
+class REFoCUSDelayModel(DelayModel):
+    """Model the spherical waves fired by the individual elements of the transmitting
     probe.
 
     Reference:
-        N. Bottenus, "Recovery of the Complete Data Set From Focused Transmit Beams," 
-        in IEEE Transactions on Ultrasonics, Ferroelectrics, and Frequency Control, 
+        N. Bottenus, "Recovery of the Complete Data Set From Focused Transmit Beams,"
+        in IEEE Transactions on Ultrasonics, Ferroelectrics, and Frequency Control,
         vol. 65, no. 1, pp. 30-38, Jan. 2018, doi: 10.1109/TUFFC.2017.2773495.
     """
-    base_wavefront: TransmittedWaveDelayModel
-    tx_speed_of_sound: Optional[float] = None
+
+    synthetic_element_positions: ops.array
+    focusing_delay_model: SeparableDelayModel
+    stai_delay_model: DelayModel = field(default_factory=lambda: STADelayModel(1540.0))
 
     def __call__(
         self,
-        transmitting_probe: Probe,
         point: ops.array,
-        transmitted_wave: GeometricallyFocusedWave,
-        speed_of_sound: float,
-    ) -> float:
-        raise_if_not_geometrically_focused_wave(transmitted_wave)
-
-        # Calculate the delays for when each individual element fired.
-        tx_speed_of_sound = (
-            self.tx_speed_of_sound
-            if self.tx_speed_of_sound is not None
-            else speed_of_sound
-        )
-        focusing_compensation = self.base_wavefront(
-            transmitting_probe,
-            transmitting_probe.active_elements.position,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        # The element fired when the original wave passed through it. This is the
+        # focusing delay compensation.
+        focusing_compensation = self.focusing_delay_model.get_tx_delay(
+            self.synthetic_element_positions,
             transmitted_wave,
-            tx_speed_of_sound,
+            transmitting_probe,
+            receiving_probe,
         )
 
-        # Calculate the distances from each element to the imaged point.
-        distances = geometry.distance(
-            transmitting_probe.active_elements.position, point
-        )
         # Calculate the delays with focusing compensation.
-        delays = distances / speed_of_sound + focusing_compensation
+        stai_transmitted_wave = replace(
+            transmitted_wave, origin=self.synthetic_element_positions
+        )
+        stai_delays = self.stai_delay_model(
+            point, stai_transmitted_wave, transmitting_probe, receiving_probe
+        )
+        delays = stai_delays + focusing_compensation
         return delays

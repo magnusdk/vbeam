@@ -1,10 +1,17 @@
-from spekk import ops, util, Dim
+from spekk import Dim, ops, util
 
-from vbeam.core import Coordinates, IndicesInfo
+from vbeam.core import Coordinate, IndicesInfo
 
 
-class LinearCoordinates(Coordinates):
+class LinearCoordinate(Coordinate):
+    start: float
+    stop: float
     size: int
+
+    def is_within_bounds(self, x: ops.array) -> bool:
+        lower = ops.minimum(self.start, self.stop)
+        upper = ops.maximum(self.start, self.stop)
+        return ops.logical_and(lower <= x, x <= (upper + (upper - lower) / self.size))
 
     def get_nearest_indices(self, x: float, n_samples: int) -> IndicesInfo:
         width = self.stop - self.start
@@ -18,7 +25,6 @@ class LinearCoordinates(Coordinates):
         fractional_index_of_x = (x - self.start) / width * last_index
         if n_samples % 2 == 0:
             fractional_index_of_x += 0.5
-
         nearest_index = ops.round(fractional_index_of_x)
 
         # Add an array of offsets centered around zero. For example:

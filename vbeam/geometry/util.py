@@ -39,7 +39,7 @@ def get_xyz(v: ops.array):
 def distance(
     point1: Union[ops.array, "Vector", "VectorWithInfiniteMagnitude"],
     point2: Union[ops.array, "Vector", "VectorWithInfiniteMagnitude"],
-) -> float:
+) -> float | ops.array:
     from vbeam.geometry.vector import Vector, VectorWithInfiniteMagnitude
 
     if isinstance(point1, VectorWithInfiniteMagnitude) or isinstance(
