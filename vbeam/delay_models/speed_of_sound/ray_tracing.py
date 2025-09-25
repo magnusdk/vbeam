@@ -25,12 +25,6 @@ class SpeedOfSoundRayTrancing(SpeedOfSound):
     interpolator_type: Type[NDInterpolator] = LinearNDInterpolator
     default_speed_of_sound: float = 1540.0
 
-    def __post_init__(self):
-        if not "xyz" in self.coordinates:
-            raise ValueError(
-                "You must specify how 'xyz' maps to different axes in the coordinates."
-            )
-
     def get_delay_between(self, point1: ops.array, point2: ops.array, /) -> ops.array:
         interpolator = self.interpolator_type(
             coordinates=self.coordinates,
