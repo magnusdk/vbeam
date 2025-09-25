@@ -14,7 +14,7 @@ from vbeam.interpolation import (
 from vbeam.scan import Scan
 
 
-class SpeedOfSoundRayTrancing(SpeedOfSound):
+class SpeedOfSoundRayTracing(SpeedOfSound):
     """Integrate the delays along a straight line between two points in a speed of
     sound map.
     """
@@ -62,7 +62,7 @@ class SpeedOfSoundRayTrancing(SpeedOfSound):
         speed_of_sound_map: ops.array,
         n_samples: Optional[int] = None,
         default_speed_of_sound: float = 1540.0,
-    ) -> "SpeedOfSoundRayTrancing":
+    ) -> "SpeedOfSoundRayTracing":
 
         points = scan.get_points()
         from_x = points["xyz", 0].min()
@@ -86,7 +86,7 @@ class SpeedOfSoundRayTrancing(SpeedOfSound):
             "xyz": ["xs", None, "zs"],
         }
 
-        return SpeedOfSoundRayTrancing(
+        return SpeedOfSoundRayTracing(
             speed_of_sound_map=speed_of_sound_map,
             coordinates=coordinates,
             n_samples=n_samples,

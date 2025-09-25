@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from spekk import ops
 
-from vbeam.delay_models.speed_of_sound.ray_tracing import SpeedOfSoundRayTrancing
+from vbeam.delay_models.speed_of_sound.ray_tracing import SpeedOfSoundRayTracing
 from vbeam.interpolation import LinearCoordinate
 
 
@@ -19,7 +19,7 @@ def test_simple_horizontal_case():
         "xs": LinearCoordinate(0, n_grid_x - 1, n_grid_x),
         "zs": LinearCoordinate(0, n_grid_z - 1, n_grid_z),
     }
-    speed_of_sound = SpeedOfSoundRayTrancing(
+    speed_of_sound = SpeedOfSoundRayTracing(
         speed_of_sound_map,
         coordinates,
         n_samples=n_grid_x - 1,
@@ -48,7 +48,7 @@ def test_simple_diagonal_case():
         "xs": LinearCoordinate(0, n_grid_z - 1, n_grid_z),
         "zs": LinearCoordinate(0, n_grid_x - 1, n_grid_x),
     }
-    speed_of_sound = SpeedOfSoundRayTrancing(
+    speed_of_sound = SpeedOfSoundRayTracing(
         speed_of_sound_map,
         coordinates,
         n_samples=n_grid_x - 1,
