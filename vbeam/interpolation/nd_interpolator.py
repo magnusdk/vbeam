@@ -51,6 +51,7 @@ class NearestNDInterpolator(NDInterpolator):
             values = values[
                 {dim: ops.squeeze(indices_info.indices, axis=indices_info.dim_name)}
             ]
-            values = ops.where(indices_info.within_bounds, values, self.fill_value)
+            if self.fill_value is not None:
+                values = ops.where(indices_info.within_bounds, values, self.fill_value)
 
         return values
