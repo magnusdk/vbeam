@@ -29,7 +29,7 @@ class IndicesInfo(Module):
         return ops.abs(self.indices_positions - self.x)
 
 
-class Coordinates(Module):
+class Coordinate(Module):
     """Coordinates of data, useful for interpolating an array of data. It gives
     information about how to map from a physical position to an index in an array, and
     vice-versa.
@@ -74,7 +74,7 @@ class NDInterpolator(Module):
             indexing.
     """
 
-    data_coordinates: Dict[Dim, Coordinates]
+    coordinates: Dict[Dim, Coordinate]
     data: ops.array
     fill_value: Union[float, None] = float("nan")
 

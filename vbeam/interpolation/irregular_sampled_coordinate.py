@@ -1,9 +1,9 @@
 from spekk import ops, util, Dim
 
-from vbeam.core import Coordinates, IndicesInfo
+from vbeam.core import Coordinate, IndicesInfo
 
 
-class IrregularSampledCoordinates(Coordinates):
+class IrregularSampledCoordinate(Coordinate):
     x_data: ops.array
     dim: Dim = None # dim in x to interploate
 

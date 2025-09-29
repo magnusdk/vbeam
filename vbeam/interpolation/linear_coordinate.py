@@ -1,9 +1,9 @@
 from spekk import ops, util, Dim
 
-from vbeam.core import Coordinates, IndicesInfo
+from vbeam.core import Coordinate, IndicesInfo
 
 
-class LinearCoordinates(Coordinates):
+class LinearCoordinate(Coordinate):
     size: int
 
     def get_nearest_indices(self, x: float, n_samples: int) -> IndicesInfo:

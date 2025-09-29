@@ -72,7 +72,7 @@ from vbeam.core.delay_models import (
     ReflectedWaveDelayModel,
     TransmittedWaveDelayModel,
 )
-from vbeam.core.interpolation import Coordinates, IndicesInfo, NDInterpolator
+from vbeam.core.interpolation import Coordinate, IndicesInfo, NDInterpolator
 from vbeam.core.kernels import Setup, signal_for_point
 from vbeam.core.points_getter import PointsGetter
 from vbeam.core.probe import Aperture, Probe, ProbeElement
@@ -83,7 +83,7 @@ __all__ = [
     "TChannelData",
     "ReflectedWaveDelayModel",
     "TransmittedWaveDelayModel",
-    "Coordinates",
+    "Coordinate",
     "IndicesInfo",
     "NDInterpolator",
     "Setup",

@@ -3,7 +3,7 @@ from typing import Dict, Protocol
 
 from spekk import Dim, ops
 
-from vbeam.core.interpolation import Coordinates
+from vbeam.core.interpolation import Coordinate
 
 
 class TChannelData(Protocol):
@@ -15,7 +15,7 @@ class TChannelData(Protocol):
         "The actual channel data array. It must at least have a dimension named 'time'."
 
     @property
-    def data_coordinates(self) -> Dict[Dim, Coordinates]:
+    def data_coordinates(self) -> Dict[Dim, Coordinate]:
         """A dict of coordinates of the channel data dimensions. It must at least have
         an entry for the 'time' dimension. The coordinates let interpolators know how
         to interpolate the data."""

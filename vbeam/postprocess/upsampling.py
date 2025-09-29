@@ -1,6 +1,6 @@
 from spekk import Dim, ops
 
-from vbeam.interpolation import LinearCoordinates, LinearNDInterpolator
+from vbeam.interpolation import LinearCoordinate, LinearNDInterpolator
 from vbeam.util._deprecations import deprecated
 
 
@@ -16,7 +16,7 @@ def upsample_grid(data: ops.array, n: int, axis: Dim):
     sample_indices = ops.linspace(0.25, last_index - 0.25, last_index * 2, dim=axis)
 
     # Upsample the data by interpolation at the sample indices
-    data_coordinates = {axis: LinearCoordinates(0, last_index, dim_size)}
+    data_coordinates = {axis: LinearCoordinate(0, last_index, dim_size)}
     interpolator = LinearNDInterpolator(data_coordinates, data, fill_value=None)
     return interpolator({axis: sample_indices})
 
@@ -35,7 +35,7 @@ def iq_upsample(data: ops.array, axis: Dim | list[Dim] | tuple[Dim]):
         dim_size = data.dim_sizes[ax]
         last_index = dim_size - 1
         indices[ax] = ops.linspace(0.25, last_index - 0.25, last_index * 2, dim=ax)
-        coordinates[ax] = LinearCoordinates(0, last_index, dim_size)
+        coordinates[ax] = LinearCoordinate(0, last_index, dim_size)
 
     interpolator = LinearNDInterpolator(coordinates, data, fill_value=None)
     return interpolator(indices)

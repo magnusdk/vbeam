@@ -15,7 +15,7 @@ class LinearNDInterpolator(NDInterpolator):
     def __call__(self, xi: Dict[Dim, ops.array]) -> ops.array:
         # Get the 2 nearest indices for each sample position from kwargs
         indices_info_dict: Dict[Dim, IndicesInfo] = {
-            dim: self.data_coordinates[dim].get_nearest_indices(x, 2)
+            dim: self.coordinates[dim].get_nearest_indices(x, 2)
             for dim, x in xi.items()
         }
 
@@ -48,7 +48,7 @@ class NearestNDInterpolator(NDInterpolator):
     def __call__(self, xi: Dict[Dim, ops.array]) -> ops.array:
         # Get the 2 nearest indices for each sample position from kwargs
         indices_info_dict: Dict[Dim, IndicesInfo] = {
-            dim: self.data_coordinates[dim].get_nearest_indices(x, 1)
+            dim: self.coordinates[dim].get_nearest_indices(x, 1)
             for dim, x in xi.items()
         }
 
