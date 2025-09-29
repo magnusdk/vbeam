@@ -2,6 +2,9 @@ import vbeam.apodization.window as window
 from vbeam.apodization.constant_width_apodization import ConstantWidthApodization
 from vbeam.apodization.expanding_aperture import ExpandingAperture
 from vbeam.apodization.no_apodization import NoApodization
+from vbeam.apodization.synthetic_transmit_aperture import (
+    SyntheticTransmitApertureApodizationFNumber,
+)
 from vbeam.apodization.plane_wave import (
     PlaneWaveTransmitApodization,
 )
@@ -30,6 +33,7 @@ __all__ = [
     "PlaneWaveTransmitApodization",
     "RTBApodization",
     "TxRxApodization",
+    "SyntheticTransmitApertureApodizationFNumber",
     "Bartlett",
     "Hamming",
     "Hanning",
