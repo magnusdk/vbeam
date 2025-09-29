@@ -24,6 +24,7 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
     n_samples: int = field(static=True)
     interpolator_type: Type[NDInterpolator] = LinearNDInterpolator
     default_speed_of_sound: float = 1540.0
+    coordinate_names_to_idx: dict = field(default_factory=lambda: {"xs": 0, "ys": 1, "zs": 2}, static=True) 
 
     def get_delay_between(self, point1: ops.array, point2: ops.array, /) -> ops.array:
         interpolator = self.interpolator_type(
@@ -40,8 +41,9 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
 
         def reduce_fn(carry, i):
             sample_point = start_position + i * step
-            x, y, z = geometry.util.get_xyz(sample_point)
-            sampled_speed_of_sound = interpolator({"xs": x, "zs": z})
+            in_coordinates = {key: sample_point["xyz", self.coordinate_names_to_idx[key]] for key in self.coordinates.keys()}            
+            sampled_speed_of_sound = interpolator(in_coordinates)
+
             # Integrate the delay for each step. The step size is constant we multiply
             # by it afterwards (see line before return statement).
             carry = carry + 1 / sampled_speed_of_sound
