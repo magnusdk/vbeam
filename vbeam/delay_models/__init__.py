@@ -7,7 +7,7 @@ from vbeam.delay_models.focused import (
 )
 from vbeam.delay_models.plane import PlaneDelayModel
 from vbeam.delay_models.refocus import REFoCUSDelayModel
-from vbeam.delay_models.synthetic_transmit_aperture import STADelayModel
+from vbeam.delay_models.synthetic_transmit_aperture import STADelayModel, STASOSMapDelayModel
 
 # TODO: Re-implement unified delay model
 # from vbeam.delay_models.unified import UnifiedDelayModel
@@ -21,6 +21,7 @@ __all__ = [
     "PlaneDelayModel",
     "REFoCUSDelayModel",
     "STADelayModel",
+    "STASOSMapDelayModel",
     # "UnifiedDelayModel",
     "SphericalBlendedDelayModel",
 ]
