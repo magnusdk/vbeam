@@ -6,6 +6,7 @@ from vbeam.delay_models.focused import (
     SphericalHybridDelayModel,
 )
 from vbeam.delay_models.plane import PlaneDelayModel
+from vbeam.delay_models.pre_calculated_delays import PreCalculatedDelayModel
 from vbeam.delay_models.refocus import REFoCUSDelayModel
 from vbeam.delay_models.synthetic_transmit_aperture import STADelayModel
 
@@ -19,6 +20,7 @@ __all__ = [
     "SphericalFocusedDelayModel",
     "SphericalDivergingDelayModel",
     "PlaneDelayModel",
+    "PreCalculatedDelayModel",
     "REFoCUSDelayModel",
     "STADelayModel",
     # "UnifiedDelayModel",
