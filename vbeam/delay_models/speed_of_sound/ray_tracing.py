@@ -118,12 +118,7 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
         if n_samples is None:
             n_samples = int(numpy.ceil(numpy.sqrt(n_x**2 + n_z**2)))
 
-        coordinates = {
-            "xs": x_axis,
-            "zs": z_axis,
-            "xyz": ["xs", None, "zs"],
-        }
-
+        coordinates = {"xs": x_axis, "zs": z_axis}
         return SpeedOfSoundRayTracing(
             speed_of_sound_map=speed_of_sound_map,
             coordinates=coordinates,
