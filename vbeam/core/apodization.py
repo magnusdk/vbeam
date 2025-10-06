@@ -37,7 +37,7 @@ class Apodization(Module):
     def combine(
         apodization,
         *more_apodizations,
-        combiner: Optional[Callable] = None,
+        combiner: Callable = ops.prod,
     ) -> "CombinedApodization":
         """Combine multiple apodizations using `combiner` into a single apodization
         object.
