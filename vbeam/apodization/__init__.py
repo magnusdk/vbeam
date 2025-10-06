@@ -1,10 +1,9 @@
 import vbeam.apodization.window as window
+from vbeam.apodization.constant_f_number import ConstantFNumberApodization
 from vbeam.apodization.constant_width_apodization import ConstantWidthApodization
 from vbeam.apodization.expanding_aperture import ExpandingAperture
 from vbeam.apodization.no_apodization import NoApodization
-from vbeam.apodization.plane_wave import (
-    PlaneWaveTransmitApodization,
-)
+from vbeam.apodization.plane_wave import PlaneWaveTransmitApodization
 from vbeam.apodization.rtb import RTBApodization
 from vbeam.apodization.tx_rx_apodization import TxRxApodization
 from vbeam.apodization.window import (
@@ -24,6 +23,7 @@ from vbeam.core.apodization import Apodization
 
 __all__ = [
     "window",
+    "ConstantFNumberApodization",
     "ConstantWidthApodization",
     "ExpandingAperture",
     "NoApodization",
