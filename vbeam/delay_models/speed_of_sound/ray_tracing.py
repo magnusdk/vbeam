@@ -1,9 +1,9 @@
 from typing import Optional, Type
 
+from enum import Enum
 import numpy
 from spekk import Dim, field, ops
 
-from vbeam import geometry
 from vbeam.delay_models.speed_of_sound.base import SpeedOfSound
 from vbeam.interpolation import (
     Coordinate,
@@ -14,26 +14,46 @@ from vbeam.interpolation import (
 from vbeam.scan import Scan
 
 
+class MapType(Enum):
+    SPEED_OF_SOUND = "speed_of_sound"
+    SLOWNESS = "slowness"
+
+
 class SpeedOfSoundRayTracing(SpeedOfSound):
-    """Integrate the delays along a straight line between two points in a speed of
-    sound map.
+    """Integrate the delays along a straight line between two points in a (speed of sound or slowness) map.
+
+    Attributes:
+        map_data: Array containing the speed of sound or slowness values.
+        coordinates: Dictionary defining the spatial map_data coordinates.
+        n_steps: Number of integration steps along the straight ray path.
+        interpolator_type: Type of interpolator to use for sampling the map_data.
+        default_data: Default value to use when sampling outside the map coordinates.
+        coordinate_names_to_idx: Mapping from coordinate names e.g. ("xs", "ys", "zs")
+            to their indices in the xyz dimension.
+        unroll: Unrolling factor in a jitted context for the integration loop.
+        map_type: Specifies whether map_data contains speed of sound or
+            slowness (1/speed_of_sound) values.
     """
 
-    speed_of_sound_map: ops.array
+    map_data: ops.array
     coordinates: dict[Dim, Coordinate]
-    n_samples: int = field(static=True)
+    n_steps: int = field(static=True)
     interpolator_type: Type[NDInterpolator] = LinearNDInterpolator
-    default_speed_of_sound: float = 1540.0
-    coordinate_names_to_idx: dict = field(default_factory=lambda: {"xs": 0, "ys": 1, "zs": 2}, static=True) 
+    default_data: float = 1540.0
+    coordinate_names_to_idx: dict = field(
+        default_factory=lambda: {"xs": 0, "ys": 1, "zs": 2}, static=True
+    )
+    unroll: int | bool = field(default=1, static=True)
+    map_type: MapType = MapType.SPEED_OF_SOUND
 
     def get_delay_between(self, point1: ops.array, point2: ops.array, /) -> ops.array:
         interpolator = self.interpolator_type(
             coordinates=self.coordinates,
-            data=self.speed_of_sound_map,
-            fill_value=self.default_speed_of_sound,
+            data=self.map_data,
+            fill_value=self.default_data,
         )
 
-        step = (point2 - point1) / self.n_samples
+        step = (point2 - point1) / self.n_steps
         step_size = ops.linalg.vector_norm(step, axis="xyz")
         # Add 0.5 steps because it is more accurate to sample the midpoints (-x- -x-)
         # than the start (x-- x--) of each sub-interval.
@@ -41,19 +61,26 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
 
         def reduce_fn(carry, i):
             sample_point = start_position + i * step
-            in_coordinates = {key: sample_point["xyz", self.coordinate_names_to_idx[key]] for key in self.coordinates.keys()}            
-            sampled_speed_of_sound = interpolator(in_coordinates)
+            in_coordinates = {
+                key: sample_point["xyz", self.coordinate_names_to_idx[key]]
+                for key in self.coordinates.keys()
+            }
+            sampled_data = interpolator(in_coordinates)
 
             # Integrate the delay for each step. The step size is constant we multiply
             # by it afterwards (see line before return statement).
-            carry = carry + 1 / sampled_speed_of_sound
+            if self.map_type == MapType.SPEED_OF_SOUND:
+                carry = carry + 1 / sampled_data
+            elif self.map_type == MapType.SLOWNESS:
+                carry = carry + sampled_data
             return carry
 
         delay_per_meter = ops.reduce_over_dim(
             reduce_fn,
-            ops.arange(self.n_samples, dim="iter"),
+            ops.arange(self.n_steps, dim="iter"),
             init=0.0,
             dim="iter",
+            unroll=self.unroll,
         )
         delays = delay_per_meter * step_size
         return delays
@@ -65,7 +92,6 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
         n_samples: Optional[int] = None,
         default_speed_of_sound: float = 1540.0,
     ) -> "SpeedOfSoundRayTracing":
-
         points = scan.get_points()
         from_x = points["xyz", 0].min()
         to_x = points["xyz", 0].max()
@@ -91,6 +117,6 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
         return SpeedOfSoundRayTracing(
             speed_of_sound_map=speed_of_sound_map,
             coordinates=coordinates,
-            n_samples=n_samples,
+            n_steps=n_samples,
             default_speed_of_sound=default_speed_of_sound,
         )

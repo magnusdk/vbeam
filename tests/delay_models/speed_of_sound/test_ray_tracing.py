@@ -22,8 +22,8 @@ def test_simple_horizontal_case():
     speed_of_sound = SpeedOfSoundRayTracing(
         speed_of_sound_map,
         coordinates,
-        n_samples=n_grid_x - 1,
-        default_speed_of_sound=default_speed_of_sound,
+        n_steps=n_grid_x - 1,
+        default_data=default_speed_of_sound,
     )
 
     point1 = ops.asarray([0, 0, 0], dims=["xyz"])
@@ -51,8 +51,8 @@ def test_simple_diagonal_case():
     speed_of_sound = SpeedOfSoundRayTracing(
         speed_of_sound_map,
         coordinates,
-        n_samples=n_grid_x - 1,
-        default_speed_of_sound=default_speed_of_sound,
+        n_steps=n_grid_x - 1,
+        default_data=default_speed_of_sound,
     )
 
     point1 = ops.asarray([0, 0, 0], dims=["xyz"])
