@@ -46,5 +46,5 @@ class LinearCoordinate(Coordinate):
             dim_name,
         )
 
-    def to_array(self, *, dim: Dim):
+    def to_array(self, *, dim: Dim=None):
         return ops.linspace(self.start, self.stop, self.size, dim=dim)
