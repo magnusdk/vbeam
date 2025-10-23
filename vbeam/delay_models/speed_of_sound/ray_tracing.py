@@ -45,15 +45,15 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
     coordinate_names_to_idx: dict = field(
         default_factory=lambda: {"xs": 0, "ys": 1, "zs": 2}, static=True
     )
-    map_type: IntegrationMethod = IntegrationMethod.SPEED_OF_SOUND
+    integration_method: IntegrationMethod = IntegrationMethod.SPEED_OF_SOUND
     unroll: int | bool = field(default=1, static=True)
 
     def get_delay_between(self, point1: ops.array, point2: ops.array, /) -> ops.array:
 
-        if self.map_type == IntegrationMethod.SPEED_OF_SOUND:
+        if self.integration_method == IntegrationMethod.SPEED_OF_SOUND:
             data = self.speed_of_sound
             default_data = self.default_speed_of_sound
-        elif self.map_type == IntegrationMethod.SLOWNESS:
+        elif self.integration_method == IntegrationMethod.SLOWNESS:
             data = 1 / self.speed_of_sound
             default_data = 1 / self.default_speed_of_sound
 
@@ -79,9 +79,9 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
 
             # Integrate the delay for each step. The step size is constant we multiply
             # by it afterwards (see line before return statement).
-            if self.map_type == IntegrationMethod.SPEED_OF_SOUND:
+            if self.integration_method == IntegrationMethod.SPEED_OF_SOUND:
                 carry = carry + 1 / sampled_data
-            elif self.map_type == IntegrationMethod.SLOWNESS:
+            elif self.integration_method == IntegrationMethod.SLOWNESS:
                 carry = carry + sampled_data
             return carry
 
