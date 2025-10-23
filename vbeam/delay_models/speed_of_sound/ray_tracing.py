@@ -14,7 +14,7 @@ from vbeam.interpolation import (
 from vbeam.scan import Scan
 
 
-class MapType(Enum):
+class IntegrationMethod(Enum):
     SPEED_OF_SOUND = "speed_of_sound"
     SLOWNESS = "slowness"
 
@@ -23,34 +23,44 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
     """Integrate the delays along a straight line between two points in a (speed of sound or slowness) map.
 
     Attributes:
-        map_data: Array containing the speed of sound or slowness values.
-        coordinates: Dictionary defining the spatial map_data coordinates.
+        speed of sound: Array containing the speed of sound values.
+        coordinates: Dictionary defining the spatial speed of sound coordinates.
         n_steps: Number of integration steps along the straight ray path.
-        interpolator_type: Type of interpolator to use for sampling the map_data.
-        default_data: Default value to use when sampling outside the map coordinates.
+        interpolator_type: Type of interpolator to use for sampling.
+        default_speed of sound: Default value to use when sampling outside the speed of sound coordinates.
         coordinate_names_to_idx: Mapping from coordinate names e.g. ("xs", "ys", "zs")
             to their indices in the xyz dimension.
         unroll: Unrolling factor in a jitted context for the integration loop.
-        map_type: Specifies whether map_data contains speed of sound or
+        integration_method: Specifies whether the speed of sound map will be integrated as speed of sound or as
             slowness (1/speed_of_sound) values.
+            Note that the output from 'get_delay_between' may not be equal for IntegrationMethod SPEED_OF_SOUND and SLOWNESS.
     """
 
-    map_data: ops.array
+    speed_of_sound: ops.array
+    # map_data: ops.array
     coordinates: dict[Dim, Coordinate]
     n_steps: int = field(static=True)
     interpolator_type: Type[NDInterpolator] = LinearNDInterpolator
-    default_data: float = 1540.0
+    default_speed_of_sound: float = 1540.0
     coordinate_names_to_idx: dict = field(
         default_factory=lambda: {"xs": 0, "ys": 1, "zs": 2}, static=True
     )
+    map_type: IntegrationMethod = IntegrationMethod.SPEED_OF_SOUND
     unroll: int | bool = field(default=1, static=True)
-    map_type: MapType = MapType.SPEED_OF_SOUND
 
     def get_delay_between(self, point1: ops.array, point2: ops.array, /) -> ops.array:
+
+        if self.map_type == IntegrationMethod.SPEED_OF_SOUND:
+            data = self.speed_of_sound
+            default_data = self.default_speed_of_sound
+        elif self.map_type == IntegrationMethod.SLOWNESS:
+            data = 1 / self.speed_of_sound
+            default_data = 1 / self.default_speed_of_sound
+
         interpolator = self.interpolator_type(
             coordinates=self.coordinates,
-            data=self.map_data,
-            fill_value=self.default_data,
+            data=data,
+            fill_value=default_data,
         )
 
         step = (point2 - point1) / self.n_steps
@@ -69,9 +79,9 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
 
             # Integrate the delay for each step. The step size is constant we multiply
             # by it afterwards (see line before return statement).
-            if self.map_type == MapType.SPEED_OF_SOUND:
+            if self.map_type == IntegrationMethod.SPEED_OF_SOUND:
                 carry = carry + 1 / sampled_data
-            elif self.map_type == MapType.SLOWNESS:
+            elif self.map_type == IntegrationMethod.SLOWNESS:
                 carry = carry + sampled_data
             return carry
 
