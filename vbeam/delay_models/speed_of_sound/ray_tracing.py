@@ -27,7 +27,8 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
         coordinates: Dictionary defining the spatial speed of sound coordinates.
         n_steps: Number of integration steps along the straight ray path.
         interpolator_type: Type of interpolator to use for sampling.
-        default_speed of sound: Default value to use when sampling outside the speed of sound coordinates.
+        default_speed_of_sound: Default value to use when sampling outside the speed of sound coordinates.
+            If set to None, the interpolator will use the nearest valid speed of sound value.
         coordinate_names_to_idx: Mapping from coordinate names e.g. ("xs", "ys", "zs")
             to their indices in the xyz dimension.
         unroll: Unrolling factor in a jitted context for the integration loop.
@@ -41,7 +42,7 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
     coordinates: dict[Dim, Coordinate]
     n_steps: int = field(static=True)
     interpolator_type: Type[NDInterpolator] = LinearNDInterpolator
-    default_speed_of_sound: float = 1540.0
+    default_speed_of_sound: float = None
     coordinate_names_to_idx: dict = field(
         default_factory=lambda: {"xs": 0, "ys": 1, "zs": 2}, static=True
     )
@@ -55,7 +56,7 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
             default_data = self.default_speed_of_sound
         elif self.integration_method == IntegrationMethod.SLOWNESS:
             data = 1 / self.speed_of_sound
-            default_data = 1 / self.default_speed_of_sound
+            default_data = self.default_speed_of_sound if self.default_speed_of_sound is None else 1 / self.default_speed_of_sound
 
         interpolator = self.interpolator_type(
             coordinates=self.coordinates,
