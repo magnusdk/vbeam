@@ -48,3 +48,8 @@ class LinearCoordinate(Coordinate):
 
     def to_array(self, *, dim: Dim=None):
         return ops.linspace(self.start, self.stop, self.size, dim=dim)
+
+    def delta(self):
+        arr = ops.linspace(self.start, self.stop, self.size)
+        return arr[1]-arr[0]
+    
