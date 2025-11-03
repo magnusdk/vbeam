@@ -47,23 +47,44 @@ class STASOSMapDelayModel(DelayModel):
     speed_of_sound: SpeedOfSound
     same_tx_rx_probe: bool = field(default=False, static=True)
 
-    def __call__(
+    def get_tx_delay(
         self,
         point: ops.array,
         transmitted_wave: TransmittedWave,
         transmitting_probe: Probe,
         receiving_probe: Probe,
     ) -> float | ops.array:
+        # Note: get_tx_delay assumes transmitted_wave.origin to be at element positions
         delays_tx = self.speed_of_sound.get_delay_between(
             transmitting_probe.active_elements.position, point
-        )
+        )   
+        return delays_tx
+
+    def get_rx_delay(
+        self,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe,
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        delays_rx = self.speed_of_sound.get_delay_between(
+            receiving_probe.active_elements.position, point
+        )   
+        return delays_rx
+
+    def __call__(
+        self,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe, 
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        delays_tx = self.get_tx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
 
         if self.same_tx_rx_probe:
             delays_rx = delays_tx.rename_dim("tx", "rx")
         else:
-            delays_rx = self.speed_of_sound.get_delay_between(
-                receiving_probe.active_elements.position, point
-            )
+            delays_rx = self.get_rx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
 
         delays = delays_tx + delays_rx
         return delays
