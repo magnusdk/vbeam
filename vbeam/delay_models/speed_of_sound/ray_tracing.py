@@ -38,7 +38,6 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
     """
 
     speed_of_sound: ops.array
-    # map_data: ops.array
     coordinates: dict[Dim, Coordinate]
     n_steps: int = field(static=True)
     interpolator_type: Type[NDInterpolator] = LinearNDInterpolator
