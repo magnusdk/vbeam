@@ -33,14 +33,14 @@ class SyntheticTransmitApertureApodizationFNumber(Apodization):
    
         return ops.logical_or(valid_fn_x * valid_fn_y, valid_minimum_aperture_x*valid_minimum_aperture_y)
 
-    def get_tx_apodization(
+    def tx(
         self,
         transmitting_probe: Probe,
         point: ops.array,
     ):
         return self.get_oneway_apodization(transmitting_probe, point)
 
-    def get_rx_apodization(
+    def rx(
         self,
         receiving_probe: Probe,
         point: ops.array,
