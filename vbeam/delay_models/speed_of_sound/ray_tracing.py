@@ -1,7 +1,6 @@
 from typing import Optional, Type
 
 from enum import Enum
-import numpy
 from spekk import Dim, field, ops
 
 from vbeam.delay_models.speed_of_sound.base import SpeedOfSound
@@ -41,12 +40,12 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
     coordinates: dict[Dim, Coordinate]
     n_steps: int = field(static=True)
     interpolator_type: Type[NDInterpolator] = LinearNDInterpolator
-    default_speed_of_sound: float = None
+    default_speed_of_sound: float | None = None
     coordinate_names_to_idx: dict = field(
         default_factory=lambda: {"xs": 0, "ys": 1, "zs": 2}, static=True
     )
     integration_method: IntegrationMethod = IntegrationMethod.SPEED_OF_SOUND
-    unroll: int | bool = field(default=1, static=True)
+    unroll: int | bool = field(default=True, static=True)
 
     def get_delay_between(self, point1: ops.array, point2: ops.array, /) -> ops.array:
 
@@ -76,7 +75,7 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
                 for key in self.coordinates.keys()
             }
             sampled_data = interpolator(in_coordinates)
-
+            
             # Integrate the delay for each step. The step size is constant we multiply
             # by it afterwards (see line before return statement).
             if self.integration_method == IntegrationMethod.SPEED_OF_SOUND:
@@ -98,30 +97,47 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
     @staticmethod
     def from_scan(
         scan: Scan,
-        speed_of_sound_map: ops.array,
-        n_samples: Optional[int] = None,
-        default_speed_of_sound: float = 1540.0,
+        speed_of_sound: ops.array,
+        n_steps: Optional[int] = None,
+        default_speed_of_sound: float | None = None
     ) -> "SpeedOfSoundRayTracing":
-        points = scan.get_points()
-        from_x = points["xyz", 0].min()
-        to_x = points["xyz", 0].max()
-        from_z = points["xyz", 2].min()
-        to_z = points["xyz", 2].max()
+        
+        from_x = scan.points["xyz", 0].min()
+        to_x = scan.points["xyz", 0].max()
+        from_y = scan.points["xyz", 1].min()
+        to_y = scan.points["xyz", 1].max()        
+        from_z = scan.points["xyz", 2].min()
+        to_z = scan.points["xyz", 2].max()
 
-        n_x, n_z = (
-            speed_of_sound_map.dim_sizes["xs"],
-            speed_of_sound_map.dim_sizes["zs"],
-        )
-        z_axis = LinearCoordinate(from_z, to_z, n_z)
-        x_axis = LinearCoordinate(from_x, to_x, n_x)
+        # n_x = speed_of_sound.dim_sizes["xs_c"]
+        # n_y = speed_of_sound.dim_sizes["ys_c"] if "ys_c" in speed_of_sound.dim_sizes else 0 
+        # n_z = speed_of_sound.dim_sizes["zs_c"]
+                 
+        # if n_steps is None:
+        #     n_steps = int((n_x**2 + n_y**2+ n_z**2)**0.5)
 
-        if n_samples is None:
-            n_samples = int(numpy.ceil(numpy.sqrt(n_x**2 + n_z**2)))
+        # coordinates = {
+        #     "xs_c": LinearCoordinate(from_x, to_x, n_x),
+        #     **({"ys_c": LinearCoordinate(from_y, to_y, n_y)} if n_y > 0 else {}),
+        #     "zs_c": LinearCoordinate(from_z, to_z, n_z),
+        # }
 
-        coordinates = {"xs": x_axis, "zs": z_axis}
+        n_x = speed_of_sound.dim_sizes["xs"]
+        n_y = speed_of_sound.dim_sizes["ys"] if "ys" in speed_of_sound.dim_sizes else 0 
+        n_z = speed_of_sound.dim_sizes["zs"]
+                 
+        if n_steps is None:
+            n_steps = int((n_x**2 + n_y**2+ n_z**2)**0.5)
+
+        coordinates = {
+            "xs": LinearCoordinate(from_x, to_x, n_x),
+            **({"ys": LinearCoordinate(from_y, to_y, n_y)} if n_y > 0 else {}),
+            "zs": LinearCoordinate(from_z, to_z, n_z),
+        }        
+
         return SpeedOfSoundRayTracing(
-            speed_of_sound_map=speed_of_sound_map,
+            speed_of_sound=speed_of_sound,
             coordinates=coordinates,
-            n_steps=n_samples,
+            n_steps=n_steps,
             default_speed_of_sound=default_speed_of_sound,
         )
