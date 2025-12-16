@@ -17,11 +17,11 @@ class IrregularSampledCoordinate(Coordinate):
 
     @property
     def start(self):
-        return self.x_data[{self.dim: 0}]
+        return self.x_data[self.dim, 0]
 
     @property
     def stop(self):
-        return self.x_data[{self.dim: -1}]
+        return self.x_data[self.dim, -1]
     
     @property
     def size(self):
