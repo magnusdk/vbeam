@@ -2,7 +2,7 @@
 :func:`~vbeam.core.kernels.signal_for_point`.
 """
 
-from typing import Type, Union
+from typing import Type
 
 from spekk import Module, ops
 
@@ -10,13 +10,13 @@ from vbeam.core.apodization import Apodization
 from vbeam.core.channel_data import TChannelData
 from vbeam.core.delay_models import DelayModel
 from vbeam.core.interpolation import NDInterpolator
-from vbeam.core.points_getter import PointsGetter
 from vbeam.core.probe.base import Probe
 from vbeam.core.transmitted_wave import TransmittedWave
 
+from vbeam.core.scan import TScan
 
 class Setup(Module):
-    points: Union[ops.array, PointsGetter]
+    scan: TScan
     transmitting_probe: Probe
     receiving_probe: Probe
     transmitted_wave: TransmittedWave
@@ -32,17 +32,12 @@ def signal_for_point(setup: Setup) -> ops.array:
     Return an :class:`~vbeam.core.kernels.Output` object which also has metadata such
     as the calculated weights.
     """
-    points = (
-        setup.points.get_points()
-        if isinstance(setup.points, PointsGetter)
-        else setup.points
-    )
 
     # Get the delay in seconds between when the wave passed through
     # transmitted_wave.origin, to when it reached a given point, and to when it was
     # reflected back to a receiving element.
     delays = setup.delay_model(
-        points,
+        setup.scan.points,
         setup.transmitted_wave,
         setup.transmitting_probe,
         setup.receiving_probe,
@@ -62,7 +57,7 @@ def signal_for_point(setup: Setup) -> ops.array:
         weights = setup.apodization(
             setup.transmitting_probe,
             setup.receiving_probe,
-            points,
+            setup.scan.points,
             setup.transmitted_wave,
         )
         values *= weights

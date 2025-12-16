@@ -5,16 +5,15 @@ from spekk import ops
 from vbeam.scan.base import CoordinateSystem, Scan
 from vbeam.scan.util import parse_axes, polar_bounds_to_cartesian_bounds, scan_convert
 from vbeam.util import _deprecations
-from vbeam.util.arrays import grid
 from vbeam.util.coordinate_systems import as_cartesian
 
 
 class SectorScan(Scan):
     azimuths: ops.array
-    elevations: ops.array | float  # May be just a single number for 2D scans
+    elevations: ops.array | float  # zero for 2D scans
     depths: ops.array
     apex: ops.array
-
+    
     def get_points(self) -> ops.array:
         points = ops.stack([self.azimuths, self.elevations, self.depths], axis="xyz")
         points = as_cartesian(points)
@@ -151,6 +150,7 @@ class SectorScan(Scan):
 def sector_scan(
     azimuths: ops.array,
     depths: ops.array,
+    *,
     apex: Union[ops.array, float] = 0.0,
 ) -> SectorScan: ...  # 2D scan
 
@@ -160,6 +160,7 @@ def sector_scan(
     azimuths: ops.array,
     elevations: ops.array,
     depths: ops.array,
+    *,
     apex: Union[ops.array, float] = 0.0,
 ) -> SectorScan: ...  # 3D scan
 

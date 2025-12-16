@@ -8,34 +8,6 @@ if TYPE_CHECKING:
     from vbeam.geometry.vector import Vector, VectorWithInfiniteMagnitude
 
 
-def get_x(v: ops.array):
-    return v["xyz", 0]
-
-
-def get_y(v: ops.array):
-    return v["xyz", 1]
-
-
-def get_z(v: ops.array):
-    return v["xyz", 2]
-
-
-def get_xy(v: ops.array):
-    return get_x(v), get_y(v)
-
-
-def get_xz(v: ops.array):
-    return get_x(v), get_z(v)
-
-
-def get_yz(v: ops.array):
-    return get_y(v), get_z(v)
-
-
-def get_xyz(v: ops.array):
-    return get_x(v), get_y(v), get_z(v)
-
-
 def distance(
     point1: Union[ops.array, "Vector", "VectorWithInfiniteMagnitude"],
     point2: Union[ops.array, "Vector", "VectorWithInfiniteMagnitude"],

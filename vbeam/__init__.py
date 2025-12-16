@@ -6,7 +6,7 @@ import vbeam.geometry as geometry
 import vbeam.interpolation as interpolation
 import vbeam.postprocess as postprocess
 import vbeam.probe as probe
-import vbeam.scan as scan
+# import vbeam.scan as scan
 import vbeam.util as util
 
 __version__ = "1.0.8"
@@ -20,6 +20,6 @@ __all__ = [
     "interpolation",
     "postprocess",
     "probe",
-    "scan",
+    # "scan",
     "util",
 ]

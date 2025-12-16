@@ -71,9 +71,9 @@ from vbeam.core.channel_data import TChannelData
 from vbeam.core.delay_models import DelayModel, SeparableDelayModel
 from vbeam.core.interpolation import Coordinate, IndicesInfo, NDInterpolator
 from vbeam.core.kernels import Setup, signal_for_point
-from vbeam.core.points_getter import PointsGetter
 from vbeam.core.probe import Aperture, Probe, ProbeElement
 from vbeam.core.transmitted_wave import GeometricallyFocusedWave, TransmittedWave
+from vbeam.core.scan import TScan
 
 __all__ = [
     "Apodization",
@@ -85,10 +85,10 @@ __all__ = [
     "NDInterpolator",
     "Setup",
     "signal_for_point",
-    "PointsGetter",
     "Aperture",
     "Probe",
     "ProbeElement",
     "GeometricallyFocusedWave",
     "TransmittedWave",
+    "TScan",
 ]

@@ -1,0 +1,186 @@
+from typing import Optional, Tuple, Union
+
+from spekk import ops
+
+from vbeam.interpolation import LinearNDInterpolator, LinearCoordinate
+
+
+# class Scan(Module):
+#     @abstractmethod
+#     def get_points(self, flatten: bool = True) -> ops.array:
+#         """Return the points defined by the scan, flattened to a (N, 3) array by
+#         default, where N is the number of points."""
+
+#     @property
+#     @abstractmethod
+#     def axes(self) -> tuple[ops.array, ...]:
+#         """Return the axes of the scan.
+
+#         E.g.: if the scan is a sector scan, return the azimuth and depths axes."""
+
+#     @property
+#     def shape(self) -> tuple[int, ...]:
+#         "Return the shape of the grid of points defined by the scan."
+#         return tuple([axis.size for axis in self.axes])
+
+#     @property
+#     def bounds(self) -> ops.array:
+#         "Return the bounds of the axes of the scan."
+#         bounds = []
+#         for ax in self.axes:
+#             bounds += [ax[0], ax[-1]]
+#         return tuple(bounds)
+
+#     @property
+#     @abstractmethod
+#     def cartesian_bounds(self) -> ops.array:
+#         """Return the bounds in cartesian coordinates of the axes of the scan (useful
+#         for sector scans)."""
+
+
+def _right_bound(
+    min_azimuth: float,
+    max_azimuth: float,
+    min_depth: float,
+    max_depth: float,
+) -> float:
+    """For the two arcs defined by the azimuth bounds (one for ``min_depth`` and one
+    for ``max_depth``), find the right-most x coordinate of the two arcs.
+
+    This will be the right-edge of a bounding box that encompasses the arcs. You can
+    get the other edges of the bounding box by rotating the azimuth bounds by 90, 180,
+    and 270 degrees.
+
+    See ``docs/tutorials/scan/sector_scan_bounds.ipynb`` for a visualization of the
+    bounding box of the arcs."""
+    cos_min, cos_max = ops.cos(min_azimuth), ops.cos(max_azimuth)
+    sin_min, sin_max = ops.sin(min_azimuth), ops.sin(max_azimuth)
+
+    # Get the maximum x coordinate of the corners of both the inner and outer arc.
+    max_corner_x = ops.max(
+        ops.stack(
+            [
+                cos_min * min_depth,  # Inner arc
+                cos_max * min_depth,  # Inner arc
+                cos_min * max_depth,  # Outer arc
+                cos_max * max_depth,  # Outer arc
+            ]
+        )
+    )
+
+    # The right-most part of the arcs may either be ``max_corner_x``, or it may be on
+    # the right-most *tangent* of the outer arc. We have to make some additional checks
+    # to make this work. The code for this is a bit terse, so just trust the generative
+    # unit tests for :attr:`SectorScan.cartesian_bounds` :)
+    return ops.where(
+        (max_azimuth - min_azimuth) < ops.pi,
+        ops.where(ops.logical_and(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
+        ops.where(ops.logical_or(sin_min < 0, sin_max > 0), max_depth, max_corner_x),
+    )
+
+
+def polar_bounds_to_cartesian_bounds(
+    bounds: Tuple[float, float, float, float]
+) -> Tuple[float, float, float, float]:
+    """Take a tuple representing the polar coordinate bounds of a grid and return the
+    cartesian coordinate bounds.
+
+    Polar coordinate bounds is of form [min_azimuth, max_azimuth, min_depth, max_depth].
+    Returned cartesian coordinate bounds is of form [min_x, max_x, min_z, max_z].
+    """
+    min_az, max_az, min_d, max_d = bounds
+    # Ensure that the min and max are actually min and max
+    min_az, max_az = _ensure_min_and_max(min_az, max_az)
+    min_d, max_d = _ensure_min_and_max(min_d, max_d)
+
+    # We get the bounds by calculating the bound for each edge of the bounding box
+    # individually. _right_bound gets the right-most x coordinate of the bounding
+    # box and we can get the other sides by rotating the azimuth bounds by 90, 180,
+    # and 270 degrees. Because in ultrasound, "straight down" is at 0 degrees, we
+    # have to rotate everything by an additional 90 degrees.
+    quarter_turn = ops.pi / 2
+    half_turn = ops.pi
+    # Return (left, right, top, bottom)
+    return (
+        -_right_bound(min_az + quarter_turn, max_az + quarter_turn, min_d, max_d),
+        _right_bound(min_az - quarter_turn, max_az - quarter_turn, min_d, max_d),
+        -_right_bound(min_az + half_turn, max_az + half_turn, min_d, max_d),
+        _right_bound(min_az, max_az, min_d, max_d),
+    )
+
+
+@_deprecations.renamed_kwargs("1.0.5", imaged_points="image", sector_scan="bounds")
+def scan_convert(
+    image: ops.array,
+    bounds: Union[Tuple[float, float, float, float], "SectorScan"],
+    azimuth_axis: int = -2,
+    depth_axis: int = -1,
+    *,  # Remaining args must be passed by name (to avoid confusion)
+    shape: Optional[Union[Tuple[int, int], str]] = None,
+    default_value: Optional[ops.array] = 0.0,
+    edge_handling: str = "Value",
+    cartesian_axes: Optional[Tuple[ops.array, ops.array]] = None,
+):
+    from vbeam.scan import CoordinateSystem, Scan
+
+    if isinstance(bounds, Scan):
+        if not bounds.coordinate_system == CoordinateSystem.POLAR:
+            raise ValueError("You may only scan convert from polar coordinates.")
+        bounds = bounds.bounds
+
+    width, height = image.shape[azimuth_axis], image.shape[depth_axis]
+    min_az, max_az, min_depth, max_depth = bounds
+
+    # Get the points in the cartesian grid
+    if cartesian_axes is None:
+        min_x, max_x, min_z, max_z = polar_bounds_to_cartesian_bounds(bounds)
+        if shape is None:
+            shape = image.shape[azimuth_axis], image.shape[depth_axis]
+        elif isinstance(shape, str):
+            if shape == "keep_aspect_ratio":
+                out_height = image.shape[depth_axis]
+                azimuth_scale = ops.abs((max_x - min_x) / (max_z - min_z))
+                shape = int(ops.round(out_height * azimuth_scale)), out_height
+            else:
+                raise ValueError(f"Unsupported shape {shape}")
+        points = grid(
+            ops.linspace(min_x, max_x, shape[0], dim="xs"),
+            ops.linspace(min_z, max_z, shape[1], dim="zs"),
+        )
+    else:
+        points = grid(
+            cartesian_axes[0],
+            cartesian_axes[1],
+        )
+
+    x, z = points["xyz", 0], points["xyz", 1]  # (Ignore y; scan_convert only supports 2D!)
+    # and transform each point to polar coordinates.
+    angles = ops.atan2(x, z)
+    radii = ops.sqrt(x**2 + z**2)
+    
+    data_coordinates = {
+        "azimuths": LinearCoordinate(min_az, max_az, image.dim_sizes["azimuths"]),
+        "depths": LinearCoordinate(min_depth, max_depth, image.dim_sizes["depths"]),
+    }
+    interpolator = LinearNDInterpolator(data_coordinates, image, fill_value=0)
+    interpolated_data = interpolator(
+        {
+            "azimuths": angles,
+            "depths": radii,
+        }
+    )
+    return interpolated_data
+
+
+def parse_axes(xyz):
+    "Internal utility function for parsing axes. Handles both 2D and 3D scans."
+    if len(xyz) == 3:
+        x, y, z = xyz
+    elif len(xyz) == 2:
+        x, z = xyz
+        y = 0
+    else:
+        raise ValueError(
+            f"Provide either x, y, and z (3D) or only x and z (2D). Got {len(xyz)} axes"
+        )
+    return x, y, z
