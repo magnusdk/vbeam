@@ -56,7 +56,5 @@ class SyntheticTransmitApertureApodizationFNumber(Apodization):
     ) -> float:
         "Return the spatial weighting at the given `point`."
 
-        return self.get_rx_apodization(
-            receiving_probe, point
-        ) * self.get_tx_apodization(transmitting_probe, point)
+        return self.rx(receiving_probe, point) * self.tx(transmitting_probe, point)
 
