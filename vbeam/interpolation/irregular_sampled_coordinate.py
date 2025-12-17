@@ -30,7 +30,7 @@ class IrregularSampledCoordinate(Coordinate):
     def is_within_bounds(self, x: ops.array) -> bool:
         lower = ops.minimum(self.start, self.stop)
         upper = ops.maximum(self.start, self.stop)
-        return ops.logical_and(lower <= x, x <= (upper + (upper - lower) / self.size))
+        return ops.logical_and(lower <= x, x <= upper)
 
     def get_nearest_indices(self, x: float, n_samples: int) -> IndicesInfo:
         """When n_samples is odd, returns equally number of indices on both sides of closest index.
