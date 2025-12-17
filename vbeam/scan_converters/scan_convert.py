@@ -39,7 +39,7 @@ class SectorScanConverter(ScanConverter):
     fill_value: float | None
     interpolator_type: Type[NDInterpolator]
     sampling_types: dict[str, Type[Coordinate]]
-    shape: tuple | None = field(default=None, static=True)
+    output_shape: tuple | None = field(default=None, static=True)
     _azimuth_scale: float = field(default=None, static=True)
     _elevation_scale: float = field(default=None, static=True)
     _is_3d: bool = field(default=True, static=True)
@@ -56,19 +56,19 @@ class SectorScanConverter(ScanConverter):
         cartesian_points: ops.array | None = None,
     ):
         if cartesian_points is None:
-            if self.shape is None:
-                shape = self.calculate_cartesian_shape(
+            if self.output_shape is None:
+                output_shape = self.calculate_cartesian_shape(
                     n_zs=beamspace_data.dim_sizes["depths"]
                 )
             else:
-                shape = self.shape
-            cartesian_points = self.get_cartesian_points(shape)
+                output_shape = self.output_shape
+            cartesian_points = self.get_cartesian_points(output_shape)
 
         polar_points = self.scan.from_cartesian_to_local_coordinates(cartesian_points)
 
         interpolated_coordinates = {
             "azimuths": polar_points["az_el_depth", 0],
-            "depths": polar_points["az_el_depth", 2]
+            "depths": polar_points["az_el_depth", 2],
             ** ({"elevations": polar_points["az_el_depth", 1]} if self._is_3d else {}),
         }
 
@@ -79,11 +79,11 @@ class SectorScanConverter(ScanConverter):
         }
 
         for key, sampling_type in self.sampling_types.items():
-            if isinstance(sampling_type, IrregularSampledCoordinate):
+            if sampling_type==IrregularSampledCoordinate:
                 beamspace_coordinates[key] = IrregularSampledCoordinate(
                     x_data=beamspace_coordinates[key], dim=key
                 )
-            elif isinstance(sampling_type, LinearCoordinate):
+            elif sampling_type==LinearCoordinate:
                 beamspace_coordinates[key] = LinearCoordinate(
                     start=beamspace_coordinates[key][0], 
                     stop=beamspace_coordinates[key][-1], 
@@ -103,12 +103,12 @@ class SectorScanConverter(ScanConverter):
         )
 
     def get_azimuth_scale(self) -> float:
-        min_x, max_x, min_y, max_y, min_z, max_z = self.calculate_cartesian_bounds()
+        min_x, max_x, min_y, max_y, min_z, max_z = self.scan.calculate_cartesian_bounds()
         azimuth_scale = ops.abs((max_x - min_x) / (max_z - min_z))
         return float(azimuth_scale)
 
     def get_elevation_scale(self) -> float:
-        min_x, max_x, min_y, max_y, min_z, max_z = self.calculate_cartesian_bounds()
+        min_x, max_x, min_y, max_y, min_z, max_z = self.scan.calculate_cartesian_bounds()
         elevation_scale = ops.abs((max_y - min_y) / (max_z - min_z))
         return float(elevation_scale)
 
@@ -123,12 +123,12 @@ class SectorScanConverter(ScanConverter):
 
         return (n_xs, n_ys, n_zs)
 
-    def get_cartesian_points(self, shape: ops.array) -> ops.array:
+    def get_cartesian_points(self, output_shape: ops.array) -> ops.array:
         min_x, max_x, min_y, max_y, min_z, max_z = self.scan.calculate_cartesian_bounds()
 
-        x_axis = ops.linspace(min_x, max_x, shape[0], dim="xs")
-        y_axis = ops.linspace(min_y, max_y, shape[1], dim="ys") if self._is_3d else 0
-        z_axis = ops.linspace(min_z, max_z, shape[2], dim="zs")
+        x_axis = ops.linspace(min_x, max_x, output_shape[0], dim="xs")
+        y_axis = ops.linspace(min_y, max_y, output_shape[1], dim="ys") if self._is_3d else 0
+        z_axis = ops.linspace(min_z, max_z, output_shape[2], dim="zs")
 
         return ops.stack([x_axis, y_axis, z_axis], axis="xyz")
 
@@ -146,7 +146,7 @@ class SectorScanConverter2D(SectorScanConverter):
         },
         output_shape: tuple | None = field(default=None, static=True), 
     ):
-        output_shape = output_shape if output_shape is not None else (output_shape[0], 0, output_shape[1])
+        output_shape = output_shape if output_shape is None else (output_shape[0], 0, output_shape[1])
         scan = SectorScanGeometry(azimuths=azimuths, elevations=0, depths=depths)
         super().__init__(
             scan,
@@ -165,7 +165,7 @@ class SectorScanConverter2D(SectorScanConverter):
             "azimuths": IrregularSampledCoordinate,
             "depths": IrregularSampledCoordinate,
         },
-        output_shape: tuple | None = field(default=None, static=True), 
+        output_shape: tuple | None = None, 
     ):
         return SectorScanConverter2D(
             azimuths=scan.azimuths,
@@ -174,7 +174,6 @@ class SectorScanConverter2D(SectorScanConverter):
             interpolator_type=interpolator_type,
             sampling_types=sampling_types,
             output_shape=output_shape,
-            _is_3d=False,
         )
 
 
@@ -209,7 +208,7 @@ class SectorScanConverter3D(SectorScanConverter):
             "elevations": IrregularSampledCoordinate,
             "depths": IrregularSampledCoordinate,
         },
-        output_shape: tuple | None = field(default=None, static=True), 
+        output_shape: tuple | None = None, 
     ):
         return SectorScanConverter3D(
             azimuths=scan.azimuths,

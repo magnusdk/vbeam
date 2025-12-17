@@ -30,12 +30,6 @@ class ScanConvetable(Module):
         """Convert Cartesian points to local coordinate system."""
         pass
     
-    @property
-    @abstractmethod
-    def coordinates(self) -> dict:
-        """Return dict of coordinate arrays."""
-        pass
-
     @abstractmethod
     def calculate_cartesian_bounds(self)-> tuple[float, float, float, float, float, float]:
         """Calculate the bounds of the cartesian coordinates."""
