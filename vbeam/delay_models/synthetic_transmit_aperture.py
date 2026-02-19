@@ -15,7 +15,6 @@ class STADelayModel(SeparableDelayModel):
         point: ops.array,
         transmitted_wave: TransmittedWave,
         transmitting_probe: Probe,
-        receiving_probe: Probe,
     ) -> float | ops.array:
         element_point_distance = geometry.distance(
             transmitting_probe.active_elements.position,
@@ -32,13 +31,24 @@ class STADelayModel(SeparableDelayModel):
     def get_rx_delay(
         self,
         point: ops.array,
-        transmitted_wave: TransmittedWave,
-        transmitting_probe: Probe,
         receiving_probe: Probe,
     ) -> float | ops.array:
         rx_distance = geometry.distance(point, receiving_probe.active_elements.position)
         delay = rx_distance / self.speed_of_sound
         return delay
+
+    def __call__(
+        self,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe, 
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        
+        delays_tx = self.get_tx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
+        delays_rx = self.get_rx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
+        delays = delays_tx + delays_rx
+        return delays
 
 
 class STASOSMapDelayModel(DelayModel):
@@ -52,7 +62,6 @@ class STASOSMapDelayModel(DelayModel):
         point: ops.array,
         transmitted_wave: TransmittedWave,
         transmitting_probe: Probe,
-        receiving_probe: Probe,
     ) -> float | ops.array:
         # Note: get_tx_delay assumes transmitted_wave.origin to be at element positions
         delays_tx = self.speed_of_sound.get_delay_between(
@@ -63,8 +72,6 @@ class STASOSMapDelayModel(DelayModel):
     def get_rx_delay(
         self,
         point: ops.array,
-        transmitted_wave: TransmittedWave,
-        transmitting_probe: Probe,
         receiving_probe: Probe,
     ) -> float | ops.array:
         delays_rx = self.speed_of_sound.get_delay_between(
