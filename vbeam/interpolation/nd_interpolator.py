@@ -57,6 +57,46 @@ class OptimizedNearestNDInterpolator(NDInterpolator):
         return values
 
 
+class LinearNDInterpolatorFast(NDInterpolator):
+    """Fast N-D linear interpolator that avoids the n_samples dimension.
+
+    Instead of gathering both neighbors into a [..., 2] array (which adds an
+    extra index dimension and causes slow scatter-add in JAX backward pass),
+    this interpolator does two separate gathers per dimension — one for the
+    floor index and one for floor+1 — and combines them with weights. This
+    keeps all index arrays at the same rank as the input.
+
+    Requires coordinates to have a ``get_index_and_frac(x)`` method (e.g.
+    ``LinearCoordinateFast``).
+    """
+
+    def __call__(self, xi: Mapping[str, int | float | ops.array]) -> ops.array:
+        values = self.data
+        within_bounds_list = []
+
+        for dim, x in xi.items():
+            coordinate = self.coordinates[dim]
+            idx_floor, frac = coordinate.get_index_and_frac(x)
+
+            # Two separate gathers — keeps indices at same rank as input,
+            # so backward pass scatter-add stays 2D (fast path).
+            lo = values[{dim: idx_floor}]
+            hi = values[{dim: idx_floor + 1}]
+            values = lo * (1 - frac) + hi * frac
+
+            if self.fill_value is not None:
+                within_bounds_list.append(coordinate.is_within_bounds(x))
+
+        # Apply fill_value for out-of-bounds positions (if requested).
+        if self.fill_value is not None and within_bounds_list:
+            within_bounds = within_bounds_list[0]
+            for wb in within_bounds_list[1:]:
+                within_bounds = ops.logical_and(within_bounds, wb)
+            values = ops.where(within_bounds, values, self.fill_value)
+
+        return values
+
+
 class LinearNDInterpolator(NDInterpolator):
     def _get_weights(self, indices: IndicesInfo) -> ops.array:
         distances_between_sampled_positions = ops.sum(

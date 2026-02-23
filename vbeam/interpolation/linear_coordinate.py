@@ -52,4 +52,31 @@ class LinearCoordinate(Coordinate):
     def delta(self):
         arr = ops.linspace(self.start, self.stop, self.size)
         return arr[1]-arr[0]
+
+
+class LinearCoordinateFast(LinearCoordinate):
+    """Fast linear coordinate that returns floor index and fraction directly.
+
+    Avoids creating an extra n_samples dimension (which causes slow 3D
+    scatter-add in JAX backward pass). Instead returns the floor index and
+    interpolation fraction for two-point linear interpolation.
+    """
+
+    def get_index_and_frac(self, x):
+        """Get floor index and interpolation fraction.
+
+        Args:
+            x: physical position(s) — spekk array of any shape
+
+        Returns:
+            idx_floor: int32 index of the lower neighbor, clipped to [0, size-2]
+            frac: interpolation fraction in [0, 1]
+        """
+        last_index = self.size - 1
+        fractional_index = (x - self.start) / (self.stop - self.start) * last_index
+        idx_floor = ops.astype(
+            ops.clip(ops.floor(fractional_index), min=0, max=last_index - 1), "int32"
+        )
+        frac = ops.clip(fractional_index - idx_floor, min=0, max=1)
+        return idx_floor, frac
     
