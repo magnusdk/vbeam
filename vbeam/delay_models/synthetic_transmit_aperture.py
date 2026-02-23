@@ -7,8 +7,8 @@ from vbeam.delay_models.speed_of_sound import SpeedOfSound
 
 class STADelayModel(SeparableDelayModel):
     """Synthetic transmit aperture beamforming."""
-
     speed_of_sound: float | ops.array
+    tx_rx_first: bool = field(default=True, static=True)
 
     def get_tx_delay(
         self,
@@ -33,7 +33,10 @@ class STADelayModel(SeparableDelayModel):
         point: ops.array,
         receiving_probe: Probe,
     ) -> float | ops.array:
-        rx_distance = geometry.distance(point, receiving_probe.active_elements.position)
+        if self.tx_rx_first:
+            rx_distance = geometry.distance(receiving_probe.active_elements.position, point)
+        else:
+            rx_distance = geometry.distance(point, receiving_probe.active_elements.position)
         delay = rx_distance / self.speed_of_sound
         return delay
 
@@ -44,9 +47,8 @@ class STADelayModel(SeparableDelayModel):
         transmitting_probe: Probe, 
         receiving_probe: Probe,
     ) -> float | ops.array:
-        
-        delays_tx = self.get_tx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
-        delays_rx = self.get_rx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
+        delays_tx = self.get_tx_delay(self.tx_rx_first, point, transmitted_wave, transmitting_probe)
+        delays_rx = self.get_rx_delay(self.tx_rx_first, point, transmitted_wave, transmitting_probe, receiving_probe)
         delays = delays_tx + delays_rx
         return delays
 
