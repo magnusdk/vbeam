@@ -23,9 +23,9 @@ class SyntheticTransmitApertureApodizationFNumber(Apodization):
     ) -> float:
 
         if self.flatten:
-            # dims = [d for d in point.dims if d != "xyz"]
-            # point = ops.merge_dims(point, dims, "points")
-            point = ops.reshape(point, (3,-1), ["xyz", "points"])
+            dims = [d for d in point.dims if d != "xyz"]
+            point = ops.merge_dims(point, dims, "points")
+            # point = ops.reshape(point, (3,-1), ["xyz", "points"])
 
         if tx_rx_first:
             dx = ops.abs(probe.active_elements.position["xyz", 0]-point["xyz", 0])
