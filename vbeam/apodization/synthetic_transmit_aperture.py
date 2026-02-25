@@ -10,7 +10,7 @@ class SyntheticTransmitApertureApodizationFNumber(Apodization):
     f_number_y: float = 0.5
     minimum_aperture_width_x: float = 3e-3
     minimum_aperture_width_y: float = 3e-3
-    flatten: bool = field(default=False, static=True)
+    flatten: bool = field(default=False, static=False)
     tx_rx_first: bool = field(default=True, static=True)
     
     # window: Window = Rectangular
