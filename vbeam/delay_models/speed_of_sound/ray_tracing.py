@@ -45,7 +45,7 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
         default_factory=lambda: {"xs": 0, "ys": 1, "zs": 2}, static=True
     )
     integration_method: IntegrationMethod = IntegrationMethod.SPEED_OF_SOUND
-    unroll: int | bool = field(default=True, static=True)
+    unroll: int | bool = field(default=1, static=True)
 
     def get_delay_between(self, point1: ops.array, point2: ops.array, /) -> ops.array:
 
