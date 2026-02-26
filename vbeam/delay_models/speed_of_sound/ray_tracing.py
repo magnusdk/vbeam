@@ -109,19 +109,6 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
         from_z = scan.points["xyz", 2].min()
         to_z = scan.points["xyz", 2].max()
 
-        # n_x = speed_of_sound.dim_sizes["xs_c"]
-        # n_y = speed_of_sound.dim_sizes["ys_c"] if "ys_c" in speed_of_sound.dim_sizes else 0 
-        # n_z = speed_of_sound.dim_sizes["zs_c"]
-                 
-        # if n_steps is None:
-        #     n_steps = int((n_x**2 + n_y**2+ n_z**2)**0.5)
-
-        # coordinates = {
-        #     "xs_c": LinearCoordinate(from_x, to_x, n_x),
-        #     **({"ys_c": LinearCoordinate(from_y, to_y, n_y)} if n_y > 0 else {}),
-        #     "zs_c": LinearCoordinate(from_z, to_z, n_z),
-        # }
-
         n_x = speed_of_sound.dim_sizes["xs"]
         n_y = speed_of_sound.dim_sizes["ys"] if "ys" in speed_of_sound.dim_sizes else 0 
         n_z = speed_of_sound.dim_sizes["zs"]
