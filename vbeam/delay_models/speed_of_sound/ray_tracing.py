@@ -98,6 +98,7 @@ class SpeedOfSoundRayTracing(SpeedOfSound):
     def from_scan(
         scan: Scan,
         speed_of_sound: ops.array,
+        *,
         n_steps: Optional[int] = None,
         default_speed_of_sound: float | None = None
     ) -> "SpeedOfSoundRayTracing":
