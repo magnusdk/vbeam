@@ -164,3 +164,102 @@ class NearestNDInterpolator(NDInterpolator):
             values = ops.where(within_bounds, values, self.fill_value)
 
         return values
+
+
+class FastLinearNDInterpolator(NDInterpolator):
+    """Fast N-D linear interpolator using all-at-once gather (no n_samples axis).
+
+    Computes nearest-pair indices and weights for every dimension up-front
+    using ``LinearCoordinateFast.get_nearest_indices(x, n_samples=2)``, then
+    enumerates all 2^N corner combinations with a plain Python bit-mask loop
+    (jit-safe). Each
+    combination produces a single dict-index gather over all dims at once, which
+    avoids the duplicate-dim crash that the per-dim loop in
+    ``LinearNDInterpolatorFast`` triggers when query arrays share dims with data.
+
+    Requires coordinates to have ``get_nearest_indices(x, n_samples)`` and
+    ``is_within_bounds(x)`` methods (e.g. ``LinearCoordinateFast``).
+    """
+
+    def __call__(self, xi: Mapping[str, int | float | ops.array]) -> ops.array:
+        # Collect nearest-pair indices/weights and bounds for every dim up-front.
+        dims = list(xi.keys())
+        n = len(dims)
+        indices_lo = []
+        indices_hi = []
+        weights_lo = []
+        weights_hi = []
+        within_bounds_list = []
+
+        for dim in dims:
+            coordinate = self.coordinates[dim]
+            info = coordinate.get_nearest_indices(xi[dim], 2)
+            indices_lo.append(info.indices_lo)
+            indices_hi.append(info.indices_hi)
+            weights_lo.append(info.weights_lo)
+            weights_hi.append(info.weights_hi)
+            if self.fill_value is not None:
+                within_bounds_list.append(info.within_bounds)
+
+        # Enumerate all 2^N corners via bit-masking (static Python loop, jit-safe).
+        result = None
+        for combo in range(1 << n):
+            # Build index dict and weight for this corner.
+            index_dict = {}
+            weight = None
+            for j in range(n):
+                bit = (combo >> j) & 1
+                if bit:
+                    index_dict[dims[j]] = indices_hi[j]
+                    w = weights_hi[j]
+                else:
+                    index_dict[dims[j]] = indices_lo[j]
+                    w = weights_lo[j]
+                weight = w if weight is None else weight * w
+
+            gathered = self.data[index_dict]
+            contribution = gathered * weight
+            result = contribution if result is None else result + contribution
+
+        # Apply fill_value for out-of-bounds positions (if requested).
+        if self.fill_value is not None and within_bounds_list:
+            within_bounds = within_bounds_list[0]
+            for wb in within_bounds_list[1:]:
+                within_bounds = ops.logical_and(within_bounds, wb)
+            result = ops.where(within_bounds, result, self.fill_value)
+
+        return result
+
+
+class FastNearestNDInterpolator(NDInterpolator):
+    """Fast nearest-neighbor N-D interpolator using all-at-once gather.
+
+    Computes the nearest index for each dimension via
+    ``LinearCoordinateFast.get_nearest_indices(x, n_samples=1)``.
+    A single dict-index gather over all dims avoids the shared-dim
+    issues of per-dim looping.
+
+    Requires coordinates to have ``get_nearest_indices(x, n_samples)`` and
+    ``is_within_bounds(x)`` methods (e.g. ``LinearCoordinateFast``).
+    """
+
+    def __call__(self, xi: Mapping[str, int | float | ops.array]) -> ops.array:
+        index_dict = {}
+        within_bounds_list = []
+
+        for dim, x in xi.items():
+            coordinate = self.coordinates[dim]
+            info = coordinate.get_nearest_indices(x, 1)
+            index_dict[dim] = info.indices_lo
+            if self.fill_value is not None:
+                within_bounds_list.append(info.within_bounds)
+        
+        values = self.data[index_dict]
+
+        if self.fill_value is not None and within_bounds_list:
+            within_bounds = within_bounds_list[0]
+            for wb in within_bounds_list[1:]:
+                within_bounds = ops.logical_and(within_bounds, wb)
+            values = ops.where(within_bounds, values, self.fill_value)
+
+        return values

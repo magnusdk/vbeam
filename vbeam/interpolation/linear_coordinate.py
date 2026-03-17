@@ -1,6 +1,30 @@
-from spekk import Dim, ops, util
+from spekk import Dim, Module, ops, util
 
 from vbeam.core import Coordinate, IndicesInfo
+
+
+class FastNearestIndicesInfo(Module):
+    """Compact nearest-index info for fast interpolation paths.
+
+    Unlike `IndicesInfo`, this structure avoids adding an explicit n_samples
+    axis. It stores lower/upper neighbor indices and their linear weights at
+    the same rank as `x`.
+    """
+
+    x: ops.array
+    indices_lo: ops.array
+    indices_hi: ops.array
+    weights_lo: ops.array
+    weights_hi: ops.array
+    within_bounds: ops.array
+    # Compatibility fields used by legacy interpolators.
+    indices: ops.array
+    indices_positions: ops.array
+    dim_name: Dim
+
+    @property
+    def offset_distances(self) -> ops.array:
+        return ops.abs(self.indices_positions - self.x)
 
 
 class LinearCoordinate(Coordinate):
@@ -61,6 +85,63 @@ class LinearCoordinateFast(LinearCoordinate):
     scatter-add in JAX backward pass). Instead returns the floor index and
     interpolation fraction for two-point linear interpolation.
     """
+
+    def get_nearest_indices(self, x: float, n_samples: int) -> FastNearestIndicesInfo:
+        """Get nearest sample indices without creating an n_samples axis.
+
+        Supports:
+            - n_samples=1: nearest-neighbor index
+            - n_samples=2: lower/upper neighbors for linear interpolation
+        """
+        last_index = self.size - 1
+        fractional_index = (x - self.start) / (self.stop - self.start) * last_index
+        within_bounds = self.is_within_bounds(x)
+
+        if n_samples == 1:
+            dim_name = util.random_dim_name(self)
+            nearest = ops.astype(
+                ops.clip(ops.round(fractional_index), min=0, max=last_index), "int32"
+            )
+            zeros = fractional_index * 0
+            ones = zeros + 1
+            nearest_pos = nearest * (self.stop - self.start) / last_index + self.start
+            return FastNearestIndicesInfo(
+                x=x,
+                indices_lo=nearest,
+                indices_hi=nearest,
+                weights_lo=ones,
+                weights_hi=zeros,
+                within_bounds=within_bounds,
+                indices=ops.stack([nearest], axis=dim_name),
+                indices_positions=ops.stack([nearest_pos], axis=dim_name),
+                dim_name=dim_name,
+            )
+
+        if n_samples == 2:
+            dim_name = util.random_dim_name(self)
+            idx_floor = ops.astype(
+                ops.clip(ops.floor(fractional_index), min=0, max=last_index - 1),
+                "int32",
+            )
+            frac = ops.clip(fractional_index - idx_floor, min=0, max=1)
+            idx_hi = idx_floor + 1
+            pos_lo = idx_floor * (self.stop - self.start) / last_index + self.start
+            pos_hi = idx_hi * (self.stop - self.start) / last_index + self.start
+            return FastNearestIndicesInfo(
+                x=x,
+                indices_lo=idx_floor,
+                indices_hi=idx_hi,
+                weights_lo=1 - frac,
+                weights_hi=frac,
+                within_bounds=within_bounds,
+                indices=ops.stack([idx_floor, idx_hi], axis=dim_name),
+                indices_positions=ops.stack([pos_lo, pos_hi], axis=dim_name),
+                dim_name=dim_name,
+            )
+
+        raise ValueError(
+            "LinearCoordinateFast.get_nearest_indices supports only n_samples=1 or 2"
+        )
 
     def get_index_and_frac(self, x):
         """Get floor index and interpolation fraction.
