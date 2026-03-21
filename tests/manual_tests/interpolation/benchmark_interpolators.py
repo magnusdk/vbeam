@@ -29,6 +29,7 @@ from spekk import ops
 from vbeam.interpolation import (
     FastLinearNDInterpolator,
     FastNearestNDInterpolator,
+    GeneralFastLinearNDInterpolator,
     LinearCoordinate,
     LinearCoordinateFast,
     LinearNDInterpolator,
@@ -36,6 +37,8 @@ from vbeam.interpolation import (
     NearestNDInterpolator,
 )
 from vbeam.interpolation.nd_interpolator import OptimizedLinearNDInterpolator
+from vbeam.delay_models.speed_of_sound import SpeedOfSoundRayTracing
+from spekk import replace
 from vbeam_ntnu.experimental.aberration_corrections.losses import total_variation
 from vbeam_ntnu.experimental.aberration_corrections.path_based_aberration_model import (
     coherence,
@@ -187,6 +190,9 @@ def _build_interpolators(ndim, data_sizes, n_query):
         "OptimizedLinearND": OptimizedLinearNDInterpolator(
             coordinates=coords_old, data=data_old, fill_value=None
         ),
+        "GeneralFastLinearND": GeneralFastLinearNDInterpolator(
+            coordinates=coords_old, data=data_old, fill_value=None
+        ),
     }
 
     return interpolators, xi, data_fast, data_old, coords_fast, coords_old, dim_names
@@ -283,6 +289,7 @@ def _run_estimate_h_like_benchmark():
         ("LinearNDFast", LinearNDInterpolatorFast),
         ("OptimizedLinearND", OptimizedLinearNDInterpolator),
         ("FastLinearND", FastLinearNDInterpolator),
+        ("GeneralFastLinearND", GeneralFastLinearNDInterpolator),
     ]
 
     print(
@@ -388,6 +395,106 @@ def _run_estimate_h_like_benchmark():
 
 
 # ---------------------------------------------------------------------------
+# Ray tracing benchmark
+# ---------------------------------------------------------------------------
+
+RAY_TRACING_N_ITERS = 20
+RAY_TRACING_WARMUP = 2
+
+
+def _run_ray_tracing_benchmark():
+    """Benchmark SpeedOfSoundRayTracing.get_delay_between with different interpolators.
+
+    Uses the same scan data as estimate_h. Creates a 2D speed-of-sound map and
+    measures how long get_delay_between takes from probe elements to scan points.
+    """
+    sep = "-" * 100
+    print(f"\n{'RAY TRACING BENCHMARK (get_delay_between)':^100}")
+    print(sep)
+
+    importer = PathBasedBeamformerImporter()
+    scan = importer.get_points_in_linear_for_optimization()
+
+    # Probe element positions as point1 (shape: [xyz=3, tx=128]).
+    # Construct from probe pitch — 128 elements spaced 0.3mm apart at z=0.
+    n_elements = 128
+    pitch = 0.0003
+    x_pos = np.arange(n_elements) * pitch - (n_elements - 1) * pitch / 2
+    ep = np.zeros((3, n_elements), dtype=np.float32)
+    ep[0] = x_pos
+    point1 = ops.array(ep, dims=["xyz", "tx"])
+    # Scan points as point2 (shape: [xyz=3, xs=100, zs=100])
+    point2 = scan.points
+
+    print(f"  point1 dims: {point1.dim_sizes}")
+    print(f"  point2 dims: {point2.dim_sizes}")
+
+    # Create a realistic SoS map with some variation.
+    n_xs, n_zs = 100, 100
+    rng = np.random.default_rng(42)
+    sos_np = 1540.0 + 20.0 * rng.standard_normal((n_xs, n_zs)).astype(np.float32)
+    sos_map = ops.array(sos_np, dims=["xs", "zs"])
+
+    ray_tracer_base = SpeedOfSoundRayTracing.from_scan(
+        scan, sos_map, n_steps=64
+    )
+
+    # Build a variant with LinearCoordinateFast for FastLinearNDInterpolator.
+    coords_fast = {
+        dim: LinearCoordinateFast(c.start, c.stop, c.size)
+        for dim, c in ray_tracer_base.coordinates.items()
+    }
+    ray_tracer_fast_coords = replace(ray_tracer_base, coordinates=coords_fast)
+
+    # Interpolators to test.
+    test_interpolators = [
+        ("LinearND (old)", LinearNDInterpolator, ray_tracer_base),
+        ("OptimizedLinearND", OptimizedLinearNDInterpolator, ray_tracer_base),
+        ("GeneralFastLinearND", GeneralFastLinearNDInterpolator, ray_tracer_base),
+        ("FastLinearND", FastLinearNDInterpolator, ray_tracer_fast_coords),
+    ]
+
+    print(
+        f"  n_steps: {ray_tracer_base.n_steps}  |  SoS map: {n_xs}x{n_zs}"
+    )
+    print(
+        f"  Warmup: {RAY_TRACING_WARMUP}  |  Iterations: {RAY_TRACING_N_ITERS}"
+    )
+    print()
+    print(
+        f"  {'Interpolator':<22} | {'Total (ms)':>10} | {'Speedup':>10}"
+    )
+    print("  " + "-" * 50)
+
+    results = []
+    for name, interp_type, base_rt in test_interpolators:
+        ray_tracer = replace(base_rt, interpolator_type=interp_type)
+
+        @ops.jit
+        def run(p1, p2, _rt=ray_tracer):
+            return _rt.get_delay_between(p1, p2)
+
+        # Warmup
+        for _ in range(RAY_TRACING_WARMUP):
+            out = run(point1, point2)
+            _block_until_ready(out)
+
+        t0 = time.perf_counter()
+        for _ in range(RAY_TRACING_N_ITERS):
+            out = run(point1, point2)
+            _block_until_ready(out)
+        elapsed_ms = (time.perf_counter() - t0) / RAY_TRACING_N_ITERS * 1000
+        results.append((name, elapsed_ms))
+
+    ref_ms = results[0][1]  # LinearND (old) as reference
+    for name, ms in results:
+        speedup = ref_ms / ms if ms > 0 else float("inf")
+        print(f"  {name:<22} | {ms:>8.2f}ms | {speedup:>8.2f}x")
+
+    print(sep)
+
+
+# ---------------------------------------------------------------------------
 # Main benchmark
 # ---------------------------------------------------------------------------
 
@@ -404,6 +511,7 @@ def run_benchmarks():
 
     _run_coordinate_micro_benchmark()
     _run_estimate_h_like_benchmark()
+    _run_ray_tracing_benchmark()
 
     for label, ndim, data_sizes, n_query in CONFIGS:
         print(sep)
@@ -420,8 +528,10 @@ def run_benchmarks():
             # Pass data and xi as arguments to prevent XLA constant folding,
             # matching how estimate_h uses interpolators with dynamic inputs.
             is_fast_coord = name in ("FastLinearND", "FastNearestND", "LinearNDFast")
-            d = data_fast if is_fast_coord else data_old
-            c = coords_fast if is_fast_coord else coords_old
+            if is_fast_coord:
+                d, c = data_fast, coords_fast
+            else:
+                d, c = data_old, coords_old
             interp_cls = type(interp)
 
             # Forward

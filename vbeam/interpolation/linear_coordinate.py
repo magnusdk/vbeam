@@ -77,6 +77,57 @@ class LinearCoordinate(Coordinate):
         arr = ops.linspace(self.start, self.stop, self.size)
         return arr[1]-arr[0]
 
+    def get_flat_sample_data(self, x, n_samples):
+        """Return per-sample flat indices and Lagrange weights (no n_samples dim).
+
+        More efficient than ``get_nearest_indices`` for interpolators that
+        enumerate corners independently, because it never creates an
+        n_samples dimension.
+
+        Args:
+            x: query position(s)
+            n_samples: number of neighbor samples (1=nearest, 2=linear, 3=quadratic)
+
+        Returns:
+            (indices, weights, within_bounds) where *indices* and *weights* are
+            lists of length ``n_samples``, each element having the same shape
+            as *x*.
+        """
+        width = self.stop - self.start
+        last_index = self.size - 1
+        frac_idx = (x - self.start) / width * last_index
+
+        # Pick center so that n_samples neighbors bracket x.
+        if n_samples % 2 == 0:
+            center = ops.round(frac_idx + 0.5)
+        else:
+            center = ops.round(frac_idx)
+
+        offsets = [i - n_samples // 2 for i in range(n_samples)]
+
+        # Clipped integer indices for safe array access.
+        indices = [
+            ops.astype(ops.clip(center + offset, 0, last_index), "int32")
+            for offset in offsets
+        ]
+
+        # Lagrange interpolation weights (using fractional offset from center;
+        # the grid spacing cancels so denominators are pure integers).
+        t = frac_idx - center
+        weights = []
+        for j, oj in enumerate(offsets):
+            w = None
+            for k, ok in enumerate(offsets):
+                if k != j:
+                    factor = (t - ok) / (oj - ok)
+                    w = factor if w is None else w * factor
+            if w is None:  # n_samples == 1
+                w = t - t + 1
+            weights.append(w)
+
+        within_bounds = self.is_within_bounds(x)
+        return indices, weights, within_bounds
+
 
 class LinearCoordinateFast(LinearCoordinate):
     """Fast linear coordinate that returns floor index and fraction directly.

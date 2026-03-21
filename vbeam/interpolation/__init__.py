@@ -4,6 +4,7 @@ from vbeam.interpolation.irregular_sampled_coordinate import IrregularSampledCoo
 from vbeam.interpolation.nd_interpolator import (
     FastLinearNDInterpolator,
     FastNearestNDInterpolator,
+    GeneralFastLinearNDInterpolator,
     LinearNDInterpolator,
     LinearNDInterpolatorFast,
     NearestNDInterpolator,
@@ -21,4 +22,5 @@ __all__ = [
     "NearestNDInterpolator",
     "FastLinearNDInterpolator",
     "FastNearestNDInterpolator",
+    "GeneralFastLinearNDInterpolator",
 ]

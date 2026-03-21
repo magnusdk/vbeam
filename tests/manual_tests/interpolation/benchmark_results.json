@@ -1,0 +1,342 @@
+{
+  "estimate_h": {
+    "title": "estimate_h Optimization Loop (200 gradient updates)",
+    "data": {
+      "LinearND": {
+        "ms_per_update": 37.27,
+        "total_s": 7.454,
+        "final_loss": -0.008536901324987411
+      },
+      "OptimizedLinearND": {
+        "ms_per_update": 31.744,
+        "total_s": 6.349,
+        "final_loss": -0.008547123521566391
+      },
+      "LinearNDFast": {
+        "ms_per_update": 11.138,
+        "total_s": 2.228,
+        "final_loss": -0.008438234217464924
+      },
+      "FastLinearND": {
+        "ms_per_update": 11.156,
+        "total_s": 2.231,
+        "final_loss": -0.008486256934702396
+      },
+      "GeneralFastLinearND": {
+        "ms_per_update": 11.554,
+        "total_s": 2.311,
+        "final_loss": -0.008548330515623093
+      }
+    }
+  },
+  "ray_tracing": {
+    "title": "Ray Tracing (64 steps, 100\u00d7100 SoS, 128 elements \u2192 100\u00d7100 scan)",
+    "data": {
+      "unroll=1": {
+        "forward": {
+          "LinearND": 3.033,
+          "OptimizedLinearND": 1.334,
+          "LinearNDFast": 1.391,
+          "FastLinearND": 1.115,
+          "GeneralFastLinearND": 1.114
+        },
+        "backward": {
+          "LinearND": 51.587,
+          "OptimizedLinearND": 29.213,
+          "LinearNDFast": 24.504,
+          "FastLinearND": 37.677,
+          "GeneralFastLinearND": 37.209
+        }
+      },
+      "unroll=True": {
+        "forward": {
+          "LinearND": 5.926,
+          "OptimizedLinearND": 1.093,
+          "LinearNDFast": 3.342,
+          "FastLinearND": 1.443,
+          "GeneralFastLinearND": 0.977
+        },
+        "backward": {
+          "LinearND": 40.704,
+          "OptimizedLinearND": 11.451,
+          "LinearNDFast": 14.557,
+          "FastLinearND": 35.558,
+          "GeneralFastLinearND": 34.044
+        }
+      }
+    }
+  },
+  "micro": {
+    "title": "Micro-benchmarks (forward + backward)",
+    "data": {
+      "2D 512\u00b2": {
+        "forward": {
+          "LinearND": 0.064,
+          "OptimizedLinearND": 0.063,
+          "LinearNDFast": 0.063,
+          "FastLinearND": 0.063,
+          "GeneralFastLinearND": 0.064
+        },
+        "backward": {
+          "LinearND": 0.065,
+          "OptimizedLinearND": 0.111,
+          "LinearNDFast": 0.105,
+          "FastLinearND": 0.072,
+          "GeneralFastLinearND": 0.073
+        }
+      },
+      "3D 64\u00b3": {
+        "forward": {
+          "LinearND": 0.105,
+          "OptimizedLinearND": 0.108,
+          "LinearNDFast": 0.072,
+          "FastLinearND": 0.067,
+          "GeneralFastLinearND": 0.076
+        },
+        "backward": {
+          "LinearND": 0.119,
+          "OptimizedLinearND": 0.131,
+          "LinearNDFast": 0.128,
+          "FastLinearND": 0.133,
+          "GeneralFastLinearND": 0.133
+        }
+      },
+      "3D 128\u00b3": {
+        "forward": {
+          "LinearND": 0.106,
+          "OptimizedLinearND": 0.106,
+          "LinearNDFast": 0.075,
+          "FastLinearND": 0.078,
+          "GeneralFastLinearND": 0.079
+        },
+        "backward": {
+          "LinearND": 0.118,
+          "OptimizedLinearND": 0.167,
+          "LinearNDFast": 0.161,
+          "FastLinearND": 0.124,
+          "GeneralFastLinearND": 0.128
+        }
+      }
+    }
+  },
+  "compile_time": {
+    "title": "JIT Compilation Time (ms)",
+    "data": {
+      "2D 256\u00b2": {
+        "forward": {
+          "LinearND": 120.0,
+          "OptimizedLinearND": 125.4,
+          "LinearNDFast": 66.7,
+          "FastLinearND": 81.4,
+          "GeneralFastLinearND": 82.9,
+          "GeneralFast n=3": 128.5
+        },
+        "backward": {
+          "LinearND": 100.9,
+          "OptimizedLinearND": 218.7,
+          "LinearNDFast": 188.6,
+          "FastLinearND": 106.1,
+          "GeneralFastLinearND": 103.2,
+          "GeneralFast n=3": 214.1
+        }
+      },
+      "3D 64\u00b3": {
+        "forward": {
+          "LinearND": 120.8,
+          "OptimizedLinearND": 175.2,
+          "LinearNDFast": 113.7,
+          "FastLinearND": 156.9,
+          "GeneralFastLinearND": 160.9,
+          "GeneralFast n=3": 408.3
+        },
+        "backward": {
+          "LinearND": 119.9,
+          "OptimizedLinearND": 292.1,
+          "LinearNDFast": 164.6,
+          "FastLinearND": 253.3,
+          "GeneralFastLinearND": 264.3,
+          "GeneralFast n=3": 690.5
+        }
+      }
+    }
+  },
+  "quadratic": {
+    "title": "Quadratic (n=3) vs Linear (n=2) vs Nearest (n=1)",
+    "data": {
+      "2D 512\u00b2": {
+        "forward": {
+          "GeneralFast n=1": 0.065,
+          "GeneralFast n=2": 0.064,
+          "GeneralFast n=3": 0.065,
+          "LinearND": 0.064,
+          "OptimizedLinearND": 0.065,
+          "LinearNDFast": 0.064,
+          "FastLinearND": 0.064,
+          "GeneralFastLinearND": 0.066
+        },
+        "backward": {
+          "GeneralFast n=1": 0.066,
+          "GeneralFast n=2": 0.072,
+          "GeneralFast n=3": 0.11,
+          "LinearND": 0.073,
+          "OptimizedLinearND": 0.108,
+          "LinearNDFast": 0.105,
+          "FastLinearND": 0.072,
+          "GeneralFastLinearND": 0.071
+        }
+      },
+      "3D 128\u00b3": {
+        "forward": {
+          "GeneralFast n=1": 0.068,
+          "GeneralFast n=2": 0.067,
+          "GeneralFast n=3": 0.107,
+          "LinearND": 0.111,
+          "OptimizedLinearND": 0.116,
+          "LinearNDFast": 0.074,
+          "FastLinearND": 0.067,
+          "GeneralFastLinearND": 0.069
+        },
+        "backward": {
+          "GeneralFast n=1": 0.074,
+          "GeneralFast n=2": 0.125,
+          "GeneralFast n=3": 0.169,
+          "LinearND": 0.123,
+          "OptimizedLinearND": 0.18,
+          "LinearNDFast": 0.167,
+          "FastLinearND": 0.127,
+          "GeneralFastLinearND": 0.125
+        }
+      }
+    }
+  },
+  "memory": {
+    "title": "XLA Compiled Memory Analysis",
+    "data": {
+      "3D 128\u00b3": {
+        "LinearND": {
+          "fwd_temp_mb": 0.0,
+          "fwd_arg_mb": 8.39,
+          "fwd_out_mb": 1.05,
+          "bwd_temp_mb": 0.0,
+          "bwd_out_mb": 8.39
+        },
+        "OptimizedLinearND": {
+          "fwd_temp_mb": 0.0,
+          "fwd_arg_mb": 8.39,
+          "fwd_out_mb": 1.05,
+          "bwd_temp_mb": 16.78,
+          "bwd_out_mb": 8.39
+        },
+        "LinearNDFast": {
+          "fwd_temp_mb": 0.0,
+          "fwd_arg_mb": 8.39,
+          "fwd_out_mb": 1.05,
+          "bwd_temp_mb": 16.78,
+          "bwd_out_mb": 8.39
+        },
+        "FastLinearND": {
+          "fwd_temp_mb": 0.0,
+          "fwd_arg_mb": 8.39,
+          "fwd_out_mb": 1.05,
+          "bwd_temp_mb": 8.39,
+          "bwd_out_mb": 8.39
+        },
+        "GeneralFastLinearND": {
+          "fwd_temp_mb": 0.0,
+          "fwd_arg_mb": 8.39,
+          "fwd_out_mb": 1.05,
+          "bwd_temp_mb": 8.39,
+          "bwd_out_mb": 8.39
+        },
+        "GeneralFast n=3": {
+          "fwd_temp_mb": 0.0,
+          "fwd_arg_mb": 8.39,
+          "fwd_out_mb": 1.05,
+          "bwd_temp_mb": 25.17,
+          "bwd_out_mb": 8.39
+        }
+      },
+      "3D 256\u00b3": {
+        "LinearND": {
+          "fwd_temp_mb": 0.01,
+          "fwd_arg_mb": 67.11,
+          "fwd_out_mb": 8.39,
+          "bwd_temp_mb": 0.01,
+          "bwd_out_mb": 67.11
+        },
+        "OptimizedLinearND": {
+          "fwd_temp_mb": 0.0,
+          "fwd_arg_mb": 67.11,
+          "fwd_out_mb": 8.39,
+          "bwd_temp_mb": 134.22,
+          "bwd_out_mb": 67.11
+        },
+        "LinearNDFast": {
+          "fwd_temp_mb": 0.0,
+          "fwd_arg_mb": 67.11,
+          "fwd_out_mb": 8.39,
+          "bwd_temp_mb": 134.22,
+          "bwd_out_mb": 67.11
+        },
+        "FastLinearND": {
+          "fwd_temp_mb": 0.27,
+          "fwd_arg_mb": 67.11,
+          "fwd_out_mb": 8.39,
+          "bwd_temp_mb": 67.38,
+          "bwd_out_mb": 67.11
+        },
+        "GeneralFastLinearND": {
+          "fwd_temp_mb": 0.27,
+          "fwd_arg_mb": 67.11,
+          "fwd_out_mb": 8.39,
+          "bwd_temp_mb": 67.38,
+          "bwd_out_mb": 67.11
+        },
+        "GeneralFast n=3": {
+          "fwd_temp_mb": 0.6,
+          "fwd_arg_mb": 67.11,
+          "fwd_out_mb": 8.39,
+          "bwd_temp_mb": 201.92,
+          "bwd_out_mb": 67.11
+        }
+      }
+    }
+  },
+  "complex": {
+    "title": "Complex-valued Data (complex64)",
+    "data": {
+      "2D 512\u00b2": {
+        "forward": {
+          "LinearND": 0.078,
+          "OptimizedLinearND": 0.08,
+          "LinearNDFast": 0.08,
+          "FastLinearND": 0.066,
+          "GeneralFastLinearND": 0.066
+        },
+        "backward": {
+          "LinearND": 0.111,
+          "OptimizedLinearND": 0.127,
+          "LinearNDFast": 0.112,
+          "FastLinearND": 0.11,
+          "GeneralFastLinearND": 0.106
+        }
+      },
+      "3D 128\u00b3": {
+        "forward": {
+          "LinearND": 0.109,
+          "OptimizedLinearND": 0.117,
+          "LinearNDFast": 0.117,
+          "FastLinearND": 0.134,
+          "GeneralFastLinearND": 0.116
+        },
+        "backward": {
+          "LinearND": 0.152,
+          "OptimizedLinearND": 0.352,
+          "LinearNDFast": 0.348,
+          "FastLinearND": 0.2,
+          "GeneralFastLinearND": 0.2
+        }
+      }
+    }
+  }
+}

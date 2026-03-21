@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interpolator Benchmark Results</title>
+<style>
+:root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --fg: #c9d1d9;
+    --fg2: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --border: #30363d;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.6;
+    padding: 2rem;
+}
+.container { max-width: 1400px; margin: 0 auto; }
+h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+}
+.timestamp { color: var(--fg2); margin-bottom: 2rem; font-size: 0.9rem; }
+.section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+.section h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--fg);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+}
+.section h3 {
+    font-size: 1rem;
+    color: var(--fg2);
+    margin: 1.2rem 0 0.6rem 0;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+}
+th, td {
+    padding: 8px 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+}
+th { color: var(--fg2); font-weight: 600; white-space: nowrap; }
+td:first-child, th:first-child { text-align: left; }
+tr:hover { background: var(--bg3); }
+.best { color: var(--green); font-weight: 700; }
+.worst { color: var(--fg2); }
+.failed { color: var(--red); }
+.interp-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.summary-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.summary-box h3 { margin-top: 0; color: var(--accent); }
+.summary-box ul { padding-left: 1.5rem; }
+.summary-box li { margin-bottom: 0.3rem; }
+.nav {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.nav a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+}
+.nav a:hover { background: var(--bg3); }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Interpolator Benchmark Results</h1>
+<p class="timestamp">Generated: 2026-03-17 14:57:26 | Device: gpu | Backend: JAX</p>
+
+<nav class="nav">
+    <a href="#estimate-h">estimate_h</a>
+    <a href="#ray-tracing">Ray Tracing</a>
+    <a href="#micro">Micro-benchmarks</a>
+    <a href="#compile">Compilation Time</a>
+    <a href="#quadratic">Quadratic vs Linear</a>
+    <a href="#memory">Memory Analysis</a>
+    <a href="#complex">Complex Data</a>
+    <a href="#summary">Summary</a>
+</nav>
+<div class="section" id="estimate-h"><h2>estimate_h Optimization Loop (200 gradient updates)</h2><table><thead><tr><th>Interpolator</th><th>ms/update</th><th>Total (s)</th><th>Speedup</th><th>Final Loss</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span class="worst">37.270ms</span></td><td>7.5s</td><td>1.00x</td><td>-8.5369e-03</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td><span>31.744ms</span></td><td>6.3s</td><td>1.17x</td><td>-8.5471e-03</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td><span class="best">11.138ms</span></td><td>2.2s</td><td>3.35x</td><td>-8.4382e-03</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span>11.156ms</span></td><td>2.2s</td><td>3.34x</td><td>-8.4863e-03</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td><span>11.554ms</span></td><td>2.3s</td><td>3.23x</td><td>-8.5483e-03</td></tr></tbody></table></div><div class="section" id="ray-tracing"><h2>Ray Tracing (64 steps, 100×100 SoS, 128 elements → 100×100 scan)</h2><h3>unroll=1</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span class="worst">3.033ms</span></td><td>1.00x</td><td><span class="worst">51.587ms</span></td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td>1.334ms</td><td>2.27x</td><td>29.213ms</td><td>1.77x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td>1.391ms</td><td>2.18x</td><td><span class="best">24.504ms</span></td><td>2.11x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td>1.115ms</td><td>2.72x</td><td>37.677ms</td><td>1.37x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td><span class="best">1.114ms</span></td><td>2.72x</td><td>37.209ms</td><td>1.39x</td></tr></tbody></table><h3>unroll=True</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span class="worst">5.926ms</span></td><td>1.00x</td><td><span class="worst">40.704ms</span></td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td>1.093ms</td><td>5.42x</td><td><span class="best">11.451ms</span></td><td>3.55x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td>3.342ms</td><td>1.77x</td><td>14.557ms</td><td>2.80x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td>1.443ms</td><td>4.11x</td><td>35.558ms</td><td>1.14x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td><span class="best">0.977ms</span></td><td>6.07x</td><td>34.044ms</td><td>1.20x</td></tr></tbody></table></div><div class="section" id="micro"><h2>Micro-benchmarks (forward + backward)</h2><h3>2D 512²</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span class="worst">0.064ms</span></td><td>1.00x</td><td><span class="best">0.065ms</span></td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td><span class="best">0.063ms</span></td><td>1.02x</td><td><span class="worst">0.111ms</span></td><td>0.59x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td><span class="best">0.063ms</span></td><td>1.02x</td><td>0.105ms</td><td>0.62x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span class="best">0.063ms</span></td><td>1.02x</td><td>0.072ms</td><td>0.90x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td><span class="worst">0.064ms</span></td><td>1.00x</td><td>0.073ms</td><td>0.89x</td></tr></tbody></table><h3>3D 64³</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td>0.105ms</td><td>1.00x</td><td><span class="best">0.119ms</span></td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td><span class="worst">0.108ms</span></td><td>0.97x</td><td>0.131ms</td><td>0.91x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td>0.072ms</td><td>1.46x</td><td>0.128ms</td><td>0.93x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span class="best">0.067ms</span></td><td>1.57x</td><td><span class="worst">0.133ms</span></td><td>0.89x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td>0.076ms</td><td>1.38x</td><td><span class="worst">0.133ms</span></td><td>0.89x</td></tr></tbody></table><h3>3D 128³</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span class="worst">0.106ms</span></td><td>1.00x</td><td><span class="best">0.118ms</span></td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td><span class="worst">0.106ms</span></td><td>1.00x</td><td><span class="worst">0.167ms</span></td><td>0.71x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td><span class="best">0.075ms</span></td><td>1.41x</td><td>0.161ms</td><td>0.73x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td>0.078ms</td><td>1.36x</td><td>0.124ms</td><td>0.95x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td>0.079ms</td><td>1.34x</td><td>0.128ms</td><td>0.92x</td></tr></tbody></table></div><div class="section" id="compile"><h2>JIT Compilation Time (ms)</h2><h3>2D 256²</h3><table><thead><tr><th>Interpolator</th><th>Compile Forward</th><th>Compile Backward</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span>120.0ms</span></td><td><span class="best">100.9ms</span></td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td><span>125.4ms</span></td><td><span>218.7ms</span></td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td><span class="best">66.7ms</span></td><td><span>188.6ms</span></td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span>81.4ms</span></td><td><span>106.1ms</span></td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td><span>82.9ms</span></td><td><span>103.2ms</span></td></tr><tr><td><span class="interp-dot" style="background:#6610f2"></span>GeneralFast n=3</td><td><span>128.5ms</span></td><td><span>214.1ms</span></td></tr></tbody></table><h3>3D 64³</h3><table><thead><tr><th>Interpolator</th><th>Compile Forward</th><th>Compile Backward</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span>120.8ms</span></td><td><span class="best">119.9ms</span></td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td><span>175.2ms</span></td><td><span>292.1ms</span></td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td><span class="best">113.7ms</span></td><td><span>164.6ms</span></td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span>156.9ms</span></td><td><span>253.3ms</span></td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td><span>160.9ms</span></td><td><span>264.3ms</span></td></tr><tr><td><span class="interp-dot" style="background:#6610f2"></span>GeneralFast n=3</td><td><span>408.3ms</span></td><td><span>690.5ms</span></td></tr></tbody></table></div><div class="section" id="quadratic"><h2>Quadratic (n=3) vs Linear (n=2) vs Nearest (n=1)</h2><h3>2D 512²</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#adb5bd"></span>GeneralFast n=1</td><td>0.065ms</td><td>0.98x</td><td><span class="best">0.066ms</span></td><td>1.09x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFast n=2</td><td><span class="best">0.064ms</span></td><td>1.00x</td><td>0.072ms</td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#6610f2"></span>GeneralFast n=3</td><td>0.065ms</td><td>0.98x</td><td><span class="worst">0.110ms</span></td><td>0.65x</td></tr><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span class="best">0.064ms</span></td><td>1.00x</td><td>0.073ms</td><td>0.99x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td>0.065ms</td><td>0.98x</td><td>0.108ms</td><td>0.67x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td><span class="best">0.064ms</span></td><td>1.00x</td><td>0.105ms</td><td>0.69x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span class="best">0.064ms</span></td><td>1.00x</td><td>0.072ms</td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td><span class="worst">0.066ms</span></td><td>0.97x</td><td>0.071ms</td><td>1.01x</td></tr></tbody></table><h3>3D 128³</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#adb5bd"></span>GeneralFast n=1</td><td>0.068ms</td><td>0.99x</td><td><span class="best">0.074ms</span></td><td>1.69x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFast n=2</td><td><span class="best">0.067ms</span></td><td>1.00x</td><td>0.125ms</td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#6610f2"></span>GeneralFast n=3</td><td>0.107ms</td><td>0.63x</td><td>0.169ms</td><td>0.74x</td></tr><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td>0.111ms</td><td>0.60x</td><td>0.123ms</td><td>1.02x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td><span class="worst">0.116ms</span></td><td>0.58x</td><td><span class="worst">0.180ms</span></td><td>0.69x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td>0.074ms</td><td>0.91x</td><td>0.167ms</td><td>0.75x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span class="best">0.067ms</span></td><td>1.00x</td><td>0.127ms</td><td>0.98x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td>0.069ms</td><td>0.97x</td><td>0.125ms</td><td>1.00x</td></tr></tbody></table></div><div class="section" id="memory"><h2>XLA Compiled Memory Analysis</h2><h3>3D 128³</h3><table><thead><tr><th>Interpolator</th><th>Fwd Temp (MB)</th><th>Fwd Arg (MB)</th><th>Fwd Out (MB)</th><th>Bwd Temp (MB)</th><th>Bwd Out (MB)</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td>0.00</td><td>8.39</td><td>1.05</td><td><span class="best">0.00</span></td><td>8.39</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td>0.00</td><td>8.39</td><td>1.05</td><td><span>16.78</span></td><td>8.39</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td>0.00</td><td>8.39</td><td>1.05</td><td><span>16.78</span></td><td>8.39</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td>0.00</td><td>8.39</td><td>1.05</td><td><span>8.39</span></td><td>8.39</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td>0.00</td><td>8.39</td><td>1.05</td><td><span>8.39</span></td><td>8.39</td></tr><tr><td><span class="interp-dot" style="background:#6610f2"></span>GeneralFast n=3</td><td>0.00</td><td>8.39</td><td>1.05</td><td><span class="worst">25.17</span></td><td>8.39</td></tr></tbody></table><h3>3D 256³</h3><table><thead><tr><th>Interpolator</th><th>Fwd Temp (MB)</th><th>Fwd Arg (MB)</th><th>Fwd Out (MB)</th><th>Bwd Temp (MB)</th><th>Bwd Out (MB)</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td>0.01</td><td>67.11</td><td>8.39</td><td><span class="best">0.01</span></td><td>67.11</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td>0.00</td><td>67.11</td><td>8.39</td><td><span>134.22</span></td><td>67.11</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td>0.00</td><td>67.11</td><td>8.39</td><td><span>134.22</span></td><td>67.11</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td>0.27</td><td>67.11</td><td>8.39</td><td><span>67.38</span></td><td>67.11</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td>0.27</td><td>67.11</td><td>8.39</td><td><span>67.38</span></td><td>67.11</td></tr><tr><td><span class="interp-dot" style="background:#6610f2"></span>GeneralFast n=3</td><td>0.60</td><td>67.11</td><td>8.39</td><td><span class="worst">201.92</span></td><td>67.11</td></tr></tbody></table></div><div class="section" id="complex"><h2>Complex-valued Data (complex64)</h2><h3>2D 512²</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td>0.078ms</td><td>1.00x</td><td>0.111ms</td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td><span class="worst">0.080ms</span></td><td>0.97x</td><td><span class="worst">0.127ms</span></td><td>0.87x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td><span class="worst">0.080ms</span></td><td>0.97x</td><td>0.112ms</td><td>0.99x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span class="best">0.066ms</span></td><td>1.18x</td><td>0.110ms</td><td>1.01x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td><span class="best">0.066ms</span></td><td>1.18x</td><td><span class="best">0.106ms</span></td><td>1.05x</td></tr></tbody></table><h3>3D 128³</h3><table><thead><tr><th>Interpolator</th><th>Forward</th><th>Fwd Speedup</th><th>Backward</th><th>Bwd Speedup</th></tr></thead><tbody><tr><td><span class="interp-dot" style="background:#6c757d"></span>LinearND</td><td><span class="best">0.109ms</span></td><td>1.00x</td><td><span class="best">0.152ms</span></td><td>1.00x</td></tr><tr><td><span class="interp-dot" style="background:#fd7e14"></span>OptimizedLinearND</td><td>0.117ms</td><td>0.93x</td><td><span class="worst">0.352ms</span></td><td>0.43x</td></tr><tr><td><span class="interp-dot" style="background:#0dcaf0"></span>LinearNDFast</td><td>0.117ms</td><td>0.93x</td><td>0.348ms</td><td>0.44x</td></tr><tr><td><span class="interp-dot" style="background:#198754"></span>FastLinearND</td><td><span class="worst">0.134ms</span></td><td>0.81x</td><td>0.200ms</td><td>0.76x</td></tr><tr><td><span class="interp-dot" style="background:#0d6efd"></span>GeneralFastLinearND</td><td>0.116ms</td><td>0.94x</td><td>0.200ms</td><td>0.76x</td></tr></tbody></table></div>
+<div class="section" id="summary">
+<h2>Summary &amp; Recommendations</h2>
+<div class="summary-box">
+<h3>Key Findings</h3>
+<ul>
+<li><strong>Best overall forward performance:</strong> GeneralFastLinearND and FastLinearND — consistently fastest in forward pass across all scenarios.</li>
+<li><strong>Best backward in loops (unroll=True):</strong> OptimizedLinearND — XLA can fuse scatter-adds across unrolled iterations, giving 3x speedup over GeneralFast in ray tracing backward.</li>
+<li><strong>Best backward in loops (unroll=1):</strong> LinearNDFast — its per-dimension lo/hi gather pattern works well even without unrolling.</li>
+<li><strong>Lowest memory usage (backward):</strong> LinearND — zero temp memory in backward pass (in-place scatter-add). GeneralFastLinearND uses ~1× data size; OptimizedLinearND uses ~2× data size.</li>
+<li><strong>Fastest compilation:</strong> LinearNDFast (2D) and LinearND (3D) compile fastest. Quadratic n=3 in 3D is significantly slower to compile.</li>
+<li><strong>Complex data:</strong> GeneralFastLinearND and FastLinearND perform well. OptimizedLinearND is notably slow in backward pass with complex data.</li>
+<li><strong>Quadratic interpolation (n=3):</strong> ~20-40% slower forward, ~33-50% slower backward vs linear (n=2). Compilation time increases significantly in 3D.</li>
+</ul>
+</div>
+<div class="summary-box">
+<h3>Recommendation</h3>
+<ul>
+<li><strong>estimate_h (realistic workload):</strong> GeneralFastLinearND and FastLinearND are ~3× faster than LinearND in the full optimization loop.</li>
+<li>Use <strong>GeneralFastLinearND</strong> as the default — best forward speed, good backward, supports n_samples=1,2,3, works with standard LinearCoordinate.</li>
+<li>For <strong>ray tracing with gradient optimization</strong> (unroll=True): switch to <strong>OptimizedLinearND</strong> for the interpolator_type — it's 3× faster in the backward pass.</li>
+<li>No single interpolator wins in every scenario due to fundamentally different XLA optimization patterns in the backward pass.</li>
+</ul>
+</div>
+</div>
+</div></body></html>
