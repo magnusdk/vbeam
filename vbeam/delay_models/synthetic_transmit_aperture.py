@@ -40,6 +40,11 @@ class STADelayModel(SeparableDelayModel):
         delay = rx_distance / self.speed_of_sound
         return delay
 
+    def get_tx_and_rx_delays(self, points, transmitted_wave, transmitting_probe, receiving_probe) -> tuple[ops.array, ops.array]:    
+        tx_delay = self.get_tx_delay(points, transmitted_wave, transmitting_probe)
+        rx_delay = self.get_rx_delay(points, receiving_probe)
+        return tx_delay, rx_delay
+
     def __call__(
         self,
         point: ops.array,
@@ -81,6 +86,23 @@ class STASOSMapDelayModel(DelayModel):
         )   
         return delays_rx
 
+    def get_tx_and_rx_delays(        
+        self,
+        point: ops.array,
+        transmitted_wave: TransmittedWave,
+        transmitting_probe: Probe, 
+        receiving_probe: Probe,
+    ) -> float | ops.array:
+        
+        delays_tx = self.get_tx_delay(point, transmitted_wave, transmitting_probe)
+
+        if self.same_tx_rx_probe:
+            delays_rx = delays_tx.rename_dim("tx", "rx")
+        else:
+            delays_rx = self.get_rx_delay(point, receiving_probe)
+
+        return delays_tx, delays_rx
+
     def __call__(
         self,
         point: ops.array,
@@ -88,12 +110,12 @@ class STASOSMapDelayModel(DelayModel):
         transmitting_probe: Probe, 
         receiving_probe: Probe,
     ) -> float | ops.array:
-        delays_tx = self.get_tx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
+        delays_tx = self.get_tx_delay(point, transmitted_wave, transmitting_probe)
 
         if self.same_tx_rx_probe:
             delays_rx = delays_tx.rename_dim("tx", "rx")
         else:
-            delays_rx = self.get_rx_delay(point, transmitted_wave, transmitting_probe, receiving_probe)
+            delays_rx = self.get_rx_delay(point, receiving_probe)
 
         delays = delays_tx + delays_rx
         return delays
