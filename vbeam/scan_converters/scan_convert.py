@@ -87,7 +87,7 @@ class SectorScanConverter(ScanConverter):
                 beamspace_coordinates[key] = LinearCoordinate(
                     start=beamspace_coordinates[key][0], 
                     stop=beamspace_coordinates[key][-1], 
-                    num=len(beamspace_coordinates[key])
+                    size=len(beamspace_coordinates[key])
                 )
             else:
                 raise ValueError(
