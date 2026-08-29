@@ -52,8 +52,8 @@ class STADelayModel(SeparableDelayModel):
         transmitting_probe: Probe, 
         receiving_probe: Probe,
     ) -> float | ops.array:
-        delays_tx = self.get_tx_delay(self.tx_rx_first, point, transmitted_wave, transmitting_probe)
-        delays_rx = self.get_rx_delay(self.tx_rx_first, point, transmitted_wave, transmitting_probe, receiving_probe)
+        delays_tx = self.get_tx_delay(point, transmitted_wave, transmitting_probe)
+        delays_rx = self.get_rx_delay(point, receiving_probe)
         delays = delays_tx + delays_rx
         return delays
 
