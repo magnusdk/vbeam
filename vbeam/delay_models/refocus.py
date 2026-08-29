@@ -43,3 +43,7 @@ class REFoCUSDelayModel(DelayModel):
         )
         delays = stai_delays + focusing_compensation
         return delays
+
+    @property
+    def refocus_tx_dim(self):
+        return self.synthetic_element_positions.dims[0]
