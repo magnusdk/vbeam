@@ -17,10 +17,10 @@ def plot_linear_coordinates(index, n_samples):
     # x_in = ops.linspace(-2, 9, 45, dim='depth')
     x_in = ops.linspace(-2, 11, 53, dim='xs')
     
-    indices_info = linear_coordinates.get_nearest_indices(x_in, n_samples)
+    indices_info = linear_coordinates.get_indices_info(x_in, n_samples)
 
-    nearest_indices_positions = indices_info.indices_positions[index]
     nearest_indices_index = indices_info.indices[index]
+    nearest_indices_positions = x['depth', nearest_indices_index]
     
     plt.figure()
     plt.plot(x.data, x.data, '.', color='k', label='new samples')
@@ -36,13 +36,13 @@ def plot_linear_coordinates(index, n_samples):
 def plot_irregular_sampled_coordinates(index, n_samples):
     x = ops.array([0,0.5,1,2,2.4,3,4,5,6.6,9], dims=['depth_2'])
 
-    irregular_sampled_coordinate = IrregularSampledCoordinate(ops.min(x), ops.max(x), x, dim='depth_2')
+    irregular_sampled_coordinate = IrregularSampledCoordinate(x, dim='depth_2')
     x_in = ops.linspace(-2, 11, 53, dim='xs')
 
-    indices_info = irregular_sampled_coordinate.get_nearest_indices(x_in, n_samples)
+    indices_info = irregular_sampled_coordinate.get_indices_info(x_in, n_samples)
     
-    nearest_indices_positions = indices_info.indices_positions[index]
     nearest_indices_index = indices_info.indices[index]
+    nearest_indices_positions = x['depth_2', nearest_indices_index]
     
     plt.ion()
     plt.figure()

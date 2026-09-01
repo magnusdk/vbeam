@@ -5,28 +5,22 @@ from spekk import Dim, Module, ops
 
 
 class IndicesInfo(Module):
-    """Information about the indices used to interpolate an array.
+    """The grid samples used to interpolate an array, and their weights.
 
     Attributes:
-        x (ops.array): The position used to interpolate.
-        indices (ops.array): The nearest indices in the data array.
-        indices_positions (ops.array): The corresponding physical coordinates of the
-            sampled indices. It has the same shape as `indices`.
+        indices (ops.array): The sampled indices into the data array, stacked along
+            `dim_name`.
+        weights (ops.array): The interpolation weight of each sampled index. It has
+            the same shape as `indices` and sums to 1 along `dim_name`.
         within_bounds (ops.array): A bool array indicating whether the sampled position
-            is within bounds. It has the same shape as `x`.
-        dim_name (Dim): The name of the dimension along which the indices are sampled.
+            is within bounds. It has the same shape as the queried position.
+        dim_name (Dim): The name of the dimension the samples are stacked along.
     """
 
-    x: ops.array
     indices: ops.array
-    indices_positions: ops.array
+    weights: ops.array
     within_bounds: ops.array
     dim_name: Dim
-
-    @property
-    def offset_distances(self) -> ops.array:
-        "The distance from the sampled positions to the interpolated position."
-        return ops.abs(self.indices_positions - self.x)
 
 
 class Coordinate(Module):
@@ -36,15 +30,19 @@ class Coordinate(Module):
     """
 
     @abstractmethod
-    def get_nearest_indices(self, x: ops.array, n_samples: int) -> IndicesInfo:
-        """Return the `n_samples` nearest indices around `x` and the corresponding
-        positions.
+    def get_indices_info(self, x: ops.array, n_samples: int) -> IndicesInfo:
+        """Return the `n_samples` grid samples nearest `x`, and their interpolation
+        weights.
+
+        Implementations compute the weights themselves, so that each coordinate can
+        use whichever basis is most accurate for its own sample spacing.
 
         Args:
             x (float): The coordinate of the data to sample around. For channel data,
                 and in the context of delay-and-sum, this would be the delay (i.e.:
                 time).
-            n_samples (int): The number of samples around `x` to return.
+            n_samples (int): The number of samples around `x` to return. 1 gives
+                nearest-neighbor, 2 linear, and 3 quadratic interpolation.
         """
 
 

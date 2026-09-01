@@ -1,4 +1,5 @@
-"""Tests for FastLinearNDInterpolator and FastNearestNDInterpolator.
+"""Tests for PolynomialNDInterpolator, LinearNDInterpolator and
+NearestNDInterpolator.
 
 All tests use only spekk.ops — no direct JAX imports.
 """
@@ -10,10 +11,9 @@ import pytest
 from spekk import ops
 
 from vbeam.interpolation import (
-    FastLinearNDInterpolator,
-    FastNearestNDInterpolator,
+    PolynomialNDInterpolator,
+    IrregularSampledCoordinate,
     LinearCoordinate,
-    LinearCoordinateFast,
     LinearNDInterpolator,
     NearestNDInterpolator,
 )
@@ -31,23 +31,17 @@ def backend(request):
         yield request.param
 
 
+def test_multidimensional_irregular_coordinate_requires_dim():
+    positions = ops.zeros((2, 3), dims=["batch", "x"])
+
+    with pytest.raises(ValueError, match="dim must specify the interpolation axis"):
+        IrregularSampledCoordinate(positions)
+
+
 def _make_2d_data(dim0="z", dim1="x", n0=11, n1=13):
     """Create a simple 2-D test dataset: data[i,j] = i + j*0.1"""
     raw = np.arange(n0 * n1, dtype=np.float32).reshape(n0, n1)
     # Make values distinguishable: row index + col*0.1
-    for i in range(n0):
-        for j in range(n1):
-            raw[i, j] = float(i) + float(j) * 0.1
-    data = ops.array(raw, dims=[dim0, dim1])
-    coord0 = LinearCoordinateFast(start=0.0, stop=1.0, size=n0)
-    coord1 = LinearCoordinateFast(start=0.0, stop=1.0, size=n1)
-    coords = {dim0: coord0, dim1: coord1}
-    return data, coords
-
-
-def _make_2d_data_old_coord(dim0="z", dim1="x", n0=11, n1=13):
-    """Same data but with LinearCoordinate (for the old interpolator)."""
-    raw = np.arange(n0 * n1, dtype=np.float32).reshape(n0, n1)
     for i in range(n0):
         for j in range(n1):
             raw[i, j] = float(i) + float(j) * 0.1
@@ -58,24 +52,66 @@ def _make_2d_data_old_coord(dim0="z", dim1="x", n0=11, n1=13):
     return data, coords
 
 
+@pytest.mark.parametrize("interpolator_type", [LinearNDInterpolator, PolynomialNDInterpolator])
+def test_descending_irregular_coordinate(interpolator_type, backend):
+    positions = ops.array([6.0, 3.0, 1.0, 0.0], dims=["x"])
+    data = ops.array([12.0, 6.0, 2.0, 0.0], dims=["x"])
+    coordinate = IrregularSampledCoordinate(positions)
+    query = ops.array([2.0, 5.0], dims=["q"])
+
+    result = interpolator_type(
+        coordinates={"x": coordinate}, data=data, fill_value=None
+    )({"x": query})
+
+    np.testing.assert_allclose(np.asarray(result), [4.0, 10.0], atol=1e-6)
+
+
+@pytest.mark.parametrize("n_samples", [1, 2, 3, 4])
+@pytest.mark.parametrize("descending", [False, True])
+def test_irregular_binary_search_matches_brute_force(n_samples, descending, backend):
+    positions = np.array([0.0, 1.0, 3.0, 6.0], dtype=np.float32)
+    if descending:
+        positions = positions[::-1].copy()
+    queries = np.array([-1.0, 0.0, 0.5, 1.0, 2.0, 3.0, 5.0, 6.0, 7.0])
+    coordinate = IrregularSampledCoordinate(ops.array(positions, dims=["x"]))
+
+    info = coordinate.get_indices_info(ops.array(queries, dims=["q"]), n_samples)
+
+    differences = positions[:, None] - queries[None, :]
+    nearest = np.argmin(np.abs(differences), axis=0)
+    if n_samples % 2 == 0:
+        direction = positions[-1] - positions[0]
+        nearest += (differences[nearest, np.arange(queries.size)] * direction <= 0)
+    offsets = np.arange(n_samples) - n_samples // 2
+    expected_indices = np.clip(nearest[:, None] + offsets, 0, positions.size - 1)
+    np.testing.assert_array_equal(np.asarray(info.indices), expected_indices)
+    np.testing.assert_allclose(
+        np.asarray(ops.sum(info.weights, axis=info.dim_name)), 1.0, atol=1e-6
+    )
+    np.testing.assert_array_equal(
+        np.asarray(info.within_bounds),
+        np.logical_and(queries >= positions.min(), queries <= positions.max()),
+    )
+
+
 # ===========================================================================
 # Test A — Numerical equivalence with disjoint dims
 # ===========================================================================
 
 
 class TestNumericalEquivalenceDisjointDims:
-    """Compare FastLinearNDInterpolator against LinearNDInterpolator when
-    query arrays have different dim names than the data."""
+    """Compare PolynomialNDInterpolator against LinearNDInterpolator
+    when query arrays have different dim names than the data."""
 
     def test_linear_equivalence_2d(self, backend):
         data_fast, coords_fast = _make_2d_data("z", "x")
-        data_old, coords_old = _make_2d_data_old_coord("z", "x")
+        data_old, coords_old = _make_2d_data("z", "x")
 
         # Query with different dims
         qz = ops.linspace(0.1, 0.9, 7, dim="qz")
         qx = ops.linspace(0.1, 0.9, 5, dim="qx")
 
-        fast_interp = FastLinearNDInterpolator(
+        fast_interp = PolynomialNDInterpolator(
             coordinates=coords_fast, data=data_fast, fill_value=float("nan")
         )
         old_interp = LinearNDInterpolator(
@@ -94,7 +130,7 @@ class TestNumericalEquivalenceDisjointDims:
         qz = ops.linspace(0.1, 0.9, 7, dim="qz")
         qx = ops.linspace(0.1, 0.9, 5, dim="qx")
 
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates=coords, data=data, fill_value=float("nan")
         )
         result = interp({"z": qz, "x": qx})
@@ -109,7 +145,7 @@ class TestNumericalEquivalenceDisjointDims:
 
 class TestSameDimQuery:
     """Data has dims ["zs","xs"] and query arrays also have dims ["zs","xs"].
-    This is the case that LinearNDInterpolatorFast (loop-based) would break."""
+    The removed per-dim loop interpolators silently returned wrong values here."""
 
     def test_same_dims_no_crash(self, backend):
         n0, n1 = 11, 13
@@ -124,7 +160,7 @@ class TestSameDimQuery:
         qz = ops.array(qz_grid, dims=["zs", "xs"])
         qx = ops.array(qx_grid, dims=["zs", "xs"])
 
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates=coords, data=data, fill_value=float("nan")
         )
         result = interp({"zs": qz, "xs": qx})
@@ -145,7 +181,7 @@ class TestSameDimQuery:
         qz = ops.array(np.array([[phys_z]], dtype=np.float32), dims=["zs", "xs"])
         qx = ops.array(np.array([[phys_x]], dtype=np.float32), dims=["zs", "xs"])
 
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates=coords, data=data, fill_value=float("nan")
         )
         result = interp({"zs": qz, "xs": qx})
@@ -164,7 +200,7 @@ class TestSameDimQuery:
         qz = ops.array(qz_grid, dims=["zs", "xs"])
         qx = ops.array(qx_grid, dims=["zs", "xs"])
 
-        interp = FastNearestNDInterpolator(
+        interp = NearestNDInterpolator(
             coordinates=coords, data=data, fill_value=float("nan")
         )
         result = interp({"zs": qz, "xs": qx})
@@ -187,7 +223,7 @@ class TestFillValue:
         qz = ops.array(np.array([-1.0, 2.0], dtype=np.float32), dims=["q"])
         qx = ops.array(np.array([0.5], dtype=np.float32), dims=["r"])
 
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates=coords, data=data, fill_value=fill
         )
         result = interp({"z": qz, "x": qx})
@@ -202,7 +238,7 @@ class TestFillValue:
         qz = ops.array(np.array([-1.0, 2.0], dtype=np.float32), dims=["q"])
         qx = ops.array(np.array([0.5], dtype=np.float32), dims=["r"])
 
-        interp = FastNearestNDInterpolator(
+        interp = NearestNDInterpolator(
             coordinates=coords, data=data, fill_value=fill
         )
         result = interp({"z": qz, "x": qx})
@@ -217,7 +253,7 @@ class TestFillValue:
         qz = ops.array(np.array([0.5], dtype=np.float32), dims=["q"])
         qx = ops.array(np.array([0.5], dtype=np.float32), dims=["r"])
 
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates=coords, data=data, fill_value=fill
         )
         result = interp({"z": qz, "x": qx})
@@ -231,7 +267,7 @@ class TestFillValue:
         qz = ops.array(np.array([-1.0], dtype=np.float32), dims=["q"])
         qx = ops.array(np.array([0.5], dtype=np.float32), dims=["r"])
 
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates=coords, data=data, fill_value=None
         )
         result = interp({"z": qz, "x": qx})
@@ -255,7 +291,7 @@ class TestNearestInterpolation:
         qz = ops.array(np.array([phys_z], dtype=np.float32), dims=["q"])
         qx = ops.array(np.array([phys_x], dtype=np.float32), dims=["q2"])
 
-        interp = FastNearestNDInterpolator(
+        interp = NearestNDInterpolator(
             coordinates=coords, data=data, fill_value=float("nan")
         )
         result = interp({"z": qz, "x": qx})
@@ -266,19 +302,17 @@ class TestNearestInterpolation:
         )
 
     def test_nearest_rounds_correctly(self, backend):
-        """Query slightly above midpoint should round up."""
+        """Query exactly on a midpoint rounds half-to-even, i.e. up to 4 here."""
         n0 = 11
         raw = np.arange(n0, dtype=np.float32)
         data = ops.array(raw, dims=["z"])
-        coord = LinearCoordinateFast(start=0.0, stop=1.0, size=n0)
+        coord = LinearCoordinate(start=0.0, stop=1.0, size=n0)
 
-        # Physical 0.35 -> fractional index 3.5 -> nearest is 4 (rounds up from 0.5)
-        # Actually: 0.35 * 10 = 3.5, frac=0.5 -> >= 0.5 rounds to ceil -> idx 4
+        # Physical 0.35 -> fractional index 3.5 -> round() -> 4
         qz = ops.array(np.array([0.35], dtype=np.float32), dims=["q"])
-        interp = FastNearestNDInterpolator(
+        interp = NearestNDInterpolator(
             coordinates={"z": coord}, data=data, fill_value=float("nan")
         )
-        # idx_floor=3, frac=0.5 -> frac < 0.5 is False -> picks floor+1=4
         result = interp({"z": qz})
         np.testing.assert_allclose(np.array(result.data).ravel(), [4.0], atol=1e-5)
 
@@ -293,11 +327,11 @@ class Test1DInterpolation:
         n = 11
         raw = np.linspace(0.0, 10.0, n, dtype=np.float32)
         data = ops.array(raw, dims=["z"])
-        coord = LinearCoordinateFast(start=0.0, stop=1.0, size=n)
+        coord = LinearCoordinate(start=0.0, stop=1.0, size=n)
 
         # Query at midpoint: physical 0.5 -> index 5 -> value 5.0
         qz = ops.array(np.array([0.25, 0.5, 0.75], dtype=np.float32), dims=["q"])
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates={"z": coord}, data=data, fill_value=float("nan")
         )
         result = interp({"z": qz})
@@ -310,15 +344,39 @@ class Test1DInterpolation:
         n = 11
         raw = np.arange(n, dtype=np.float32)
         data = ops.array(raw, dims=["z"])
-        coord = LinearCoordinateFast(start=0.0, stop=1.0, size=n)
+        coord = LinearCoordinate(start=0.0, stop=1.0, size=n)
 
-        # physical 0.22 -> frac_idx = 2.2, floor=2, frac=0.2 < 0.5 -> nearest=2
+        # physical 0.22 -> frac_idx = 2.2 -> round() -> nearest = 2
         qz = ops.array(np.array([0.22], dtype=np.float32), dims=["q"])
-        interp = FastNearestNDInterpolator(
+        interp = NearestNDInterpolator(
             coordinates={"z": coord}, data=data, fill_value=float("nan")
         )
         result = interp({"z": qz})
         np.testing.assert_allclose(np.array(result.data).ravel(), [2.0], atol=1e-5)
+
+    def test_quadratic_1d_beats_linear(self, backend):
+        """n_samples=3 gives quadratic Lagrange interpolation."""
+        n = 21
+        xs = np.linspace(0.0, 1.0, n, dtype=np.float32)
+        data = ops.array(np.sin(2 * np.pi * xs).astype(np.float32), dims=["z"])
+        coord = LinearCoordinate(start=0.0, stop=1.0, size=n)
+
+        q_raw = np.linspace(0.1, 0.9, 37, dtype=np.float32)
+        qz = ops.array(q_raw, dims=["q"])
+        exact = np.sin(2 * np.pi * q_raw)
+
+        errors = {}
+        for n_samples in (2, 3):
+            interp = PolynomialNDInterpolator(
+                coordinates={"z": coord},
+                data=data,
+                fill_value=float("nan"),
+                n_samples=n_samples,
+            )
+            got = np.array(interp({"z": qz}).data).ravel()
+            errors[n_samples] = np.max(np.abs(got - exact))
+
+        assert errors[3] < errors[2]
 
 
 # ===========================================================================
@@ -337,9 +395,9 @@ class Test3DInterpolation:
                     raw[i, j, k] = i + j * 0.1 + k * 0.01
         data = ops.array(raw, dims=["z", "x", "y"])
         coords = {
-            "z": LinearCoordinateFast(start=0.0, stop=1.0, size=nz),
-            "x": LinearCoordinateFast(start=0.0, stop=1.0, size=nx),
-            "y": LinearCoordinateFast(start=0.0, stop=1.0, size=ny),
+            "z": LinearCoordinate(start=0.0, stop=1.0, size=nz),
+            "x": LinearCoordinate(start=0.0, stop=1.0, size=nx),
+            "y": LinearCoordinate(start=0.0, stop=1.0, size=ny),
         }
 
         # Query at exact grid point
@@ -351,7 +409,7 @@ class Test3DInterpolation:
         qx = ops.array(np.array([px], dtype=np.float32), dims=["q2"])
         qy = ops.array(np.array([py], dtype=np.float32), dims=["q3"])
 
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates=coords, data=data, fill_value=float("nan")
         )
         result = interp({"z": qz, "x": qx, "y": qy})
@@ -371,9 +429,9 @@ class Test3DInterpolation:
                     raw[i, j, k] = i + j * 0.1 + k * 0.01
         data = ops.array(raw, dims=["z", "x", "y"])
         coords = {
-            "z": LinearCoordinateFast(start=0.0, stop=1.0, size=nz),
-            "x": LinearCoordinateFast(start=0.0, stop=1.0, size=nx),
-            "y": LinearCoordinateFast(start=0.0, stop=1.0, size=ny),
+            "z": LinearCoordinate(start=0.0, stop=1.0, size=nz),
+            "x": LinearCoordinate(start=0.0, stop=1.0, size=nx),
+            "y": LinearCoordinate(start=0.0, stop=1.0, size=ny),
         }
 
         # Midpoint between grid points (1,2,3) and (2,3,4)
@@ -384,7 +442,7 @@ class Test3DInterpolation:
         qx = ops.array(np.array([px], dtype=np.float32), dims=["q2"])
         qy = ops.array(np.array([py], dtype=np.float32), dims=["q3"])
 
-        interp = FastLinearNDInterpolator(
+        interp = PolynomialNDInterpolator(
             coordinates=coords, data=data, fill_value=float("nan")
         )
         result = interp({"z": qz, "x": qx, "y": qy})
@@ -396,7 +454,46 @@ class Test3DInterpolation:
 
 
 # ===========================================================================
-# Test G — Performance (spekk only, ops.jit / ops.grad)
+# Test G — Complex one-dimensional reverse mode
+# ===========================================================================
+
+
+def test_complex_1d_forward_and_gradient_match_general_fast():
+    with ops.backend.temporary_backend("jax"):
+        raw = (
+            np.linspace(-1.0, 1.0, 32, dtype=np.float32)
+            + 1j * np.linspace(2.0, -2.0, 32, dtype=np.float32)
+        ).astype(np.complex64)
+        data = ops.array(raw, dims=["time"])
+        coordinates = {"time": LinearCoordinate(0.0, 1.0, raw.size)}
+        xi = {"time": ops.linspace(0.03, 0.97, 47, dim="points")}
+
+        def interpolate(interpolator_type, values):
+            return interpolator_type(
+                coordinates=coordinates, data=values, fill_value=None
+            )(xi)
+
+        linear = interpolate(LinearNDInterpolator, data)
+        general = interpolate(PolynomialNDInterpolator, data)
+        np.testing.assert_allclose(linear.data, general.data, rtol=1e-6, atol=1e-6)
+
+        def loss(interpolator_type, values):
+            result = interpolate(interpolator_type, values)
+            return ops.sum(ops.real(result * ops.conj(result)))
+
+        linear_grad = ops.jit(ops.grad(lambda values: loss(LinearNDInterpolator, values)))(
+            data
+        )
+        general_grad = ops.jit(
+            ops.grad(lambda values: loss(PolynomialNDInterpolator, values))
+        )(data)
+        np.testing.assert_allclose(
+            linear_grad.data, general_grad.data, rtol=1e-6, atol=1e-6
+        )
+
+
+# ===========================================================================
+# Test H — Performance (spekk only, ops.jit / ops.grad)
 # ===========================================================================
 
 
@@ -407,36 +504,40 @@ class TestPerformance:
     def test_forward_not_slower(self, backend_name):
         with ops.backend.temporary_backend(backend_name):
             n0, n1 = 64, 64
-            data_fast, coords_fast = _make_2d_data("z", "x", n0, n1)
-            data_old, coords_old = _make_2d_data_old_coord("z", "x", n0, n1)
+            data, coords = _make_2d_data("z", "x", n0, n1)
 
             qz = ops.linspace(0.05, 0.95, 32, dim="qz")
             qx = ops.linspace(0.05, 0.95, 32, dim="qx")
             xi = {"z": qz, "x": qx}
 
-            fast_interp = FastLinearNDInterpolator(
-                coordinates=coords_fast, data=data_fast, fill_value=float("nan")
-            )
-            old_interp = LinearNDInterpolator(
-                coordinates=coords_old, data=data_old, fill_value=float("nan")
-            )
+            def forward_fast(d):
+                interp = PolynomialNDInterpolator(
+                    coordinates=coords, data=d, fill_value=float("nan")
+                )
+                return interp(xi)
 
-            fast_fn = ops.jit(lambda: fast_interp(xi))
-            old_fn = ops.jit(lambda: old_interp(xi))
+            def forward_old(d):
+                interp = LinearNDInterpolator(
+                    coordinates=coords, data=d, fill_value=float("nan")
+                )
+                return interp(xi)
+
+            fast_fn = ops.jit(forward_fast)
+            old_fn = ops.jit(forward_old)
 
             # Warm-up
-            _ = fast_fn()
-            _ = old_fn()
+            _ = fast_fn(data)
+            _ = old_fn(data)
 
             n_iters = 50
             t0 = time.time()
             for _ in range(n_iters):
-                _ = fast_fn()
+                _ = fast_fn(data)
             fast_time = time.time() - t0
 
             t0 = time.time()
             for _ in range(n_iters):
-                _ = old_fn()
+                _ = old_fn(data)
             old_time = time.time() - t0
 
             print(
@@ -449,22 +550,21 @@ class TestPerformance:
     def test_backward_faster(self, backend_name):
         with ops.backend.temporary_backend(backend_name):
             n0, n1 = 64, 64
-            data_fast, coords_fast = _make_2d_data("z", "x", n0, n1)
-            data_old, coords_old = _make_2d_data_old_coord("z", "x", n0, n1)
+            data, coords = _make_2d_data("z", "x", n0, n1)
 
             qz = ops.linspace(0.05, 0.95, 32, dim="qz")
             qx = ops.linspace(0.05, 0.95, 32, dim="qx")
             xi = {"z": qz, "x": qx}
 
             def loss_fast(d):
-                interp = FastLinearNDInterpolator(
-                    coordinates=coords_fast, data=d, fill_value=None
+                interp = PolynomialNDInterpolator(
+                    coordinates=coords, data=d, fill_value=None
                 )
                 return ops.sum(interp(xi))
 
             def loss_old(d):
                 interp = LinearNDInterpolator(
-                    coordinates=coords_old, data=d, fill_value=None
+                    coordinates=coords, data=d, fill_value=None
                 )
                 return ops.sum(interp(xi))
 
@@ -472,18 +572,18 @@ class TestPerformance:
             grad_old = ops.jit(ops.grad(loss_old))
 
             # Warm-up
-            _ = grad_fast(data_fast)
-            _ = grad_old(data_old)
+            _ = grad_fast(data)
+            _ = grad_old(data)
 
             n_iters = 50
             t0 = time.time()
             for _ in range(n_iters):
-                _ = grad_fast(data_fast)
+                _ = grad_fast(data)
             fast_time = time.time() - t0
 
             t0 = time.time()
             for _ in range(n_iters):
-                _ = grad_old(data_old)
+                _ = grad_old(data)
             old_time = time.time() - t0
 
             print(

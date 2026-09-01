@@ -3,7 +3,6 @@ from typing import Dict, Optional
 from spekk import Dim, Module, ops
 
 from vbeam.interpolation import LinearCoordinate
-from vbeam.interpolation.linear_coordinate import LinearCoordinateFast
 
 
 class LinearlySampledChannelData(Module):
@@ -36,10 +35,10 @@ class LinearlySampledChannelData(Module):
         return values
 
     @property
-    def data_coordinates(self) -> Dict[Dim, LinearCoordinateFast]:
+    def data_coordinates(self) -> Dict[Dim, LinearCoordinate]:
         n_time_samples = self.data.dim_sizes["time"]
         return {
-            "time": LinearCoordinateFast(
+            "time": LinearCoordinate(
                 self.t0,
                 self.t0 + (n_time_samples - 1) / self.sampling_frequency,
                 n_time_samples,
