@@ -6,3 +6,11 @@ class NoApodization(Apodization):
 
     def __call__(self, *_, **__) -> float:
         return ops.array(1.0)
+
+
+    def tx(self, *_, **__) -> float:
+        return ops.array(1.0)
+
+    def rx(self, *_, **__) -> float:
+        return ops.array(1.0)
+        
