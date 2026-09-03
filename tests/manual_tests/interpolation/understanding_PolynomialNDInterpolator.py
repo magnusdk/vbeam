@@ -1,9 +1,9 @@
-"""Step through GeneralFastLinearNDInterpolator in a debugger.
+"""Step through PolynomialNDInterpolator in a debugger.
 
 Creates a small 2D grid and interpolates a single query point so every
 intermediate value is easy to inspect.
 
-Set a breakpoint inside GeneralFastLinearNDInterpolator.__call__ (in
+Set a breakpoint inside PolynomialNDInterpolator.__call__ (in
 nd_interpolator.py) or anywhere in this file and run with the debugger.
 """
 
