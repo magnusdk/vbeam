@@ -17,6 +17,7 @@ class REFoCUSDelayModel(DelayModel):
     synthetic_element_positions: ops.array
     focusing_delay_model: SeparableDelayModel
     stai_delay_model: DelayModel = field(default_factory=lambda: STADelayModel(1540.0))
+    refocus_tx_dim: str = "refocus_tx"
 
     def __call__(
         self,
@@ -43,7 +44,3 @@ class REFoCUSDelayModel(DelayModel):
         )
         delays = stai_delays + focusing_compensation
         return delays
-
-    @property
-    def refocus_tx_dim(self):
-        return self.synthetic_element_positions.dims[0]
