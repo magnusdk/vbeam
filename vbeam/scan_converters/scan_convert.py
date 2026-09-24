@@ -62,7 +62,7 @@ class SectorScanConverter(ScanConverter):
                 )
             else:
                 output_shape = self.output_shape
-            cartesian_points = self.get_cartesian_points(output_shape)
+            cartesian_points = self.get_cartesian_points(output_shape=output_shape)
 
         polar_points = self.scan.from_cartesian_to_local_coordinates(cartesian_points)
 
@@ -123,12 +123,21 @@ class SectorScanConverter(ScanConverter):
 
         return (n_xs, n_ys, n_zs)
 
-    def get_cartesian_points(self, output_shape: ops.array) -> ops.array:
+    def get_cartesian_points(self, *, output_shape: tuple | None = None,  sc_data=None) -> ops.array:
         min_x, max_x, min_y, max_y, min_z, max_z = self.scan.calculate_cartesian_bounds()
 
-        x_axis = ops.linspace(min_x, max_x, output_shape[0], dim="xs")
-        y_axis = ops.linspace(min_y, max_y, output_shape[1], dim="ys") if self._is_3d else 0
-        z_axis = ops.linspace(min_z, max_z, output_shape[2], dim="zs")
+        if sc_data is not None:
+            nx = sc_data.dim_sizes["xs"]    
+            ny = sc_data.dim_sizes["ys"] if self._is_3d else 0
+            nz = sc_data.dim_sizes["zs"]
+        else:
+            nx = output_shape[0]
+            ny = output_shape[1] if self._is_3d else 0
+            nz = output_shape[2]
+
+        x_axis = ops.linspace(min_x, max_x, nx, dim="xs")
+        y_axis = ops.linspace(min_y, max_y, ny, dim="ys") if self._is_3d else 0
+        z_axis = ops.linspace(min_z, max_z, nz, dim="zs")
 
         return ops.stack([x_axis, y_axis, z_axis], axis="xyz")
 
